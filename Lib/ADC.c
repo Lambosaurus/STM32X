@@ -6,7 +6,9 @@
  * PRIVATE DEFINITIONS
  */
 
+#ifndef ADC_SAMPLETIME
 #define ADC_SAMPLETIME	ADC_SAMPLETIME_79CYCLES_5
+#endif
 
 #define _ADC_SELECT(adc, channel) 	(adc->CHSELR = channel & ADC_CHANNEL_MASK)
 #define _ADC_READ(adc)				(adc->DR)

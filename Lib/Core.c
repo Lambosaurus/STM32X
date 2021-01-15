@@ -37,6 +37,16 @@ void CORE_Idle(void)
 	__WFI();
 }
 
+void CORE_Delay(uint32_t ms)
+{
+	ms += 1; // Add to guarantee a minimum delay
+	uint32_t start = CORE_GetTick();
+	while (CORE_GetTick() - start < ms)
+	{
+		CORE_Idle();
+	}
+}
+
 /*
  * PRIVATE FUNCTIONS
  */
