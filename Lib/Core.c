@@ -119,3 +119,9 @@ void HAL_MspInit(void)
 /*
  * INTERRUPT ROUTINES
  */
+
+void SysTick_Handler(void)
+{
+	HAL_IncTick();
+}
+
