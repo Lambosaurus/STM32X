@@ -4,6 +4,10 @@
 #include "Board.h"
 
 /*
+ * EXAMPLE BOARD DEFINITION
+ */
+
+/*
  * PUBLIC DEFINITIONS
  */
 

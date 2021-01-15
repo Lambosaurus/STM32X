@@ -36,7 +36,7 @@ void EEPROM_Write(uint32_t offset, const void * data, uint16_t size)
 	{
 		if (bytes[i] != eeprom[i])
 		{
-			eeprom[i] = bytes[i]; // This triggers and 8 bit write operation.
+			eeprom[i] = bytes[i]; // This triggers an 8 bit write operation.
 			EEPROM_WaitForOperation();
 		}
 	}

@@ -7,6 +7,10 @@
  * PRIVATE DEFINITIONS
  */
 
+#if ((UART_BFR_SIZE & (UART_BFR_SIZE - 1)) != 0)
+#error "UART_BFR_SIZE must be a power of two"
+#endif
+
 #define UART_BFR_INCR(v) ((v + 1) & (UART_BFR_SIZE - 1))
 
 #define __UART_RX_ENABLE(uart) 	(uart->Instance->CR1 |= USART_CR1_RXNEIE)

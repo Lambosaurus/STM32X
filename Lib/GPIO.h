@@ -4,7 +4,7 @@
 #include "Board.h"
 
 /*
- *  EXAMPLE BOARD DEFINITION
+ * EXAMPLE BOARD DEFINITION
  */
 
 /*

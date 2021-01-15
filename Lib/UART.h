@@ -5,13 +5,14 @@
 #include "Board.h"
 
 /*
- *  EXAMPLE BOARD DEFINITION
+ * EXAMPLE BOARD DEFINITION
  */
 
 /*
 #define UART1_GPIO	GPIOA
 #define UART1_PINS	(GPIO_PIN_9 | GPIO_PIN_10)
 #define UART1_AF	GPIO_AF4_USART1
+//#define UART_BFR_SIZE 128
 */
 
 
@@ -19,11 +20,9 @@
  * PUBLIC DEFINITIONS
  */
 
-// This MUST be a power of two
 #ifndef UART_BFR_SIZE
-#define UART_BFR_SIZE 128
+#define UART_BFR_SIZE 64
 #endif
-
 
 /*
  * PUBLIC TYPES
