@@ -93,7 +93,7 @@ void UART_Deinit(UART_t * uart)
 	UARTx_Deinit(uart);
 }
 
-void UART_Tx(UART_t * uart, uint8_t * data, uint16_t count)
+void UART_Tx(UART_t * uart, const uint8_t * data, uint16_t count)
 {
 	while (count--)
 	{
@@ -111,9 +111,9 @@ void UART_Tx(UART_t * uart, uint8_t * data, uint16_t count)
 	}
 }
 
-void UART_TxStr(UART_t * uart, char * str)
+void UART_TxStr(UART_t * uart, const char * str)
 {
-	UART_Tx(uart, (uint8_t *)str, strlen(str));
+	UART_Tx(uart, (const uint8_t *)str, strlen(str));
 }
 
 uint16_t UART_RxCount(UART_t * uart)

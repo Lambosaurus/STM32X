@@ -5,6 +5,17 @@
 #include "Board.h"
 
 /*
+ *  EXAMPLE BOARD DEFINITION
+ */
+
+/*
+#define SPI1_GPIO		GPIOB
+#define SPI1_PINS		(GPIO_PIN_3 | GPIO_PIN_4 | GPIO_PIN_5)
+#define SPI1_AF			GPIO_AF0_SPI1
+*/
+
+
+/*
  * PUBLIC DEFINITIONS
  */
 
@@ -24,17 +35,21 @@ typedef enum {
 	SPI_MODE3 = SPI_POLARITY_HIGH | SPI_PHASE_2EDGE,
 } SPIMode_t;
 
+
 /*
  * PUBLIC FUNCTIONS
  */
 
+// Initialisation
 void SPI_Init(SPI_t * spi, uint32_t bitrate, SPIMode_t mode);
 void SPI_Deinit(SPI_t * spi);
 
+// Transaction functions
 void SPI_Tx(SPI_t * spi, const uint8_t * data, uint16_t count);
 void SPI_Rx(SPI_t * spi, uint8_t * data, uint16_t count);
 void SPI_TxRx(SPI_t * spi, const uint8_t * txdata, uint8_t * rxdata, uint16_t count);
 uint8_t SPI_Xfer(SPI_t * spi, uint8_t data);
+
 
 /*
  * EXTERN DECLARATIONS
@@ -46,5 +61,6 @@ extern SPI_t * SPI_1;
 #ifdef SPI2_GPIO
 extern SPI_t * SPI_2;
 #endif
+
 
 #endif //SPI_H

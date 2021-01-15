@@ -52,8 +52,8 @@ void UART_Init(UART_t * uart, uint32_t baud);
 void UART_Deinit(UART_t * uart);
 
 // Transmit
-void UART_Tx(UART_t * uart, uint8_t * data, uint16_t count);
-void UART_TxStr(UART_t * uart, char * str);
+void UART_Tx(UART_t * uart, const uint8_t * data, uint16_t count);
+void UART_TxStr(UART_t * uart, const char * str);
 void UART_TxFlush(UART_t * uart);
 
 // Recieve
