@@ -52,11 +52,11 @@ void GPIO_Write(GPIO_TypeDef * gpio, uint32_t pin, GPIO_PinState state)
 {
 	if (state == GPIO_PIN_SET)
 	{
-		GPIO_SET(gpio, pin);
+		GPIO_Set(gpio, pin);
 	}
 	else
 	{
-		GPIO_RESET(gpio, pin);
+		GPIO_Reset(gpio, pin);
 	}
 }
 
