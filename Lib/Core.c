@@ -5,6 +5,8 @@
  * PRIVATE DEFINITIONS
  */
 
+#define CORE_SYSTICK_FREQ	1000
+
 /*
  * PRIVATE TYPES
  */
@@ -15,6 +17,7 @@
 
 static void CORE_InitGPIO(void);
 static void CORE_InitSysClk(void);
+static void CORE_InitSysTick(void);
 
 /*
  * PRIVATE VARIABLES
@@ -26,7 +29,11 @@ static void CORE_InitSysClk(void);
 
 void CORE_Init(void)
 {
-	HAL_Init();
+	__HAL_FLASH_PREREAD_BUFFER_ENABLE();
+	__HAL_RCC_SYSCFG_CLK_ENABLE();
+	__HAL_RCC_PWR_CLK_ENABLE();
+
+	CORE_InitSysTick();
 	CORE_InitSysClk();
 	CORE_InitGPIO();
 }
@@ -50,6 +57,12 @@ void CORE_Delay(uint32_t ms)
 /*
  * PRIVATE FUNCTIONS
  */
+
+void CORE_InitSysTick(void)
+{
+	HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq() / CORE_SYSTICK_FREQ);
+	HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
+}
 
 void CORE_InitGPIO(void)
 {

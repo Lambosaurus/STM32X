@@ -1,7 +1,7 @@
 
 #include "UART.h"
 #include "Core.h"
-#include "string.h"
+#include <string.h>
 
 /*
  * PRIVATE DEFINITIONS
@@ -97,12 +97,12 @@ void UART_Deinit(UART_t * uart)
 	UARTx_Deinit(uart);
 }
 
-void UART_Tx(UART_t * uart, const uint8_t * data, uint16_t count)
+void UART_Tx(UART_t * uart, const uint8_t * data, uint32_t count)
 {
 	while (count--)
 	{
 		// calculate the next head. We cant assign it yet, as the IRQ relies on it.
-		uint16_t head = UART_BFR_INCR(uart->tx.head);
+		uint32_t head = UART_BFR_INCR(uart->tx.head);
 
 		// If the head has caught up with tail.. wait.
 		while (head == uart->tx.tail) { CORE_Idle(); }
@@ -120,28 +120,28 @@ void UART_TxStr(UART_t * uart, const char * str)
 	UART_Tx(uart, (const uint8_t *)str, strlen(str));
 }
 
-uint16_t UART_RxCount(UART_t * uart)
+uint32_t UART_RxCount(UART_t * uart)
 {
 	__UART_RX_DISABLE(uart);
 	// We have to disable the IRQs, as the IRQ may bump the tail.
-	uint16_t count = uart->rx.head >= uart->rx.tail
+	uint32_t count = uart->rx.head >= uart->rx.tail
 				   ? uart->rx.head - uart->rx.tail
 				   : UART_BFR_SIZE + uart->rx.head - uart->rx.tail;
 	__UART_RX_ENABLE(uart);
 	return count;
 }
 
-uint16_t UART_Rx(UART_t * uart, uint8_t * data, uint16_t count)
+uint32_t UART_Rx(UART_t * uart, uint8_t * data, uint32_t count)
 {
-	uint16_t available = UART_RxCount(uart);
+	uint32_t available = UART_RxCount(uart);
 	if (available < count)
 	{
 		count = available;
 	}
 
 	// As long as we read faster than the tail is nudged, we should be fine.
-	uint16_t tail = uart->rx.tail;
-	for (uint16_t i = 0; i < count; i++)
+	uint32_t tail = uart->rx.tail;
+	for (uint32_t i = 0; i < count; i++)
 	{
 		*data++ = uart->rx.buffer[tail];
 		tail = UART_BFR_INCR(tail);
@@ -153,7 +153,7 @@ uint16_t UART_Rx(UART_t * uart, uint8_t * data, uint16_t count)
 
 uint8_t UART_RxPop(UART_t * uart)
 {
-	uint16_t tail = uart->rx.tail;
+	uint32_t tail = uart->rx.tail;
 	uint8_t b = uart->rx.buffer[tail];
 	uart->rx.tail = UART_BFR_INCR(tail);
 	return b;

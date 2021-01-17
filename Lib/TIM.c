@@ -29,7 +29,7 @@ static void TIM_Reload(TIM_t * tim);
 static void TIM_IRQHandler(TIM_t * tim);
 #endif //USE_TIM_IRQS
 
-static void TIM_EnableOCx(TIM_t * tim, uint8_t oc, uint32_t mode);
+static void TIM_EnableOCx(TIM_t * tim, uint32_t oc, uint32_t mode);
 
 /*
  * PRIVATE VARIABLES
@@ -89,7 +89,7 @@ TIM_t * TIM_22 = &gTIM_22;
  * PUBLIC FUNCTIONS
  */
 
-void TIM_Init(TIM_t * tim, uint32_t freq, uint16_t reload)
+void TIM_Init(TIM_t * tim, uint32_t freq, uint32_t reload)
 {
 	TIMx_Init(tim);
 
@@ -108,9 +108,9 @@ void TIM_SetFreq(TIM_t * tim, uint32_t freq)
 	tim->Instance->PSC = (sysclk / freq) - 1;
 }
 
-void TIM_SetReload(TIM_t * tim, uint16_t reload)
+void TIM_SetReload(TIM_t * tim, uint32_t reload)
 {
-	tim->Instance->ARR = (uint32_t)reload;
+	tim->Instance->ARR = reload;
 }
 
 #ifdef USE_TIM_IRQS
@@ -120,7 +120,7 @@ void TIM_OnReload(TIM_t * tim, VoidFunction_t callback)
 	tim->ReloadCallback = callback;
 }
 
-void TIM_OnPulse(TIM_t * tim, uint8_t ch, VoidFunction_t callback)
+void TIM_OnPulse(TIM_t * tim, uint32_t ch, VoidFunction_t callback)
 {
 	// WARN: This will fail horribly if ch is greater than 4.
 	TIM_EnableOCx(tim, ch, TIM_OCMODE_ACTIVE);
@@ -130,7 +130,7 @@ void TIM_OnPulse(TIM_t * tim, uint8_t ch, VoidFunction_t callback)
 }
 #endif //USE_TIM_IRQS
 
-void TIM_EnablePwm(TIM_t * tim, uint8_t ch, GPIO_TypeDef * gpio, uint32_t pin, uint8_t af)
+void TIM_EnablePwm(TIM_t * tim, uint32_t ch, GPIO_TypeDef * gpio, uint32_t pin, uint32_t af)
 {
 	// TIM_CCMR1_OC1PE is the output compare preload
 	TIM_EnableOCx(tim, ch, TIM_OCMODE_PWM1 | TIM_CCMR1_OC1PE | TIM_OCFAST_ENABLE);
@@ -146,7 +146,7 @@ void TIM_EnablePwm(TIM_t * tim, uint8_t ch, GPIO_TypeDef * gpio, uint32_t pin, u
 }
 
 
-void TIM_SetPulse(TIM_t * tim, uint8_t ch, uint16_t pulse)
+void TIM_SetPulse(TIM_t * tim, uint32_t ch, uint32_t pulse)
 {
 	switch (ch)
 	{
@@ -188,7 +188,7 @@ void TIM_Deinit(TIM_t * tim)
  * PRIVATE FUNCTIONS
  */
 
-static void TIM_EnableOCx(TIM_t * tim, uint8_t oc, uint32_t mode)
+static void TIM_EnableOCx(TIM_t * tim, uint32_t oc, uint32_t mode)
 {
 	// Disable the channel during the update.
 	TIM_DISABLE_CCx(tim, oc);

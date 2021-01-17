@@ -1,8 +1,7 @@
 #ifndef UART_H
 #define UART_H
 
-#include "stm32l0xx_hal.h"
-#include "Board.h"
+#include "STM32X.h"
 
 /*
  * EXAMPLE BOARD DEFINITION
@@ -31,8 +30,8 @@
 typedef struct
 {
 	uint8_t buffer[UART_BFR_SIZE];
-	uint16_t head;
-	uint16_t tail;
+	uint32_t head;
+	uint32_t tail;
 } UARTBuffer_t;
 
 typedef struct {
@@ -51,13 +50,13 @@ void UART_Init(UART_t * uart, uint32_t baud);
 void UART_Deinit(UART_t * uart);
 
 // Transmit
-void UART_Tx(UART_t * uart, const uint8_t * data, uint16_t count);
+void UART_Tx(UART_t * uart, const uint8_t * data, uint32_t count);
 void UART_TxStr(UART_t * uart, const char * str);
 void UART_TxFlush(UART_t * uart);
 
 // Recieve
-uint16_t UART_RxCount(UART_t * uart);
-uint16_t UART_Rx(UART_t * uart, uint8_t * data, uint16_t count);
+uint32_t UART_RxCount(UART_t * uart);
+uint32_t UART_Rx(UART_t * uart, uint8_t * data, uint32_t count);
 uint8_t UART_RxPop(UART_t * uart);
 void UART_RxFlush(UART_t * uart);
 

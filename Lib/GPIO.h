@@ -1,7 +1,7 @@
 #ifndef GPIO_H
 #define GPIO_H
 
-#include "Board.h"
+#include "STM32X.h"
 
 /*
  * EXAMPLE BOARD DEFINITION

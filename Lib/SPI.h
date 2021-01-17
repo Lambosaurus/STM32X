@@ -1,8 +1,7 @@
 #ifndef SPI_H
 #define SPI_H
 
-#include "stm32l0xx_hal.h"
-#include "Board.h"
+#include "STM32X.h"
 
 /*
  * EXAMPLE BOARD DEFINITION
@@ -45,9 +44,9 @@ void SPI_Init(SPI_t * spi, uint32_t bitrate, SPIMode_t mode);
 void SPI_Deinit(SPI_t * spi);
 
 // Transaction functions
-void SPI_Tx(SPI_t * spi, const uint8_t * data, uint16_t count);
-void SPI_Rx(SPI_t * spi, uint8_t * data, uint16_t count);
-void SPI_TxRx(SPI_t * spi, const uint8_t * txdata, uint8_t * rxdata, uint16_t count);
+void SPI_Tx(SPI_t * spi, const uint8_t * data, uint32_t count);
+void SPI_Rx(SPI_t * spi, uint8_t * data, uint32_t count);
+void SPI_TxRx(SPI_t * spi, const uint8_t * txdata, uint8_t * rxdata, uint32_t count);
 uint8_t SPI_Xfer(SPI_t * spi, uint8_t data);
 
 

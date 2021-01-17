@@ -1,7 +1,7 @@
 #ifndef TIM_H
 #define TIM_H
 
-#include "Board.h"
+#include "STM32X.h"
 
 /*
  * EXAMPLE BOARD DEFINITION
@@ -37,10 +37,10 @@ typedef struct {
  */
 
 // Initialisation
-void TIM_Init(TIM_t * tim, uint32_t frequency, uint16_t reload);
+void TIM_Init(TIM_t * tim, uint32_t frequency, uint32_t reload);
 void TIM_Deinit(TIM_t * tim);
 void TIM_SetFreq(TIM_t * tim, uint32_t freq);
-void TIM_SetReload(TIM_t * tim, uint16_t reload);
+void TIM_SetReload(TIM_t * tim, uint32_t reload);
 
 // Base counter features
 void TIM_Start(TIM_t * tim);
@@ -48,14 +48,14 @@ void TIM_Stop(TIM_t * tim);
 static inline uint32_t TIM_GetCounter(TIM_t * tim);
 
 // Channel features
-void TIM_SetPulse(TIM_t * tim, uint8_t ch, uint16_t pulse);
+void TIM_SetPulse(TIM_t * tim, uint32_t ch, uint32_t pulse);
 
 #ifdef USE_TIM_IRQS
 void TIM_OnReload(TIM_t * tim, VoidFunction_t callback);
-void TIM_OnPulse(TIM_t * tim, uint8_t ch, VoidFunction_t callback);
+void TIM_OnPulse(TIM_t * tim, uint32_t ch, VoidFunction_t callback);
 #endif //USE_TIM_IRQS
 
-void TIM_EnablePwm(TIM_t * tim, uint8_t ch, GPIO_TypeDef * gpio, uint32_t pin, uint8_t af);
+void TIM_EnablePwm(TIM_t * tim, uint32_t ch, GPIO_TypeDef * gpio, uint32_t pin, uint32_t af);
 
 
 /*

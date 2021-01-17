@@ -1,6 +1,5 @@
 
 #include "ADC.h"
-#include "stm32l0xx_hal_adc.h"
 
 /*
  * PRIVATE DEFINITIONS

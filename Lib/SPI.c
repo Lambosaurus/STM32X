@@ -65,7 +65,7 @@ void SPI_Deinit(SPI_t * spi)
 	SPIx_Deinit(spi);
 }
 
-void SPI_Tx(SPI_t * spi, const uint8_t * data, uint16_t count)
+void SPI_Tx(SPI_t * spi, const uint8_t * data, uint32_t count)
 {
 	for (uint32_t i = 0; i < count; i++)
 	{
@@ -76,7 +76,7 @@ void SPI_Tx(SPI_t * spi, const uint8_t * data, uint16_t count)
 	__HAL_SPI_CLEAR_OVRFLAG(spi);
 }
 
-void SPI_Rx(SPI_t * spi, uint8_t * data, uint16_t count)
+void SPI_Rx(SPI_t * spi, uint8_t * data, uint32_t count)
 {
 	for (uint32_t i = 0; i < count; i++)
 	{
@@ -89,7 +89,7 @@ void SPI_Rx(SPI_t * spi, uint8_t * data, uint16_t count)
 	__HAL_SPI_CLEAR_OVRFLAG(spi);
 }
 
-void SPI_TxRx(SPI_t * spi, const uint8_t * txdata, uint8_t * rxdata, uint16_t count)
+void SPI_TxRx(SPI_t * spi, const uint8_t * txdata, uint8_t * rxdata, uint32_t count)
 {
 	for (uint32_t i = 0; i < count; i++)
 	{

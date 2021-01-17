@@ -1,6 +1,6 @@
 
 #include "EEPROM.h"
-#include "string.h"
+#include <string.h>
 
 /*
  * PRIVATE DEFINITIONS
@@ -26,13 +26,13 @@ static void EEPROM_WaitForOperation(void);
  * PUBLIC FUNCTIONS
  */
 
-void EEPROM_Write(uint32_t offset, const void * data, uint16_t size)
+void EEPROM_Write(uint32_t offset, const void * data, uint32_t size)
 {
 	uint8_t * bytes = (uint8_t *)data;
 	uint8_t * eeprom = (uint8_t *)(DATA_EEPROM_BASE + offset);
 
 	EEPROM_Unlock();
-	for (uint16_t i = 0; i < size; i++)
+	for (uint32_t i = 0; i < size; i++)
 	{
 		if (bytes[i] != eeprom[i])
 		{
@@ -43,7 +43,7 @@ void EEPROM_Write(uint32_t offset, const void * data, uint16_t size)
 	EEPROM_Lock();
 }
 
-void EEPROM_Read(uint32_t offset, void * data, uint16_t size)
+void EEPROM_Read(uint32_t offset, void * data, uint32_t size)
 {
 	uint8_t * eeprom = (uint8_t *)(DATA_EEPROM_BASE + offset);
 	memcpy(data, eeprom, size);
