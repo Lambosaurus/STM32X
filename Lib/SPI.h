@@ -3,16 +3,6 @@
 
 #include "STM32X.h"
 
-/*
- * EXAMPLE BOARD DEFINITION
- */
-
-/*
-#define SPI1_GPIO		GPIOB
-#define SPI1_PINS		(GPIO_PIN_3 | GPIO_PIN_4 | GPIO_PIN_5)
-#define SPI1_AF			GPIO_AF0_SPI1
-*/
-
 
 /*
  * PUBLIC DEFINITIONS

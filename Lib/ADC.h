@@ -3,13 +3,6 @@
 
 #include "STM32X.h"
 
-/*
- * EXAMPLE BOARD DEFINITION
- */
-
-/*
-//#define ADC_VREF	3300
- */
 
 /*
  * PUBLIC DEFINITIONS

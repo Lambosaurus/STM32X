@@ -3,15 +3,6 @@
 
 #include "STM32X.h"
 
-/*
- * EXAMPLE BOARD DEFINITION
- */
-
-/*
-#define USE_TIM1
-// #define USE_TIM_IRQS
-*/
-
 
 /*
  * PUBLIC DEFINITIONS

@@ -3,9 +3,6 @@
 
 #include "STM32X.h"
 
-/*
- * EXAMPLE BOARD DEFINITION
- */
 
 /*
  * PUBLIC DEFINITIONS

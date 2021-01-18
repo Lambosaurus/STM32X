@@ -3,13 +3,6 @@
 
 #include "STM32X.h"
 
-/*
- * EXAMPLE BOARD DEFINITION
- */
-
-/*
-//#define CORE_USE_HSE
- */
 
 //TODO:
 // Implement HSE support options.

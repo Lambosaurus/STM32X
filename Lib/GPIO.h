@@ -3,15 +3,6 @@
 
 #include "STM32X.h"
 
-/*
- * EXAMPLE BOARD DEFINITION
- */
-
-/*
-//#define USE_GPIO_IRQS
-//#define USE_EXTI_0
-*/
-
 
 /*
  * PUBLIC DEFINITIONS
