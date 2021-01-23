@@ -2,6 +2,7 @@
 #define TIM_H
 
 #include "STM32X.h"
+#include "GPIO.h"
 
 
 /*
@@ -46,7 +47,7 @@ void TIM_OnReload(TIM_t * tim, VoidFunction_t callback);
 void TIM_OnPulse(TIM_t * tim, uint32_t ch, VoidFunction_t callback);
 #endif //USE_TIM_IRQS
 
-void TIM_EnablePwm(TIM_t * tim, uint32_t ch, GPIO_TypeDef * gpio, uint32_t pin, uint32_t af);
+void TIM_EnablePwm(TIM_t * tim, uint32_t ch, GPIO_t * gpio, uint32_t pin, uint32_t af);
 
 
 /*

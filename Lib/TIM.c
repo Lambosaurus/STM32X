@@ -130,7 +130,7 @@ void TIM_OnPulse(TIM_t * tim, uint32_t ch, VoidFunction_t callback)
 }
 #endif //USE_TIM_IRQS
 
-void TIM_EnablePwm(TIM_t * tim, uint32_t ch, GPIO_TypeDef * gpio, uint32_t pin, uint32_t af)
+void TIM_EnablePwm(TIM_t * tim, uint32_t ch, GPIO_t * gpio, uint32_t pin, uint32_t af)
 {
 	// TIM_CCMR1_OC1PE is the output compare preload
 	TIM_EnableOCx(tim, ch, TIM_OCMODE_PWM1 | TIM_CCMR1_OC1PE | TIM_OCFAST_ENABLE);

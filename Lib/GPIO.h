@@ -12,10 +12,7 @@
  * PUBLIC TYPES
  */
 
-typedef struct {
-	GPIO_TypeDef * gpio;
-	uint32_t pin;
-} GPIO_t;
+typedef GPIO_TypeDef GPIO_t;
 
 typedef void(*VoidFunction_t)(void);
 
@@ -31,21 +28,21 @@ typedef enum {
  */
 
 // Initialisation
-void GPIO_EnableOutput(GPIO_TypeDef * gpio, uint32_t pin, GPIO_PinState state);
-void GPIO_EnableInput(GPIO_TypeDef * gpio, uint32_t pin, uint32_t pullup);
-void GPIO_Disable(GPIO_TypeDef * gpio, uint32_t pin);
+void GPIO_EnableOutput(GPIO_t * gpio, uint32_t pin, GPIO_PinState state);
+void GPIO_EnableInput(GPIO_t * gpio, uint32_t pin, uint32_t pullup);
+void GPIO_Disable(GPIO_t * gpio, uint32_t pin);
 #ifdef USE_GPIO_IRQS
-void GPIO_EnableIRQ(GPIO_TypeDef * gpio, uint32_t pin, uint32_t pullup, GPIO_IT_Dir_t dir, VoidFunction_t callback);
+void GPIO_EnableIRQ(GPIO_t * gpio, uint32_t pin, uint32_t pullup, GPIO_IT_Dir_t dir, VoidFunction_t callback);
 #endif //USE_GPIO_IRQS
 
 // Outputs
-void GPIO_Write(GPIO_TypeDef * gpio, uint32_t pin, GPIO_PinState state);
-static inline void GPIO_Set(GPIO_TypeDef * gpio, uint32_t pin);
-static inline void GPIO_Reset(GPIO_TypeDef * gpio, uint32_t pin);
+void GPIO_Write(GPIO_t * gpio, uint32_t pin, GPIO_PinState state);
+static inline void GPIO_Set(GPIO_t * gpio, uint32_t pin);
+static inline void GPIO_Reset(GPIO_t * gpio, uint32_t pin);
 
 // Inputs
-static inline bool GPIO_Read(GPIO_TypeDef * gpio, uint32_t pin);
-static inline uint32_t GPIO_ReadPort(GPIO_TypeDef * gpio, uint32_t pins);
+static inline bool GPIO_Read(GPIO_t * gpio, uint32_t pin);
+static inline uint32_t GPIO_ReadPort(GPIO_t * gpio, uint32_t pins);
 
 
 /*
