@@ -29,7 +29,7 @@ typedef struct {
  */
 
 // Initialisation
-void TIM_Init(TIM_t * tim, uint32_t frequency, uint32_t reload);
+void TIM_Init(TIM_t * tim, uint32_t freq, uint32_t reload);
 void TIM_Deinit(TIM_t * tim);
 void TIM_SetFreq(TIM_t * tim, uint32_t freq);
 void TIM_SetReload(TIM_t * tim, uint32_t reload);
