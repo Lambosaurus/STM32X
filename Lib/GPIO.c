@@ -48,7 +48,7 @@ VoidFunction_t gCallback[16] = {
  * PUBLIC FUNCTIONS
  */
 
-void GPIO_Write(GPIO_TypeDef * gpio, uint32_t pin, GPIO_PinState state)
+void GPIO_Write(GPIO_t * gpio, uint32_t pin, GPIO_PinState state)
 {
 	if (state == GPIO_PIN_SET)
 	{
@@ -60,7 +60,7 @@ void GPIO_Write(GPIO_TypeDef * gpio, uint32_t pin, GPIO_PinState state)
 	}
 }
 
-void GPIO_EnableOutput(GPIO_TypeDef * gpio, uint32_t pin, GPIO_PinState state)
+void GPIO_EnableOutput(GPIO_t * gpio, uint32_t pin, GPIO_PinState state)
 {
 	GPIO_InitTypeDef init = {
 	  .Mode = GPIO_MODE_OUTPUT_PP,
@@ -72,7 +72,7 @@ void GPIO_EnableOutput(GPIO_TypeDef * gpio, uint32_t pin, GPIO_PinState state)
 	GPIO_Write(gpio, pin, state);
 }
 
-void GPIO_EnableInput(GPIO_TypeDef * gpio, uint32_t pin, uint32_t pullup)
+void GPIO_EnableInput(GPIO_t * gpio, uint32_t pin, uint32_t pullup)
 {
 	GPIO_InitTypeDef init = {
 	  .Mode = GPIO_MODE_INPUT,
@@ -84,7 +84,7 @@ void GPIO_EnableInput(GPIO_TypeDef * gpio, uint32_t pin, uint32_t pullup)
 }
 
 #ifdef USE_GPIO_IRQS
-void GPIO_EnableIRQ(GPIO_TypeDef * gpio, uint32_t pin, uint32_t pullup, GPIO_IT_Dir_t dir, VoidFunction_t callback)
+void GPIO_EnableIRQ(GPIO_t * gpio, uint32_t pin, uint32_t pullup, GPIO_IT_Dir_t dir, VoidFunction_t callback)
 {
 	int n = 0;
 	while ((pin & (1 << n)) == 0) { n++; }
@@ -102,7 +102,7 @@ void GPIO_EnableIRQ(GPIO_TypeDef * gpio, uint32_t pin, uint32_t pullup, GPIO_IT_
 }
 #endif //USE_GPIO_IRQS
 
-void GPIO_Disable(GPIO_TypeDef * gpio, uint32_t pin)
+void GPIO_Disable(GPIO_t * gpio, uint32_t pin)
 {
 	GPIO_InitTypeDef init = {
 	  .Mode = GPIO_MODE_ANALOG,
