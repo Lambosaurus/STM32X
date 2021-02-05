@@ -50,7 +50,7 @@ VoidFunction_t gCallback[16] = {
 
 void GPIO_Write(GPIO_t * gpio, uint32_t pin, GPIO_PinState state)
 {
-	if (state == GPIO_PIN_SET)
+	if (state != GPIO_PIN_RESET)
 	{
 		GPIO_Set(gpio, pin);
 	}
