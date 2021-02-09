@@ -13,8 +13,6 @@
  * PUBLIC TYPES
  */
 
-typedef void(*VoidFunction_t)(void);
-
 typedef struct {
 	TIM_TypeDef * Instance;
 #ifdef USE_TIM_IRQS

@@ -14,7 +14,6 @@
 
 typedef GPIO_TypeDef GPIO_t;
 
-typedef void(*VoidFunction_t)(void);
 
 typedef enum {
 	GPIO_IT_RISING 	= GPIO_MODE_IT_RISING,
