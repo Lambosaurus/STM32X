@@ -4,6 +4,7 @@
 
 // Core config
 //#define CORE_USE_HSE
+//#define USE_SYSTICK_IRQ
 
 // ADC config
 //#define ADC_VREF	        3300

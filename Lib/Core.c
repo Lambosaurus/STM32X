@@ -23,6 +23,11 @@ static void CORE_InitSysTick(void);
  * PRIVATE VARIABLES
  */
 
+#ifdef USE_SYSTICK_IRQ
+static VoidFunction_t gTickCallback;
+#endif
+
+
 /*
  * PUBLIC FUNCTIONS
  */
@@ -119,6 +124,14 @@ void CORE_InitSysClk(void)
 }
 
 
+#ifdef USE_SYSTICK_IRQ
+void CORE_OnTick(VoidFunction_t callback)
+{
+	gTickCallback = callback;
+}
+#endif
+
+
 /*
  * CALLBACK FUNCTIONS
  */
@@ -136,5 +149,12 @@ void HAL_MspInit(void)
 void SysTick_Handler(void)
 {
 	HAL_IncTick();
+
+#ifdef USE_SYSTICK_IRQ
+	if (gTickCallback != NULL)
+	{
+		gTickCallback();
+	}
+#endif
 }
 

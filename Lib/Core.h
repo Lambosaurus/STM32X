@@ -29,6 +29,10 @@ void CORE_Delay(uint32_t ms);
 //uint32_t CORE_GetTick(void);
 #define CORE_GetTick() HAL_GetTick()
 
+#ifdef USE_SYSTICK_IRQ
+void CORE_OnTick(VoidFunction_t callback);
+#endif
+
 /*
  * EXTERN DECLARATIONS
  */
