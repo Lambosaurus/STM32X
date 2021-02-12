@@ -12,6 +12,16 @@
 #define _ADC_SELECT(adc, channel) 	(adc->CHSELR = channel & ADC_CHANNEL_MASK)
 #define _ADC_READ(adc)				(adc->DR)
 
+
+#define TS_CAL1_AIN		(*((uint16_t*)0x1FF8007A))
+#define TS_CAL2_AIN		(*((uint16_t*)0x1FF8007E))
+#define TS_CAL1_DEG		30
+#define TS_CAL2_DEG		130
+#define TS_CAL_VREF		3000
+
+#define VF_CAL_AIN		(*((uint16_t*)0x1FF80078))
+#define VF_CAL_VREF		3000
+
 /*
  * PRIVATE TYPES
  */
@@ -89,6 +99,26 @@ uint32_t AIN_AinToDivider(uint32_t ain, uint32_t rlow, uint32_t rhigh)
 uint32_t AIN_AinToMv(uint32_t ain)
 {
 	return (ain * ADC_VREF) / ADC_MAX;
+}
+
+int32_t ADC_ReadDieTemp(void)
+{
+	ADC->CCR |= ADC_CCR_TSEN;
+	int32_t ain = ADC_Read(ADC_CHANNEL_TEMPSENSOR);
+	ADC->CCR &= ~ADC_CCR_TSEN;
+
+	// The temp sensor is not ratiometric, so the vref must be adjusted for.
+	ain = ain * TS_CAL_VREF / ADC_VREF;
+	return ((ain - TS_CAL1_AIN) * (TS_CAL2_DEG - TS_CAL1_DEG) / (TS_CAL2_AIN - TS_CAL1_AIN)) + TS_CAL1_DEG;
+}
+
+uint32_t ADC_ReadVref(void)
+{
+	ADC->CCR |= ADC_CCR_VREFEN;
+	int32_t ain = ADC_Read(ADC_CHANNEL_VREFINT);
+	ADC->CCR &= ~ADC_CCR_VREFEN;
+
+	return (VF_CAL_VREF * (uint32_t)VF_CAL_AIN) / ain;
 }
 
 /*
