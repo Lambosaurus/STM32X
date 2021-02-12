@@ -6,6 +6,7 @@
  */
 
 #define CORE_SYSTICK_FREQ	1000
+#define MS_PER_SYSTICK		(1000 / CORE_SYSTICK_FREQ)
 
 /*
  * PRIVATE TYPES
@@ -22,6 +23,12 @@ static void CORE_InitSysTick(void);
 /*
  * PRIVATE VARIABLES
  */
+
+#ifdef USE_SYSTICK_IRQ
+static VoidFunction_t gTickCallback;
+#endif
+
+static volatile uint32_t gTicks = 0;
 
 /*
  * PUBLIC FUNCTIONS
@@ -46,12 +53,17 @@ void CORE_Idle(void)
 
 void CORE_Delay(uint32_t ms)
 {
-	ms += 1; // Add to guarantee a minimum delay
+	ms += MS_PER_SYSTICK; // Add to guarantee a minimum delay
 	uint32_t start = CORE_GetTick();
 	while (CORE_GetTick() - start < ms)
 	{
 		CORE_Idle();
 	}
+}
+
+uint32_t CORE_GetTick(void)
+{
+	return gTicks;
 }
 
 /*
@@ -119,14 +131,21 @@ void CORE_InitSysClk(void)
 }
 
 
+#ifdef USE_SYSTICK_IRQ
+void CORE_OnTick(VoidFunction_t callback)
+{
+	gTickCallback = callback;
+}
+#endif
+
+
 /*
  * CALLBACK FUNCTIONS
  */
 
-void HAL_MspInit(void)
+uint32_t HAL_GetTick(void)
 {
-  __HAL_RCC_SYSCFG_CLK_ENABLE();
-  __HAL_RCC_PWR_CLK_ENABLE();
+	return gTicks;
 }
 
 /*
@@ -135,6 +154,13 @@ void HAL_MspInit(void)
 
 void SysTick_Handler(void)
 {
-	HAL_IncTick();
+	gTicks += MS_PER_SYSTICK;
+
+#ifdef USE_SYSTICK_IRQ
+	if (gTickCallback != NULL)
+	{
+		gTickCallback();
+	}
+#endif
 }
 

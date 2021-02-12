@@ -15,6 +15,8 @@
  * PUBLIC TYPES
  */
 
+typedef void(*VoidFunction_t)(void);
+
 /*
  * PUBLIC FUNCTIONS
  */
