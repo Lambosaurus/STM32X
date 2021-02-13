@@ -108,11 +108,11 @@ int32_t ADC_ReadDieTemp(void)
 	ADC->CCR &= ~ADC_CCR_TSEN;
 
 	// The temp sensor is not ratiometric, so the vref must be adjusted for.
-	ain = ain * TS_CAL_VREF / ADC_VREF;
+	ain = ain * ADC_VREF / TS_CAL_VREF;
 	return ((ain - TS_CAL1_AIN) * (TS_CAL2_DEG - TS_CAL1_DEG) / (TS_CAL2_AIN - TS_CAL1_AIN)) + TS_CAL1_DEG;
 }
 
-uint32_t ADC_ReadVref(void)
+uint32_t ADC_ReadVRef(void)
 {
 	ADC->CCR |= ADC_CCR_VREFEN;
 	int32_t ain = ADC_Read(ADC_CHANNEL_VREFINT);
