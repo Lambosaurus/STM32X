@@ -28,6 +28,10 @@ void ADC_Deinit(void);
 // Reading
 uint32_t ADC_Read(uint32_t channel);
 
+// Special channels
+int32_t ADC_ReadDieTemp(void);
+uint32_t ADC_ReadVRef(void);
+
 // Utility
 uint32_t AIN_AinToMv(uint32_t ain);
 uint32_t AIN_AinToDivider(uint32_t ain, uint32_t rlow, uint32_t rhigh);
