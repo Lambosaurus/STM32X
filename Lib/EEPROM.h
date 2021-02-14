@@ -3,6 +3,7 @@
 
 #include "STM32X.h"
 
+#ifdef DATA_EEPROM_BASE
 
 /*
  * PUBLIC DEFINITIONS
@@ -23,4 +24,5 @@ void EEPROM_Read(uint32_t offset, void * data, uint32_t size);
  * EXTERN DECLARATIONS
  */
 
+#endif //DATA_EEPROM_BASE
 #endif //EEPROM_H

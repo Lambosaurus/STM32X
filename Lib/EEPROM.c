@@ -2,6 +2,8 @@
 #include "EEPROM.h"
 #include <string.h>
 
+#ifdef DATA_EEPROM_BASE
+
 /*
  * PRIVATE DEFINITIONS
  */
@@ -83,4 +85,5 @@ static void EEPROM_WaitForOperation(void)
  * INTERRUPT ROUTINES
  */
 
+#endif //DATA_EEPROM_BASE
 
