@@ -66,6 +66,14 @@ uint32_t CORE_GetTick(void)
 	return gTicks;
 }
 
+#ifdef USE_SYSTICK_IRQ
+void CORE_OnTick(VoidFunction_t callback)
+{
+	gTickCallback = callback;
+}
+#endif
+
+
 /*
  * PRIVATE FUNCTIONS
  */
@@ -129,14 +137,6 @@ void CORE_InitSysClk(void)
 	clk.APB2CLKDivider  = RCC_HCLK_DIV1;
 	HAL_RCC_ClockConfig(&clk, FLASH_LATENCY_1);
 }
-
-
-#ifdef USE_SYSTICK_IRQ
-void CORE_OnTick(VoidFunction_t callback)
-{
-	gTickCallback = callback;
-}
-#endif
 
 
 /*
