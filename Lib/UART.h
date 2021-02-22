@@ -71,6 +71,8 @@ extern UART_t * UART_1;
 #ifdef UART2_GPIO
 extern UART_t * UART_2;
 #endif
-
+#ifdef UART3_GPIO
+extern UART_t * UART_3;
+#endif
 
 #endif //UART_H

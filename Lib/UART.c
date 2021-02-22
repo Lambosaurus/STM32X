@@ -47,6 +47,12 @@ static UART_t gUART_2 = {
 };
 UART_t * UART_2 = &gUART_2;
 #endif
+#ifdef UART3_GPIO
+static UART_t gUART_3 = {
+	.Instance = USART3
+};
+UART_t * UART_3 = &gUART_3;
+#endif
 
 /*
  * PUBLIC FUNCTIONS
@@ -198,6 +204,16 @@ static void UARTx_Init(UART_t * uart)
 		HAL_NVIC_EnableIRQ(USART2_IRQn);
 	}
 #endif
+#ifdef UART3_GPIO
+	if (uart == UART_3)
+	{
+		__HAL_RCC_USART3_CLK_ENABLE();
+		gpio.Pin = UART3_PINS;
+		gpio.Alternate = UART3_AF;
+		HAL_GPIO_Init(UART3_GPIO, &gpio);
+		HAL_NVIC_EnableIRQ(USART3_IRQn);
+	}
+#endif
 }
 
 static void UARTx_Deinit(UART_t * uart)
@@ -216,6 +232,14 @@ static void UARTx_Deinit(UART_t * uart)
 		HAL_NVIC_DisableIRQ(USART2_IRQn);
 		__HAL_RCC_USART2_CLK_DISABLE();
 		HAL_GPIO_DeInit(UART2_GPIO, UART2_PINS);
+	}
+#endif
+#ifdef UART3_GPIO
+	if (uart == UART_3)
+	{
+		HAL_NVIC_DisableIRQ(USART3_IRQn);
+		__HAL_RCC_USART3_CLK_DISABLE();
+		HAL_GPIO_DeInit(UART3_GPIO, UART3_PINS);
 	}
 #endif
 }
@@ -277,5 +301,10 @@ void USART2_IRQHandler(void)
 	USART_IRQHandler(UART_2);
 }
 #endif
-
+#ifdef UART3_GPIO
+void USART3_IRQHandler(void)
+{
+	USART_IRQHandler(UART_3);
+}
+#endif
 
