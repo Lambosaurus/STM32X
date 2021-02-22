@@ -50,6 +50,9 @@ extern SPI_t * SPI_1;
 #ifdef SPI2_GPIO
 extern SPI_t * SPI_2;
 #endif
+#ifdef SPI3_GPIO
+extern SPI_t * SPI_3;
+#endif
 
 
 #endif //SPI_H

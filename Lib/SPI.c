@@ -1,6 +1,7 @@
 
 #include "SPI.h"
 #include "Core.h"
+#include "GPIO.h"
 
 /*
  * PRIVATE DEFINITIONS
@@ -37,6 +38,13 @@ static SPI_t gSPI_2 = {
 };
 SPI_t * SPI_2 = &gSPI_2;
 #endif
+#ifdef SPI3_GPIO
+static SPI_t gSPI_3 = {
+	.Instance = SPI3
+};
+SPI_t * SPI_3 = &gSPI_3;
+#endif
+
 
 /*
  * PUBLIC FUNCTIONS
@@ -157,6 +165,15 @@ static void SPIx_Init(SPI_t * spi)
 		HAL_GPIO_Init(SPI2_GPIO, &gpio);
 	}
 #endif
+#ifdef SPI3_GPIO
+	if (spi == SPI_3)
+	{
+		__HAL_RCC_SPI3_CLK_ENABLE();
+		gpio.Pin = SPI3_PINS;
+		gpio.Alternate = SPI3_AF;
+		HAL_GPIO_Init(SPI3_GPIO, &gpio);
+	}
+#endif
 }
 
 static void SPIx_Deinit(SPI_t * spi)
@@ -165,14 +182,21 @@ static void SPIx_Deinit(SPI_t * spi)
 	if (spi == SPI_1)
 	{
 		__HAL_RCC_SPI1_CLK_DISABLE();
-		HAL_GPIO_DeInit(SPI1_GPIO, SPI1_PINS);
+		GPIO_Disable(SPI1_GPIO, SPI1_PINS);
 	}
 #endif
 #ifdef SPI2_GPIO
 	if (spi == SPI_2)
 	{
 		__HAL_RCC_SPI2_CLK_DISABLE();
-		HAL_GPIO_DeInit(SPI2_GPIO, SPI2_PINS);
+		GPIO_Disable(SPI2_GPIO, SPI2_PINS);
+	}
+#endif
+#ifdef SPI3_GPIO
+	if (spi == SPI_3)
+	{
+		__HAL_RCC_SPI3_CLK_DISABLE();
+		GPIO_Disable(SPI3_GPIO, SPI3_PINS);
 	}
 #endif
 }
