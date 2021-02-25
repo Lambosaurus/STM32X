@@ -4,6 +4,11 @@
 #include "STM32X.h"
 
 /*
+ * FUNCTIONAL TESTING
+ * STM32L0: N
+ */
+
+/*
  * PUBLIC DEFINITIONS
  */
 
