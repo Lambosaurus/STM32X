@@ -3,10 +3,13 @@
 
 #include "STM32X.h"
 
+/*
+ * FUNCTIONAL TESTING
+ * STM32L0: Y
+ */
 
 //TODO:
 // Implement HSE support options.
-// Extract GetTick from HAL.
 
 /*
  * PUBLIC DEFINITIONS

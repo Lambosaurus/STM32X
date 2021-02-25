@@ -4,6 +4,10 @@
 #include "STM32X.h"
 #include "GPIO.h"
 
+/*
+ * FUNCTIONAL TESTING
+ * STM32L0: Y
+ */
 
 /*
  * PUBLIC DEFINITIONS
