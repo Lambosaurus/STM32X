@@ -36,7 +36,11 @@ static volatile uint32_t gTicks = 0;
 
 void CORE_Init(void)
 {
+#if defined(STM32L0)
 	__HAL_FLASH_PREREAD_BUFFER_ENABLE();
+#elif defined(STM32F0)
+	__HAL_FLASH_PREFETCH_BUFFER_ENABLE();
+#endif
 	__HAL_RCC_SYSCFG_CLK_ENABLE();
 	__HAL_RCC_PWR_CLK_ENABLE();
 
@@ -107,7 +111,9 @@ void CORE_InitGPIO(void)
 
 void CORE_InitSysClk(void)
 {
+#ifdef STM32L0
 	__HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
+#endif
 
 	RCC_OscInitTypeDef osc = {0};
 #ifdef CORE_USE_HSE
@@ -116,7 +122,11 @@ void CORE_InitSysClk(void)
 	osc.PLL.PLLState 		= RCC_PLL_ON;
 	osc.PLL.PLLSource 		= RCC_PLLSOURCE_HSE;
 	osc.PLL.PLLMUL 			= RCC_PLL_MUL2;
+#ifdef STM32F0
+	osc.PLL.PREDIV			= RCC_PREDIV_DIV1;
+#else
 	osc.PLL.PLLDIV 			= RCC_PLL_DIV1;
+#endif
 #else
 	osc.OscillatorType 		= RCC_OSCILLATORTYPE_HSI;
 	osc.HSIState 			= RCC_HSI_ON;
@@ -124,17 +134,23 @@ void CORE_InitSysClk(void)
 	osc.PLL.PLLState 		= RCC_PLL_ON;
 	osc.PLL.PLLSource 		= RCC_PLLSOURCE_HSI;
 	osc.PLL.PLLMUL 			= RCC_PLL_MUL4;
-	osc.PLL.PLLDIV			= RCC_PLL_DIV2;
-
+#ifdef STM32F0
+	osc.PLL.PREDIV			= RCC_PREDIV_DIV2;
+#else
+	osc.PLL.PLLDIV 			= RCC_PLL_DIV2;
+#endif
 #endif //CORE_USE_HSE
 	HAL_RCC_OscConfig(&osc);
 
 	RCC_ClkInitTypeDef clk = {0};
-	clk.ClockType 		= RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
+	clk.ClockType 		= RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1;
 	clk.SYSCLKSource 	= RCC_SYSCLKSOURCE_PLLCLK;
 	clk.AHBCLKDivider 	= RCC_SYSCLK_DIV1;
 	clk.APB1CLKDivider 	= RCC_HCLK_DIV1;
+#ifdef STM32L0
+	clk.ClockType 		|= RCC_CLOCKTYPE_PCLK2;
 	clk.APB2CLKDivider  = RCC_HCLK_DIV1;
+#endif
 	HAL_RCC_ClockConfig(&clk, FLASH_LATENCY_1);
 }
 
