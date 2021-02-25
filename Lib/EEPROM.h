@@ -6,6 +6,11 @@
 #ifdef DATA_EEPROM_BASE
 
 /*
+ * FUNCTIONAL TESTING
+ * STM32L0: Y
+ */
+
+/*
  * PUBLIC DEFINITIONS
  */
 
