@@ -1,6 +1,5 @@
 
 #include "FLASH.h"
-#include <string.h>
 
 /*
  * PRIVATE DEFINITIONS
@@ -11,7 +10,8 @@
 
 #define _FLASH_SET_CR(bit)			(FLASH->PECR |= bit)
 #define _FLASH_CLR_CR(bit)			(FLASH->PECR &= ~bit)
-#define _FLASH_CR_PROG				(FLASH_PECR_PROG | FLASH_PECR_FPRG)
+#define _FLASH_CR_PROG				FLASH_PECR_PROG
+#define _FLASH_CR_FPROG				(FLASH_PECR_PROG | FLASH_PECR_FPRG)
 #define _FLASH_CR_LOCK				FLASH_PECR_LOCK
 #define _FLASH_CR_ERASE				(FLASH_PECR_PROG | FLASH_PECR_ERASE)
 
@@ -29,9 +29,8 @@
 #endif
 
 
-// Treat this like a function: It dereferences an address, so must be calculated.
+// Treat this like a function: It dereferences an address, so must be calculated (On some series)
 #define FLASH_PAGE_COUNT()		(FLASH_SIZE / FLASH_PAGE_SIZE)
-#define FLASH_PAGE_BASE(page)	((uint32_t *)(FLASH_BASE + (FLASH_PAGE_SIZE * page)))
 
 // This must be a macro, as the __RAM_FUNC's should not call other functions.
 #define FLASH_WAIT_FOR_OPERATION()					\
@@ -50,12 +49,8 @@
 
 static void FLASH_Unlock(void);
 static inline void FLASH_Lock(void);
-static void FLASH_Erase(uint32_t * address);
-static void FLASH_Write(uint32_t * address, const uint32_t * data);
 #if defined(STM32L0)
 __RAM_FUNC void FLASH_WriteHalfPage(uint32_t * __restrict address, const uint32_t * __restrict data);
-#elif defined(STM32F0)
-static inline void FLASH_WriteWord(uint32_t * address, uint32_t word);
 #endif
 
 /*
@@ -71,21 +66,75 @@ uint32_t FLASH_GetPageCount(void)
 	return FLASH_PAGE_COUNT();
 }
 
-void FLASH_WritePage(uint32_t page, const uint32_t * data)
+uint32_t * FLASH_GetPage(uint32_t page)
+{
+	return (uint32_t *)(FLASH_BASE + (FLASH_PAGE_SIZE * page));
+}
+
+void FLASH_Erase(uint32_t * address)
 {
 	FLASH_Unlock();
-	uint32_t * address = FLASH_PAGE_BASE(page);
-	FLASH_Erase(address);
-	FLASH_Write(address, data);
+	_FLASH_SET_CR(_FLASH_CR_ERASE);
+
+#if defined(STM32L0)
+	// Write 0 to the first word of the page to erase
+	*address = 0;
+#elif defined(STM32F0)
+    FLASH->AR = (uint32_t)address;
+    _FLASH_SET_CR(FLASH_CR_STRT);
+#endif
+
+    FLASH_WAIT_FOR_OPERATION();
+	_FLASH_CLR_CR(_FLASH_CR_ERASE);
 	FLASH_Lock();
 }
 
-void FLASH_ReadPage(uint32_t page, uint32_t * data)
+void FLASH_Write(uint32_t * address, const uint32_t * data, uint32_t size)
 {
-	uint32_t * address = FLASH_PAGE_BASE(page);
-	memcpy(data, address, FLASH_PAGE_SIZE);
-}
+	uint32_t dest = (uint32_t)address;
+	const void * data_head = data;
+	const void * data_end = data_head + size;
 
+	FLASH_Unlock();
+
+#if defined (STM32L0)
+	if ((data_end - data_head) >= (FLASH_PAGE_SIZE/2))
+	{
+		_FLASH_SET_CR(_FLASH_CR_FPROG);
+		while ((data_end - data_head) >= (FLASH_PAGE_SIZE/2))
+		{
+			FLASH_WriteHalfPage(dest, data_head);
+			dest += (FLASH_PAGE_SIZE/2);
+			data_head += (FLASH_PAGE_SIZE/2);
+		}
+		_FLASH_CLR_CR(_FLASH_CR_FPROG);
+	}
+	if (size >= sizeof(uint32_t))
+	{
+		_FLASH_SET_CR(_FLASH_CR_PROG);
+		while (data_end - data_head >= sizeof(uint32_t))
+		{
+			*(__IO uint32_t*)(dest) = *(uint32_t*)data_head;
+			data_head += sizeof(uint32_t);
+			dest += sizeof(uint32_t);
+			FLASH_WAIT_FOR_OPERATION();
+		}
+		_FLASH_CLR_CR(_FLASH_CR_PROG);
+	}
+#else
+	_FLASH_SET_CR(_FLASH_CR_PROG);
+	while (data_end - data_head >= sizeof(uint16_t))
+	{
+		*(__IO uint16_t*)(dest) = *(uint16_t*)data_head;
+		data_head += sizeof(uint16_t);
+		dest += sizeof(uint16_t);
+		FLASH_WAIT_FOR_OPERATION();
+	}
+	_FLASH_CLR_CR(_FLASH_CR_PROG);
+#endif
+
+	FLASH_Lock();
+}
 
 /*
  * PRIVATE FUNCTIONS
@@ -115,37 +164,6 @@ static inline void FLASH_Lock(void)
 	_FLASH_SET_CR(_FLASH_CR_LOCK);
 }
 
-static void FLASH_Erase(uint32_t * address)
-{
-	_FLASH_SET_CR(_FLASH_CR_ERASE);
-
-#if defined(STM32L0)
-	// Write 0 to the first word of the page to erase
-	*address = 0;
-	FLASH_WAIT_FOR_OPERATION();
-#elif defined(STM32F0)
-    FLASH->AR = (uint32_t)address;
-    _FLASH_SET_CR(FLASH_CR_STRT);
-#endif
-    FLASH_WAIT_FOR_OPERATION();
-	_FLASH_CLR_CR(_FLASH_CR_ERASE);
-}
-
-static void FLASH_Write(uint32_t * address, const uint32_t * data)
-{
-	_FLASH_SET_CR(_FLASH_CR_PROG);
-#if defined (STM32L0)
-	FLASH_WriteHalfPage(address, data);
-	FLASH_WriteHalfPage(address + (FLASH_PAGE_SIZE/2), data + (FLASH_PAGE_SIZE/2));
-#else
-	for (uint32_t i = 0; i < (FLASH_PAGE_SIZE / sizeof(uint32_t)); i++)
-	{
-		FLASH_WriteWord(address, data[i]);
-	}
-#endif
-	_FLASH_CLR_CR(_FLASH_CR_PROG);
-}
-
 #if defined(STM32L0)
 __RAM_FUNC void FLASH_WriteHalfPage(uint32_t * __restrict address, const uint32_t * __restrict data)
 {
@@ -153,17 +171,6 @@ __RAM_FUNC void FLASH_WriteHalfPage(uint32_t * __restrict address, const uint32_
 	{
 		*(__IO uint32_t*)(address) = *data++;
 	}
-	FLASH_WAIT_FOR_OPERATION();
-}
-#elif defined(STM32F0)
-static inline void FLASH_WriteWord(uint32_t * address, uint32_t word)
-{
-	uint16_t * words = (uint16_t *)(&word);
-
-	*(__IO uint16_t*)((uint32_t)address + 0) = (uint16_t)words[0];
-	FLASH_WAIT_FOR_OPERATION();
-
-	*(__IO uint16_t*)((uint32_t)address + 2) = (uint16_t)words[1];
 	FLASH_WAIT_FOR_OPERATION();
 }
 #endif
