@@ -1,6 +1,8 @@
 #ifndef BOARD_H
 #define BOARD_H
 
+#define STM32L0
+//#define STM32F0
 
 // Core config
 //#define CORE_USE_HSE

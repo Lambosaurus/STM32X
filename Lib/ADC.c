@@ -5,13 +5,12 @@
  * PRIVATE DEFINITIONS
  */
 
-#ifndef ADC_SAMPLETIME
-#define ADC_SAMPLETIME	ADC_SAMPLETIME_79CYCLES_5
-#endif
+#if defined(STM32L0)
 
+// This puts sample + conversion time at 19us.
+#define ADC_SAMPLETIME				ADC_SAMPLETIME_79CYCLES_5
+#define ADC_CLOCK_PRESCALAR			ADC_CLOCK_ASYNC_DIV4
 #define _ADC_SELECT(adc, channel) 	(adc->CHSELR = channel & ADC_CHANNEL_MASK)
-#define _ADC_READ(adc)				(adc->DR)
-
 
 #define TS_CAL1_AIN		(*((uint16_t*)0x1FF8007A))
 #define TS_CAL2_AIN		(*((uint16_t*)0x1FF8007E))
@@ -21,6 +20,25 @@
 
 #define VF_CAL_AIN		(*((uint16_t*)0x1FF80078))
 #define VF_CAL_VREF		3000
+
+#elif defined(STM32F0)
+
+// This puts sample + conversion time at 18us.
+#define ADC_SAMPLETIME				ADC_SAMPLETIME_239CYCLES_5
+#define ADC_CLOCK_PRESCALAR			ADC_CLOCK_ASYNC_DIV1
+#define _ADC_SELECT(adc, channel)	(adc->CHSELR = ADC_CHSELR_CHANNEL(channel))
+
+#define TS_CAL1_AIN		(*((uint16_t*)0x1FFFF7B8))
+#define TS_CAL2_AIN		(*((uint16_t*)0x1FFFF7C2))
+#define TS_CAL1_DEG		30
+#define TS_CAL2_DEG		110
+#define TS_CAL_VREF		3300
+
+#define VF_CAL_AIN		(*((uint16_t*)0x1FFFF7BA))
+#define VF_CAL_VREF		3300
+
+#endif
+
 
 /*
  * PRIVATE TYPES
@@ -49,7 +67,7 @@ void ADC_Init(void)
 	__HAL_RCC_ADC1_CLK_ENABLE();
 
 	gAdc.Instance = ADC1;
-	gAdc.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV4;
+	gAdc.Init.ClockPrescaler = ADC_CLOCK_PRESCALAR;
 	gAdc.Init.Resolution = ADC_RESOLUTION_12B;
 	gAdc.Init.DataAlign = ADC_DATAALIGN_RIGHT;
 	gAdc.Init.ScanConvMode = ADC_SCAN_DIRECTION_FORWARD;
@@ -62,9 +80,13 @@ void ADC_Init(void)
 	gAdc.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
 	gAdc.Init.DMAContinuousRequests = DISABLE;
 	gAdc.Init.Overrun = ADC_OVR_DATA_PRESERVED;
+#if defined(STM32L0)
 	gAdc.Init.LowPowerFrequencyMode = DISABLE;
 	gAdc.Init.OversamplingMode = DISABLE;
 	gAdc.Init.SamplingTime = ADC_SAMPLETIME;
+#elif defined(STM32F0)
+	gAdc.Init.SamplingTimeCommon = ADC_SAMPLETIME;
+#endif
 	HAL_ADC_Init(&gAdc);
 
 	ADC_Calibrate();
@@ -82,7 +104,7 @@ uint32_t ADC_Read(uint32_t channel)
 
 	ADC_WaitForFlag(ADC_FLAG_EOC);
 
-	return _ADC_READ(gAdc.Instance);
+	return gAdc.Instance->DR;
 }
 
 void ADC_Deinit(void)
