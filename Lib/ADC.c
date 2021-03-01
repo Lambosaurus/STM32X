@@ -67,11 +67,7 @@ void ADC_Init(void)
 	__HAL_RCC_ADC1_CLK_ENABLE();
 
 	gAdc.Instance = ADC1;
-#if defined(STM32L0)
-	gAdc.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV4;
-#else
-	gAdc.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV1;
-#endif
+	gAdc.Init.ClockPrescaler = ADC_CLOCK_PRESCALAR;
 	gAdc.Init.Resolution = ADC_RESOLUTION_12B;
 	gAdc.Init.DataAlign = ADC_DATAALIGN_RIGHT;
 	gAdc.Init.ScanConvMode = ADC_SCAN_DIRECTION_FORWARD;
