@@ -30,5 +30,10 @@
 //#define SPI1_PINS		    (GPIO_PIN_3 | GPIO_PIN_4 | GPIO_PIN_5)
 //#define SPI1_AF			GPIO_AF0_SPI1
 
+// CAN config
+//#define CAN_GPIO			GPIOB
+//#define CAN_PINS			(GPIO_PIN_8 | GPIO_PIN_9)
+//#define CAN_AF			GPIO_AF4_CAN
+//#define CAN_DUAL_FIFO
 
 #endif /* BOARD_H */
