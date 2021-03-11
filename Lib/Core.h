@@ -36,6 +36,8 @@ uint32_t CORE_GetTick(void);
 void CORE_OnTick(VoidFunction_t callback);
 #endif
 
+void CORE_EnableUSBClock(void);
+
 /*
  * EXTERN DECLARATIONS
  */
