@@ -12,7 +12,7 @@
 #define _FLASH_CLR_CR(bit)			(FLASH->PECR &= ~bit)
 #define _FLASH_CR_PROG				FLASH_PECR_PROG
 #define _FLASH_CR_FPROG				(FLASH_PECR_PROG | FLASH_PECR_FPRG)
-#define _FLASH_CR_LOCK				FLASH_PECR_LOCK
+#define _FLASH_CR_LOCK				(FLASH_PECR_PELOCK | FLASH_PECR_PRGLOCK)
 #define _FLASH_CR_ERASE				(FLASH_PECR_PROG | FLASH_PECR_ERASE)
 
 #elif defined(STM32F0)
@@ -103,7 +103,7 @@ void FLASH_Write(uint32_t * address, const uint32_t * data, uint32_t size)
 		_FLASH_SET_CR(_FLASH_CR_FPROG);
 		while ((data_end - data_head) >= (FLASH_PAGE_SIZE/2))
 		{
-			FLASH_WriteHalfPage(dest, data_head);
+			FLASH_WriteHalfPage((uint32_t *)dest, data_head);
 			dest += (FLASH_PAGE_SIZE/2);
 			data_head += (FLASH_PAGE_SIZE/2);
 		}
