@@ -51,202 +51,65 @@ void USB_PCD_Stop(void)
 	USB->BCDR &= (uint16_t)(~(USB_BCDR_DPPU));
 }
 
-
-void USB_EP_Recieve(USB_EPTypeDef *ep)
+void USB_PCD_EP_Open(uint8_t endpoint, uint8_t type, uint16_t maxpacket)
 {
-  uint32_t len;
-  uint16_t pmabuffer;
-  uint16_t wEPVal;
+	PCD_HandleTypeDef * hpcd = &hpcd_USB_FS;
+	PCD_EPTypeDef *ep;
+	if (endpoint & 0x80U)
+	{
+		ep = &hpcd->IN_ep[endpoint & EP_ADDR_MSK];
+		ep->is_in = 1U;
+		hUsbDeviceFS.ep_in[endpoint & EP_ADDR_MSK].is_used = 1;
+	}
+	else
+	{
+		ep = &hpcd->OUT_ep[endpoint & EP_ADDR_MSK];
+		ep->is_in = 0U;
+		hUsbDeviceFS.ep_out[endpoint & EP_ADDR_MSK].is_used = 1;
+	}
+	ep->num = endpoint & EP_ADDR_MSK;
+	ep->maxpacket = maxpacket;
+	ep->type = type;
+	USB_ActivateEndpoint(USB, ep);
+}
 
-  /* IN endpoint */
-  if (ep->is_in == 1U)
-  {
-    /*Multi packet transfer*/
-    if (ep->xfer_len > ep->maxpacket)
-    {
-      len = ep->maxpacket;
-    }
-    else
-    {
-      len = ep->xfer_len;
-    }
+void USB_PCD_EP_Close(uint8_t endpoint)
+{
+	PCD_HandleTypeDef * hpcd = &hpcd_USB_FS;
+	PCD_EPTypeDef *ep;
+	if (endpoint & 0x80U)
+	{
+		ep = &hpcd->IN_ep[endpoint & EP_ADDR_MSK];
+		hUsbDeviceFS.ep_in[endpoint & EP_ADDR_MSK].is_used = 0;
+	}
+	else
+	{
+		ep = &hpcd->OUT_ep[endpoint & EP_ADDR_MSK];
+		hUsbDeviceFS.ep_out[endpoint & EP_ADDR_MSK].is_used = 0;
+	}
+	USB_DeactivateEndpoint(USB, ep);
+}
 
-    /* configure and validate Tx endpoint */
-    if (ep->doublebuffer == 0U)
-    {
-      USB_WritePMA(USB, ep->xfer_buff, ep->pmaadress, (uint16_t)len);
-      PCD_SET_EP_TX_CNT(USB, ep->num, len);
-    }
-    else
-    {
-      /* double buffer bulk management */
-      if (ep->type == EP_TYPE_BULK)
-      {
-        if (ep->xfer_len_db > ep->maxpacket)
-        {
-          /* enable double buffer */
-          PCD_SET_EP_DBUF(USB, ep->num);
 
-          /* each Time to write in PMA xfer_len_db will */
-          ep->xfer_len_db -= len;
+void USB_PCD_EP_StartRx(uint8_t endpoint, uint8_t * data, uint32_t count)
+{
+	PCD_EPTypeDef * ep = &(hpcd_USB_FS.OUT_ep[endpoint & EP_ADDR_MSK]);
+	ep->xfer_buff = data;
+	ep->xfer_len = count;
+	ep->xfer_count = 0;
+	USB_EPStartXfer(USB, ep);
+}
 
-          /* Fill the two first buffer in the Buffer0 & Buffer1 */
-          if ((PCD_GET_ENDPOINT(USB, ep->num) & USB_EP_DTOG_TX) != 0U)
-          {
-            /* Set the Double buffer counter for pmabuffer1 */
-            PCD_SET_EP_DBUF1_CNT(USB, ep->num, ep->is_in, len);
-            pmabuffer = ep->pmaaddr1;
-
-            /* Write the user buffer to USB PMA */
-            USB_WritePMA(USB, ep->xfer_buff, pmabuffer, (uint16_t)len);
-            ep->xfer_buff += len;
-
-            if (ep->xfer_len_db > ep->maxpacket)
-            {
-              ep->xfer_len_db -= len;
-            }
-            else
-            {
-              len = ep->xfer_len_db;
-              ep->xfer_len_db = 0U;
-            }
-
-            /* Set the Double buffer counter for pmabuffer0 */
-            PCD_SET_EP_DBUF0_CNT(USB, ep->num, ep->is_in, len);
-            pmabuffer = ep->pmaaddr0;
-
-            /* Write the user buffer to USB PMA */
-            USB_WritePMA(USB, ep->xfer_buff, pmabuffer, (uint16_t)len);
-          }
-          else
-          {
-            /* Set the Double buffer counter for pmabuffer0 */
-            PCD_SET_EP_DBUF0_CNT(USB, ep->num, ep->is_in, len);
-            pmabuffer = ep->pmaaddr0;
-
-            /* Write the user buffer to USB PMA */
-            USB_WritePMA(USB, ep->xfer_buff, pmabuffer, (uint16_t)len);
-            ep->xfer_buff += len;
-
-            if (ep->xfer_len_db > ep->maxpacket)
-            {
-              ep->xfer_len_db -= len;
-            }
-            else
-            {
-              len = ep->xfer_len_db;
-              ep->xfer_len_db = 0U;
-            }
-
-            /* Set the Double buffer counter for pmabuffer1 */
-            PCD_SET_EP_DBUF1_CNT(USB, ep->num, ep->is_in, len);
-            pmabuffer = ep->pmaaddr1;
-
-            /* Write the user buffer to USB PMA */
-            USB_WritePMA(USB, ep->xfer_buff, pmabuffer, (uint16_t)len);
-          }
-        }
-        /* auto Switch to single buffer mode when transfer <Mps no need to manage in double buffer */
-        else
-        {
-          len = ep->xfer_len_db;
-
-          /* disable double buffer mode */
-          PCD_CLEAR_EP_DBUF(USB, ep->num);
-
-          /* Set Tx count with nbre of byte to be transmitted */
-          PCD_SET_EP_TX_CNT(USB, ep->num, len);
-          pmabuffer = ep->pmaaddr0;
-
-          /* Write the user buffer to USB PMA */
-          USB_WritePMA(USB, ep->xfer_buff, pmabuffer, (uint16_t)len);
-        }
-      }/* end if bulk double buffer */
-
-      /* manage isochronous double buffer IN mode */
-      else
-      {
-        /* Write the data to the USB endpoint */
-        if ((PCD_GET_ENDPOINT(USB, ep->num) & USB_EP_DTOG_TX) != 0U)
-        {
-          /* Set the Double buffer counter for pmabuffer1 */
-          PCD_SET_EP_DBUF1_CNT(USB, ep->num, ep->is_in, len);
-          pmabuffer = ep->pmaaddr1;
-        }
-        else
-        {
-          /* Set the Double buffer counter for pmabuffer0 */
-          PCD_SET_EP_DBUF0_CNT(USB, ep->num, ep->is_in, len);
-          pmabuffer = ep->pmaaddr0;
-        }
-
-        USB_WritePMA(USB, ep->xfer_buff, pmabuffer, (uint16_t)len);
-        PCD_FreeUserBuffer(USB, ep->num, ep->is_in);
-      }
-    }
-
-    PCD_SET_EP_TX_STATUS(USB, ep->num, USB_EP_TX_VALID);
-  }
-  else /* OUT endpoint */
-  {
-    if (ep->doublebuffer == 0U)
-    {
-      /* Multi packet transfer */
-      if (ep->xfer_len > ep->maxpacket)
-      {
-        len = ep->maxpacket;
-        ep->xfer_len -= len;
-      }
-      else
-      {
-        len = ep->xfer_len;
-        ep->xfer_len = 0U;
-      }
-      /* configure and validate Rx endpoint */
-      PCD_SET_EP_RX_CNT(USB, ep->num, len);
-    }
-    else
-    {
-      /* First Transfer Coming From HAL_PCD_EP_Receive & From ISR */
-      /* Set the Double buffer counter */
-      if (ep->type == EP_TYPE_BULK)
-      {
-        PCD_SET_EP_DBUF_CNT(USB, ep->num, ep->is_in, ep->maxpacket);
-
-        /* Coming from ISR */
-        if (ep->xfer_count != 0U)
-        {
-          /* update last value to check if there is blocking state */
-          wEPVal = PCD_GET_ENDPOINT(USB, ep->num);
-
-          /*Blocking State */
-          if ((((wEPVal & USB_EP_DTOG_RX) != 0U) && ((wEPVal & USB_EP_DTOG_TX) != 0U)) ||
-              (((wEPVal & USB_EP_DTOG_RX) == 0U) && ((wEPVal & USB_EP_DTOG_TX) == 0U)))
-          {
-            PCD_FreeUserBuffer(USB, ep->num, 0U);
-          }
-        }
-      }
-      /* iso out double */
-      else if (ep->type == EP_TYPE_ISOC)
-      {
-        /* Multi packet transfer */
-        if (ep->xfer_len > ep->maxpacket)
-        {
-          len = ep->maxpacket;
-          ep->xfer_len -= len;
-        }
-        else
-        {
-          len = ep->xfer_len;
-          ep->xfer_len = 0U;
-        }
-        PCD_SET_EP_DBUF_CNT(USB, ep->num, ep->is_in, len);
-      }
-    }
-
-    PCD_SET_EP_RX_STATUS(USB, ep->num, USB_EP_RX_VALID);
-  }
+void USB_PCD_EP_StartTx(uint8_t endpoint, uint8_t * data, uint32_t count)
+{
+	PCD_EPTypeDef * ep = &(hpcd_USB_FS.IN_ep[endpoint & EP_ADDR_MSK]);
+	ep->xfer_buff = data;
+	ep->xfer_len = count;
+	ep->xfer_fill_db = 1;
+	ep->xfer_len_db = count;
+	ep->xfer_count = 0;
+	hUsbDeviceFS.ep_in[endpoint & EP_ADDR_MSK].total_length = count;
+	USB_EPStartXfer(USB, ep);
 }
 
 /*

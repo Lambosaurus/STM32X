@@ -29,8 +29,6 @@
  * DELETE LATER
  */
 
-
-
 uint32_t USB_CDC_Rx(uint8_t * data, uint32_t count);
 void USB_CDC_Tx(const uint8_t * data, uint32_t count);
 
@@ -59,9 +57,9 @@ void USB_CDC_Tx(const uint8_t * data, uint32_t count);
 #endif /* CDC_FS_BINTERVAL */
 
 /* CDC Endpoints parameters: you can fine tune these values depending on the needed baudrates and performance. */
-#define CDC_DATA_HS_MAX_PACKET_SIZE                 512U  /* Endpoint IN & OUT Packet size */
-#define CDC_DATA_FS_MAX_PACKET_SIZE                 64U  /* Endpoint IN & OUT Packet size */
-#define CDC_CMD_PACKET_SIZE                         8U  /* Control Endpoint Packet size */
+#define CDC_DATA_HS_MAX_PACKET_SIZE                 512U  	/* Endpoint IN & OUT Packet size */
+#define CDC_DATA_FS_MAX_PACKET_SIZE                 64U  	/* Endpoint IN & OUT Packet size */
+#define CDC_CMD_PACKET_SIZE                         8U  	/* Control Endpoint Packet size */
 
 #define USB_CDC_CONFIG_DESC_SIZ                     67U
 #define CDC_DATA_HS_IN_PACKET_SIZE                  CDC_DATA_HS_MAX_PACKET_SIZE
@@ -85,31 +83,7 @@ void USB_CDC_Tx(const uint8_t * data, uint32_t count);
 
 
 
-
-
-
-typedef struct
-{
-  uint32_t bitrate;
-  uint8_t  format;
-  uint8_t  paritytype;
-  uint8_t  datatype;
-} USBD_CDC_LineCodingTypeDef;
-
-
-typedef struct
-{
-  uint32_t data[CDC_DATA_HS_MAX_PACKET_SIZE / 4U];
-  uint8_t  CmdOpCode;
-  uint8_t  CmdLength;
-  __IO uint32_t TxState;
-  __IO uint32_t RxState;
-}
-USBD_CDC_HandleTypeDef;
-
-
 extern USBD_ClassTypeDef  USBD_CDC;
-#define USBD_CDC_CLASS    &USBD_CDC
 
 
 #endif //USB_CDC_H
