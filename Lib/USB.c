@@ -4,11 +4,9 @@
 
 #include "usb/USB_PCD.h"
 
-#include "usb_device.h"
 #include "usbd_core.h"
 #include "usbd_desc.h"
-#include "usbd_cdc.h"
-#include "usbd_cdc_if.h"
+#include "usb/USB_CDC.h"
 
 
 /*
@@ -50,10 +48,6 @@ void USB_Init(void)
 	{
 		Error_Handler();
 	}
-	if (USBD_CDC_RegisterInterface(&hUsbDeviceFS, &USBD_Interface_fops_FS) != USBD_OK)
-	{
-		Error_Handler();
-	}
 	USB_PCD_Start();
 
 }
@@ -65,12 +59,12 @@ void USB_Deinit(void)
 
 void USB_Tx(const uint8_t * data, uint32_t count)
 {
-	CDC_Transmit_FS(data, count);
+	USB_CDC_Tx(data, count);
 }
 
 uint32_t USB_Rx(uint8_t * data, uint32_t size)
 {
-	return CDC_Read(data, size);
+	return USB_CDC_Rx(data, size);
 }
 
 /*
