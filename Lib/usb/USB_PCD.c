@@ -11,7 +11,9 @@
 
 #endif
 
-#define PCD_ENDPOINTS		8
+#define USB_ENDPOINTS		8
+#define PMA_SIZE			512
+#define BTABLE_SIZE			(USB_ENDPOINTS * 8)
 
 /*
  * PRIVATE TYPES
@@ -29,16 +31,22 @@
 USBD_HandleTypeDef hUsbDeviceFS;
 PCD_HandleTypeDef * hpcd = &hpcd_USB_FS;
 
+static struct {
+	uint16_t pma_head;
+}gPCD;
+
 /*
  * PUBLIC FUNCTIONS
  */
 
 void USB_PCD_Init(void)
 {
+	gPCD.pma_head = 0;
+
 	hpcd_USB_FS.pData = &hUsbDeviceFS;
 	hpcd_USB_FS.Instance = USB;
 
-	for (uint32_t i = 0U; i < PCD_ENDPOINTS; i++)
+	for (uint32_t i = 0U; i < USB_ENDPOINTS; i++)
 	{
 		hpcd->IN_ep[i].is_in = 1U;
 		hpcd->IN_ep[i].num = i;
@@ -47,7 +55,7 @@ void USB_PCD_Init(void)
 		hpcd->IN_ep[i].xfer_buff = 0U;
 		hpcd->IN_ep[i].xfer_len = 0U;
 	}
-	for (uint32_t i = 0U; i < PCD_ENDPOINTS; i++)
+	for (uint32_t i = 0U; i < USB_ENDPOINTS; i++)
 	{
 		hpcd->OUT_ep[i].is_in = 0U;
 		hpcd->OUT_ep[i].num = i;
@@ -61,6 +69,7 @@ void USB_PCD_Init(void)
 	USB->CNTR = 0U;
 	USB->ISTR = 0U;
 	USB->BTABLE = BTABLE_ADDRESS;
+	USB_PCD_AllocPMA(BTABLE_SIZE);
 
 	hpcd->USB_Address = 0U;
 	hpcd->State = HAL_PCD_STATE_READY;
@@ -98,7 +107,7 @@ void USB_PCD_Stop(void)
 	hpcd_USB_FS.State = HAL_PCD_STATE_RESET;
 }
 
-void USB_PCD_EP_Open(uint8_t endpoint, uint8_t type, uint16_t maxpacket)
+void USB_PCD_EP_Open(uint8_t endpoint, uint8_t type, uint16_t size, bool doublebuffer)
 {
 	PCD_EPTypeDef *ep;
 	if (endpoint & 0x80U)
@@ -111,8 +120,18 @@ void USB_PCD_EP_Open(uint8_t endpoint, uint8_t type, uint16_t maxpacket)
 		ep = &hpcd->OUT_ep[endpoint & EP_ADDR_MSK];
 		hUsbDeviceFS.ep_out[endpoint & EP_ADDR_MSK].is_used = 1;
 	}
-	ep->maxpacket = maxpacket;
+	ep->maxpacket = size;
 	ep->type = type;
+	if (doublebuffer)
+	{
+		ep->doublebuffer = 1;
+		ep->pmaaddr0 = USB_PCD_AllocPMA(size);
+		ep->pmaaddr1 = USB_PCD_AllocPMA(size);
+	}
+	else
+	{
+		ep->pmaadress = USB_PCD_AllocPMA(size);
+	}
 	USB_ActivateEndpoint(USB, ep);
 }
 
@@ -151,6 +170,18 @@ void USB_PCD_EP_StartTx(uint8_t endpoint, uint8_t * data, uint32_t count)
 	ep->xfer_count = 0;
 	hUsbDeviceFS.ep_in[endpoint & EP_ADDR_MSK].total_length = count;
 	USB_EPStartXfer(USB, ep);
+}
+
+uint16_t USB_PCD_AllocPMA(uint16_t size)
+{
+	uint16_t head = gPCD.pma_head;
+	gPCD.pma_head += size;
+	if (gPCD.pma_head > PMA_SIZE)
+	{
+		// TODO: fix this?
+		__BKPT();
+	}
+	return head;
 }
 
 /*

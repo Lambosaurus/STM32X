@@ -19,6 +19,8 @@
 
 #endif
 
+#define CTL_IN_EP		0x80
+#define CTL_OUT_EP		0x00
 
 /*
  * PRIVATE TYPES
@@ -52,12 +54,9 @@ void USB_Init(void)
 
 	USB_PCD_Init();
 
-	// Need to reserve 8 bytes per EP-pair for the BTABLE, hence 0x18. Remaining endpoints need ep->maxpacket reserved.
-	HAL_PCDEx_PMAConfig(&hpcd_USB_FS, 0x00, PCD_SNG_BUF, 0x18);
-	HAL_PCDEx_PMAConfig(&hpcd_USB_FS, 0x80, PCD_SNG_BUF, 0x58);
-	HAL_PCDEx_PMAConfig(&hpcd_USB_FS, 0x81, PCD_SNG_BUF, 0xC0);
-	HAL_PCDEx_PMAConfig(&hpcd_USB_FS, 0x01, PCD_SNG_BUF, 0x110);
-	HAL_PCDEx_PMAConfig(&hpcd_USB_FS, 0x82, PCD_SNG_BUF, 0x100);
+	// Initialise the ctrl endpoints
+	USB_PCD_EP_Open(CTL_IN_EP, USBD_EP_TYPE_CTRL, USB_PACKET_SIZE, false);
+	USB_PCD_EP_Open(CTL_OUT_EP, USBD_EP_TYPE_CTRL, USB_PACKET_SIZE, false);
 
 	USB_PCD_Start();
 
