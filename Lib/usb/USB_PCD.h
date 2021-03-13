@@ -35,7 +35,7 @@ void USB_PCD_Stop(void);
 void USB_PCD_EP_Open(uint8_t endpoint, uint8_t type, uint16_t size, bool doublebuffer);
 void USB_PCD_EP_Close(uint8_t endpoint);
 void USB_PCD_EP_StartRx(uint8_t endpoint, uint8_t *data, uint32_t count);
-void USB_PCD_EP_StartTx(uint8_t endpoint, uint8_t * data, uint32_t count);
+void USB_PCD_EP_StartTx(uint8_t endpoint, const uint8_t * data, uint32_t count);
 
 uint16_t USB_PCD_AllocPMA(uint16_t size);
 

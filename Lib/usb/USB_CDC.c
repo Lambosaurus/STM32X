@@ -66,7 +66,6 @@ static void USB_CDC_ReceiveData(uint8_t* data, uint32_t count);
  */
 
 static uint8_t gRxBuffer[USB_PACKET_SIZE];
-static uint8_t gTxBuffer[USB_PACKET_SIZE];
 static CDCBuffer_t gRx;
 
 static CDC_t gCDC;
@@ -116,10 +115,8 @@ void USB_CDC_Tx(const uint8_t * data, uint32_t count)
 		{
 			// Transmit a packet
 			uint32_t packet_size = count > USB_PACKET_SIZE ? USB_PACKET_SIZE : count;
-			memcpy(gTxBuffer, data, packet_size);
 			gCDC.txBusy = true;
-			USB_PCD_EP_StartTx(CDC_IN_EP, gTxBuffer, count);
-
+			USB_PCD_EP_StartTx(CDC_IN_EP, data, count);
 			count -= packet_size;
 			data += packet_size;
 		}

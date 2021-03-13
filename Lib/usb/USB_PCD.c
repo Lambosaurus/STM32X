@@ -160,10 +160,10 @@ void USB_PCD_EP_StartRx(uint8_t endpoint, uint8_t * data, uint32_t count)
 	USB_EPStartXfer(USB, ep);
 }
 
-void USB_PCD_EP_StartTx(uint8_t endpoint, uint8_t * data, uint32_t count)
+void USB_PCD_EP_StartTx(uint8_t endpoint, const uint8_t * data, uint32_t count)
 {
 	PCD_EPTypeDef * ep = &(hpcd_USB_FS.IN_ep[endpoint & EP_ADDR_MSK]);
-	ep->xfer_buff = data;
+	ep->xfer_buff = (uint8_t *)data;
 	ep->xfer_len = count;
 	ep->xfer_fill_db = 1;
 	ep->xfer_len_db = count;
