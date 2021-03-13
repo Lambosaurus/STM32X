@@ -28,6 +28,7 @@
  * PUBLIC FUNCTIONS
  */
 
+void USB_PCD_Init(void);
 void USB_PCD_Start(void);
 void USB_PCD_Stop(void);
 
