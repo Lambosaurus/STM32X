@@ -22,13 +22,17 @@ typedef struct {
 	uint32_t bitrate;
 } I2C_t;
 
+typedef enum {
+	I2C_Mode_Standard,
+	I2C_Mode_Fast,
+	I2C_Mode_FastPlus,
+} I2C_Mode_t;
 
 /*
  * PUBLIC FUNCTIONS
  */
 
-
-void I2C_Init(I2C_t * i2c, uint32_t frequency);
+void I2C_Init(I2C_t * i2c, I2C_Mode_t mode);
 void I2C_Deinit(I2C_t * i2c);
 
 bool I2C_Scan(I2C_t * i2c, uint8_t address);

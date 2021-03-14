@@ -7,6 +7,13 @@
  * PRIVATE DEFINITIONS
  */
 
+#define I2C_SCL_SYNC_CYCLES		3
+
+#ifndef I2C_DIGITALFILTER_SIZE
+#define I2C_DIGITALFILTER_SIZE	0
+#endif
+#define I2C_USE_ANALOGFILTER
+
 /*
  * PRIVATE TYPES
  */
@@ -46,14 +53,14 @@ I2C_t * I2C_3 = &gI2C_3;
  * PUBLIC FUNCTIONS
  */
 
-void I2C_Init(I2C_t * i2c, uint32_t frequency)
+void I2C_Init(I2C_t * i2c, I2C_Mode_t mode)
 {
 	I2Cx_Init(i2c);
 	
 	__HAL_I2C_DISABLE(i2c);
 	
-	i2c->Instance->TIMINGR = hi2c->Init.Timing & TIMING_CLEAR_MASK;
-	i2c->Instance->CR1 = I2C_NOSTRETCH_DISABLE;
+	i2c->Instance->TIMINGR = I2C_SelectTiming(mode);
+	i2c->Instance->CR1 = I2C_NOSTRETCH_DISABLE | I2C_ANALOGFILTER_ENABLE | (I2C_DIGITALFILTER_SIZE << 8);
 	i2c->Instance->CR2 = I2C_CR2_AUTOEND | I2C_CR2_NACK;
 	
 	// Disable own addressing modes.
@@ -80,6 +87,43 @@ bool I2C_Scan(I2C_t * i2c, uint8_t address);
 /*
  * PRIVATE FUNCTIONS
  */
+
+#define NS_TO_CYCLES(clk, ns)		(clk/(1000000000/ns))
+
+static uint32_t I2C_SelectTiming(I2C_Mode_t mode)
+{
+	uint32_t clk = HAL_RCC_GetPCLK1Freq();
+
+	uint32_t freq;
+	uint32_t scl_delay;
+	uint32_t sda_delay = 0;
+
+	switch(mode)
+	{
+	default:
+	case I2C_Mode_Standard:
+		scl_delay = NS_TO_CYCLES(clk, 250);
+		freq = 100000;
+		break;
+	case I2C_Mode_Fast:
+		scl_delay = NS_TO_CYCLES(clk, 100);
+		freq = 400000;
+		break;
+	case I2C_Mode_FastPlus:
+		scl_delay = NS_TO_CYCLES(clk, 50);
+		freq = 1000000;
+		break;
+	}
+
+	uint32_t prescalar = 0;
+	uint32_t bittime = clk / freq;
+
+	uint32_t scl_l = 0;
+	uint32_t scl_h = 0;
+
+
+	return (prescalar << 28) | (scl_del << 20) | (sda_del << 16) | (scl_h << 8) | scl_l;
+}
 
 static void I2Cx_Init(I2C_t * i2c)
 {
