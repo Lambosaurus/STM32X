@@ -146,9 +146,12 @@ bool I2C_Tx(I2C_t * i2c, uint8_t address, const uint8_t * data, uint32_t count)
 			block--;
 		}
 
-		if (I2C_WaitOnFlagUntilTimeout(i2c, I2C_FLAG_TCR, RESET, 100, tickstart) != HAL_OK)
+		if (count > 0)
 		{
-			return false;
+			if (I2C_WaitOnFlagUntilTimeout(i2c, I2C_FLAG_TCR, RESET, 100, tickstart) != HAL_OK)
+			{
+				return false;
+			}
 		}
     }
 
@@ -196,9 +199,12 @@ bool I2C_Rx(I2C_t * i2c, uint8_t address, uint8_t * data, uint32_t count)
 			block--;
 		}
 
-		if (I2C_WaitOnFlagUntilTimeout(i2c, I2C_FLAG_TCR, RESET, 100, tickstart) != HAL_OK)
+		if (count > 0)
 		{
-			return false;
+			if (I2C_WaitOnFlagUntilTimeout(i2c, I2C_FLAG_TCR, RESET, 100, tickstart) != HAL_OK)
+			{
+				return false;
+			}
 		}
 	}
 
