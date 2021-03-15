@@ -7,12 +7,25 @@
  * PRIVATE DEFINITIONS
  */
 
-#define I2C_SCL_SYNC_CYCLES		3
-
+// Filter configuration
+#define I2C_USE_ANALOGFILTER
 #ifndef I2C_DIGITALFILTER_SIZE
 #define I2C_DIGITALFILTER_SIZE	0
 #endif
-#define I2C_USE_ANALOGFILTER
+
+
+#ifdef I2C_USE_ANALOGFILTER
+// This can probably be calculated but it seems to match what ST use
+#define I2C_ANALOGFILTER_CYCLES	1
+#else
+#define I2C_ANALOGFILTER_CYCLES	0
+#endif
+
+#define I2C_SCL_LOWTIME_PCT			70
+#define I2C_SCL_SYNC_CYCLES			(3 + I2C_DIGITALFILTER_SIZE + I2C_ANALOGFILTER_CYCLES)
+
+// The maximum bittime is where where SCLL exceeds 255
+#define I2C_BITTIME_MAX				((255 + I2C_SCL_SYNC_CYCLES) * 100 / I2C_SCL_LOWTIME_PCT)
 
 /*
  * PRIVATE TYPES
@@ -24,6 +37,7 @@
 
 static void I2Cx_Init(I2C_t * i2c);
 static void I2Cx_Deinit(I2C_t * i2c);
+static uint32_t I2C_SelectTiming(uint32_t bitrate);
 
 /*
  * PRIVATE VARIABLES
@@ -59,8 +73,12 @@ void I2C_Init(I2C_t * i2c, I2C_Mode_t mode)
 	
 	__HAL_I2C_DISABLE(i2c);
 	
-	i2c->Instance->TIMINGR = I2C_SelectTiming(mode);
-	i2c->Instance->CR1 = I2C_NOSTRETCH_DISABLE | I2C_ANALOGFILTER_ENABLE | (I2C_DIGITALFILTER_SIZE << 8);
+	i2c->Instance->TIMINGR = I2C_SelectTiming((uint32_t)mode); // The mode is the enumerated frequency
+	uint32_t cr1 = I2C_NOSTRETCH_DISABLE | (I2C_DIGITALFILTER_SIZE << 8);
+#ifndef I2C_USE_ANALOGFILTER
+	cr1 |= I2C_CR1_ANFOFF;
+#endif
+	i2c->Instance->CR1 = cr1;
 	i2c->Instance->CR2 = I2C_CR2_AUTOEND | I2C_CR2_NACK;
 	
 	// Disable own addressing modes.
@@ -90,37 +108,40 @@ bool I2C_Scan(I2C_t * i2c, uint8_t address);
 
 #define NS_TO_CYCLES(clk, ns)		(clk/(1000000000/ns))
 
-static uint32_t I2C_SelectTiming(I2C_Mode_t mode)
+static uint32_t I2C_SelectTiming(uint32_t bitrate)
 {
 	uint32_t clk = HAL_RCC_GetPCLK1Freq();
 
-	uint32_t freq;
-	uint32_t scl_delay;
-	uint32_t sda_delay = 0;
-
-	switch(mode)
+	uint32_t scl_del;
+	uint32_t sda_del = 0;
+	if (bitrate <= I2C_Mode_Standard)
 	{
-	default:
-	case I2C_Mode_Standard:
-		scl_delay = NS_TO_CYCLES(clk, 250);
-		freq = 100000;
-		break;
-	case I2C_Mode_Fast:
-		scl_delay = NS_TO_CYCLES(clk, 100);
-		freq = 400000;
-		break;
-	case I2C_Mode_FastPlus:
-		scl_delay = NS_TO_CYCLES(clk, 50);
-		freq = 1000000;
-		break;
+		scl_del = NS_TO_CYCLES(clk, 250);
+	}
+	else if (bitrate <= I2C_Mode_Fast)
+	{
+		scl_del = NS_TO_CYCLES(clk, 100);
+	}
+	else
+	{
+		scl_del = NS_TO_CYCLES(clk, 50);
 	}
 
 	uint32_t prescalar = 0;
-	uint32_t bittime = clk / freq;
+	uint32_t bittime = clk / bitrate;
+	if (bittime > I2C_BITTIME_MAX)
+	{
+		// Bittime is unachievable. Divide the clock down.
+		prescalar = bittime / I2C_BITTIME_MAX;
+		// Note: we really want the ceil of the above calc, but prescalar has an implicit +1
+		clk /= prescalar + 1;
+		bittime = clk / bitrate;
+	}
 
-	uint32_t scl_l = 0;
-	uint32_t scl_h = 0;
-
+	uint32_t scl_l = bittime * I2C_SCLL_PCT / 100;
+	uint32_t scl_h = bittime - scl_l;
+	scl_l -= I2C_SCL_SYNC_CYCLES;
+	scl_h -= I2C_SCL_SYNC_CYCLES;
 
 	return (prescalar << 28) | (scl_del << 20) | (sda_del << 16) | (scl_h << 8) | scl_l;
 }

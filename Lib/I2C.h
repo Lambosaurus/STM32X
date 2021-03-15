@@ -23,9 +23,9 @@ typedef struct {
 } I2C_t;
 
 typedef enum {
-	I2C_Mode_Standard,
-	I2C_Mode_Fast,
-	I2C_Mode_FastPlus,
+	I2C_Mode_Standard 	=  100000,
+	I2C_Mode_Fast 		=  400000,
+	I2C_Mode_FastPlus 	= 1000000,
 } I2C_Mode_t;
 
 /*
