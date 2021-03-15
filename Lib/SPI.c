@@ -145,7 +145,7 @@ static void SPIx_Init(SPI_t * spi)
 	GPIO_InitTypeDef gpio = {0};
 	gpio.Mode = GPIO_MODE_AF_PP;
 	gpio.Pull = GPIO_NOPULL;
-	gpio.Speed = GPIO_SPEED_FREQ_HIGH;
+	gpio.Speed = GPIO_SPEED_HIGH;
 
 #ifdef SPI1_GPIO
 	if (spi == SPI_1)
