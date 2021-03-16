@@ -116,7 +116,7 @@ void I2C_Init(I2C_t * i2c, I2C_Mode_t mode)
 	//i2c->Instance->OAR2 = I2C_OAR2_OA2EN | ownAddress2 | SMBUS_OA2_NOMASK;
 	
 #ifdef USE_I2C_FASTMODEPLUS
-	if (mode >= I2C_Mode_FastPlus)
+	if (mode > I2C_Mode_Fast)
 	{
 		uint32_t bit = I2C_GetFMPBit(i2c);
 		SET_FMP_BIT(bit);
@@ -131,7 +131,7 @@ void I2C_Deinit(I2C_t * i2c)
 	__HAL_I2C_DISABLE(i2c);
 
 #ifdef USE_I2C_FASTMODEPLUS
-	if (i2c->mode >= I2C_Mode_FastPlus)
+	if (i2c->mode >= I2C_Mode_Fast)
 	{
 		uint32_t bit = I2C_GetFMPBit(i2c);
 		CLR_FMP_BIT(bit);
@@ -139,6 +139,7 @@ void I2C_Deinit(I2C_t * i2c)
 #endif
 
 	I2Cx_Deinit(i2c);
+	i2c->mode = 0;
 }
 
 bool I2C_Tx(I2C_t * i2c, uint8_t address, const uint8_t * data, uint32_t count)
