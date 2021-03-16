@@ -138,7 +138,7 @@ void TIM_EnablePwm(TIM_t * tim, uint32_t ch, GPIO_t * gpio, uint32_t pin, uint32
 	GPIO_InitTypeDef init = {
 			.Pin = pin,
 			.Pull = GPIO_NOPULL,
-			.Speed = GPIO_SPEED_FREQ_HIGH,
+			.Speed = GPIO_SPEED_HIGH,
 			.Mode = GPIO_MODE_AF_PP,
 			.Alternate = af,
 	};

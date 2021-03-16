@@ -181,7 +181,7 @@ static void UARTx_Init(UART_t * uart)
 	GPIO_InitTypeDef gpio = {0};
 	gpio.Mode = GPIO_MODE_AF_PP;
 	gpio.Pull = GPIO_NOPULL;
-	gpio.Speed = GPIO_SPEED_FREQ_HIGH;
+	gpio.Speed = GPIO_SPEED_MEDIUM;
 
 
 #ifdef UART1_GPIO
