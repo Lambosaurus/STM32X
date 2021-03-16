@@ -9,9 +9,8 @@
 
 // Filter configuration
 #define I2C_USE_ANALOGFILTER
-#ifndef I2C_DIGITALFILTER_SIZE
 #define I2C_DIGITALFILTER_SIZE	0
-#endif
+#define I2C_SCL_DUTY_PCT 33
 
 #ifdef I2C_USE_ANALOGFILTER
 // This can probably be calculated but it seems to match what ST use
@@ -22,7 +21,6 @@
 
 // Duty is time spent high.
 // This might need to be dynamic: but ST seem to use this duty even at standard speed
-#define I2C_SCL_DUTY_PCT			33
 #define I2C_SCL_SYNC_CYCLES			(3 + I2C_DIGITALFILTER_SIZE + I2C_ANALOGFILTER_CYCLES)
 
 // The maximum bittime is where where SCLL exceeds 255
@@ -30,7 +28,17 @@
 
 #define NS_TO_CYCLES(clk, ns)		(clk/(1000000000/ns))
 
+
+#define _I2C_GET_FLAGS(i2c)			(i2c->Instance->ISR)
+
 #define I2C_BUSY_TIMEOUT			10
+#define I2C_XFER_TIMEOUT			5
+
+
+#define I2C_READ_MODE				I2C_CR2_RD_WRN
+#define I2C_WRITE_MODE				0U
+#define I2C_START_MODE				I2C_CR2_START
+
 
 /*
  * PRIVATE TYPES
@@ -44,13 +52,13 @@ static void I2Cx_Init(I2C_t * i2c);
 static void I2Cx_Deinit(I2C_t * i2c);
 static uint32_t I2C_SelectTiming(uint32_t bitrate);
 
+static bool I2C_IsAcknowledgeFailed(I2C_t *hi2c);
+static bool I2C_WaitForIdle(I2C_t * i2c);
+static bool I2C_WaitForFlag(I2C_t * i2c, uint32_t flag);
+static bool I2C_WaitForRXNE(I2C_t * i2c);
+static inline void I2C_StartTransfer(I2C_t * i2c, uint8_t address, uint8_t size, uint32_t mode);
 
-static HAL_StatusTypeDef I2C_WaitOnFlagUntilTimeout(I2C_t *hi2c, uint32_t Flag, FlagStatus Status, uint32_t Timeout, uint32_t Tickstart);
-static HAL_StatusTypeDef I2C_WaitOnTXISFlagUntilTimeout(I2C_t *hi2c, uint32_t Timeout, uint32_t Tickstart);
-static HAL_StatusTypeDef I2C_WaitOnSTOPFlagUntilTimeout(I2C_t *hi2c, uint32_t Timeout, uint32_t Tickstart);
-static HAL_StatusTypeDef I2C_WaitOnRXNEFlagUntilTimeout(I2C_t * hi2c, uint32_t Timeout, uint32_t Tickstart);
-static HAL_StatusTypeDef I2C_IsAcknowledgeFailed(I2C_t *hi2c, uint32_t Timeout, uint32_t Tickstart);
-static void I2C_TransferConfig(I2C_t *hi2c, uint16_t DevAddress, uint8_t Size, uint32_t Mode, uint32_t Request);
+static bool I2C_XferBlock(I2C_t * i2c, uint8_t address, uint8_t * data, uint32_t count, uint32_t rw, uint32_t endMode);
 
 /*
  * PRIVATE VARIABLES
@@ -114,123 +122,198 @@ void I2C_Deinit(I2C_t * i2c)
 
 bool I2C_Tx(I2C_t * i2c, uint8_t address, const uint8_t * data, uint32_t count)
 {
-	address = address << 1;
-
-    uint32_t tickstart = HAL_GetTick();
-
-    if (I2C_WaitOnFlagUntilTimeout(i2c, I2C_FLAG_BUSY, SET, I2C_BUSY_TIMEOUT, tickstart) != HAL_OK)
-    {
-    	return false;
-    }
-
-    bool started = false;
-
-    while (count > 0)
-    {
-		uint32_t block = (count > 255) ? 255 : count;
-		count -= block;
-		I2C_TransferConfig(i2c, address, block,
-				count > 0 ? I2C_RELOAD_MODE : I2C_AUTOEND_MODE,
-				started ? I2C_NO_STARTSTOP : I2C_GENERATE_START_WRITE);
-
-		started = true;
-
-		while (block > 0)
-		{
-			if (I2C_WaitOnTXISFlagUntilTimeout(i2c, 100, tickstart) != HAL_OK)
-			{
-				return false;
-			}
-
-			i2c->Instance->TXDR = *data++;
-			block--;
-		}
-
-		if (count > 0)
-		{
-			if (I2C_WaitOnFlagUntilTimeout(i2c, I2C_FLAG_TCR, RESET, 100, tickstart) != HAL_OK)
-			{
-				return false;
-			}
-		}
-    }
-
-    if (I2C_WaitOnSTOPFlagUntilTimeout(i2c, 100, tickstart) != HAL_OK)
-    {
-      return false;
-    }
-
-    __HAL_I2C_CLEAR_FLAG(i2c, I2C_FLAG_STOPF);
-    I2C_RESET_CR2(i2c);
-
-    return true;
+	return I2C_WaitForIdle(i2c)
+		&& I2C_XferBlock(i2c, address, (uint8_t *)data, count, I2C_WRITE_MODE, I2C_AUTOEND_MODE);
 }
-
 
 bool I2C_Rx(I2C_t * i2c, uint8_t address, uint8_t * data, uint32_t count)
 {
-	address = (address << 1) | 0x01;
-
-    uint32_t tickstart = HAL_GetTick();
-
-    if (I2C_WaitOnFlagUntilTimeout(i2c, I2C_FLAG_BUSY, SET, I2C_BUSY_TIMEOUT, tickstart) != HAL_OK)
-    {
-    	return false;
-    }
-
-    bool started = false;
-
-    while (count > 0)
-	{
-		uint32_t block = (count > 255) ? 255 : count;
-		count -= block;
-		I2C_TransferConfig(i2c, address, block,
-				count > 0 ? I2C_RELOAD_MODE : I2C_AUTOEND_MODE,
-				started ? I2C_NO_STARTSTOP : I2C_GENERATE_START_READ);
-		started = true;
-
-		while (block > 0)
-		{
-			if (I2C_WaitOnRXNEFlagUntilTimeout(i2c, 100, tickstart) != HAL_OK)
-			{
-				return false;
-			}
-			*data++ = (uint8_t)i2c->Instance->RXDR;
-			block--;
-		}
-
-		if (count > 0)
-		{
-			if (I2C_WaitOnFlagUntilTimeout(i2c, I2C_FLAG_TCR, RESET, 100, tickstart) != HAL_OK)
-			{
-				return false;
-			}
-		}
-	}
-
-    if (I2C_WaitOnSTOPFlagUntilTimeout(i2c, 100, tickstart) != HAL_OK)
-    {
-    	return false;
-    }
-
-    __HAL_I2C_CLEAR_FLAG(i2c, I2C_FLAG_STOPF);
-    I2C_RESET_CR2(i2c);
-
-    return true;
+	return I2C_WaitForIdle(i2c)
+		&& I2C_XferBlock(i2c, address, data, count, I2C_READ_MODE, I2C_AUTOEND_MODE);
 }
-
 
 bool I2C_TxRx(I2C_t * i2c, uint8_t address, const uint8_t * txdata, uint32_t txcount, uint8_t * rxdata, uint32_t rxcount)
 {
-	return I2C_Tx(i2c, address, txdata, txcount) && I2C_Rx(i2c, address, rxdata, rxcount);
+	return I2C_WaitForIdle(i2c)
+		&& I2C_XferBlock(i2c, address, (uint8_t *)txdata, txcount, I2C_WRITE_MODE, I2C_SOFTEND_MODE)
+		&& I2C_XferBlock(i2c, address, rxdata, rxcount, I2C_READ_MODE, I2C_AUTOEND_MODE);
 }
 
-
-bool I2C_Scan(I2C_t * i2c, uint8_t address);
+bool I2C_Scan(I2C_t * i2c, uint8_t address)
+{
+	return I2C_Tx(i2c, address, NULL, 0);
+}
 
 /*
  * PRIVATE FUNCTIONS
  */
+
+static bool I2C_XferBlock(I2C_t * i2c, uint8_t address, uint8_t * data, uint32_t count, uint32_t rw, uint32_t endMode)
+{
+	// Correct the address.
+	address = address << 1;
+	if (rw == I2C_READ_MODE) { address |= 0x01; }
+
+	// Default transaction parameters.
+	uint32_t startMode = I2C_START_MODE;
+	uint32_t stopMode = I2C_RELOAD_MODE;
+	uint32_t block = 255;
+
+	while (stopMode == I2C_RELOAD_MODE)
+	{
+		if (count <= 255)
+		{
+			// This is the final block of data.
+			block = count;
+			stopMode = endMode;
+		}
+		count -= block;
+
+		I2C_StartTransfer(i2c, address, block, rw | startMode | stopMode);
+		startMode = I2C_NO_STARTSTOP; // Following loops will not have a start condition.
+
+		if (rw == I2C_READ_MODE)
+		{
+			while (block-- > 0)
+			{
+				if (!I2C_WaitForRXNE(i2c))
+				{
+					return false;
+				}
+				*data++ = i2c->Instance->RXDR;
+			}
+		}
+		else
+		{
+			while (block-- > 0)
+			{
+				if (!I2C_WaitForFlag(i2c, I2C_FLAG_TXIS))
+				{
+					return false;
+				}
+				i2c->Instance->TXDR = *data++;
+			}
+		}
+
+		uint32_t stopflag;
+		switch (stopMode)
+		{
+		case I2C_RELOAD_MODE:
+			stopflag = I2C_FLAG_TCR;
+			break;
+		case I2C_SOFTEND_MODE:
+			stopflag = I2C_FLAG_TC;
+			break;
+		default:
+		case I2C_AUTOEND_MODE:
+			stopflag = I2C_FLAG_STOPF;
+			break;
+		}
+		if (!I2C_WaitForFlag(i2c, stopflag))
+		{
+			return false;
+		}
+	}
+
+	__HAL_I2C_CLEAR_FLAG(i2c, I2C_FLAG_STOPF);
+	I2C_RESET_CR2(i2c);
+	return true;
+}
+
+static bool I2C_WaitForIdle(I2C_t * i2c)
+{
+	uint32_t start = CORE_GetTick();
+    while (_I2C_GET_FLAGS(i2c) & I2C_FLAG_BUSY)
+    {
+    	if (CORE_GetTick() - start > I2C_BUSY_TIMEOUT)
+    	{
+    		return false;
+    	}
+    }
+    return true;
+}
+
+static bool I2C_WaitForFlag(I2C_t * i2c, uint32_t flag)
+{
+	uint32_t start = CORE_GetTick();
+	while (CORE_GetTick() - start < I2C_XFER_TIMEOUT)
+	{
+		if (_I2C_GET_FLAGS(i2c) & flag)
+		{
+			return true;
+		}
+		else if (I2C_IsAcknowledgeFailed(i2c))
+		{
+			return false;
+		}
+	}
+	return false;
+}
+
+static bool I2C_WaitForRXNE(I2C_t * i2c)
+{
+	uint32_t start = CORE_GetTick();
+
+	while (CORE_GetTick() - start < I2C_XFER_TIMEOUT)
+	{
+		uint32_t flags = _I2C_GET_FLAGS(i2c);
+		if (flags & I2C_FLAG_RXNE)
+		{
+			return true;
+		}
+		else if (flags & I2C_FLAG_STOPF)
+		{
+			__HAL_I2C_CLEAR_FLAG(i2c, I2C_FLAG_STOPF);
+			I2C_RESET_CR2(i2c);
+			break;
+		}
+		else if (I2C_IsAcknowledgeFailed(i2c))
+		{
+			break;
+		}
+	}
+	return false;
+}
+
+static void I2C_FlushTXDR(I2C_t * i2c)
+{
+	if (_I2C_GET_FLAGS(i2c) & I2C_FLAG_TXIS)
+	{
+		i2c->Instance->TXDR = 0x00U;
+	}
+	if (!(_I2C_GET_FLAGS(i2c) & I2C_FLAG_TXE))
+	{
+		__HAL_I2C_CLEAR_FLAG(i2c, I2C_FLAG_TXE);
+	}
+}
+
+static bool I2C_IsAcknowledgeFailed(I2C_t * i2c)
+{
+  if (_I2C_GET_FLAGS(i2c) & I2C_FLAG_AF)
+  {
+    uint32_t start = CORE_GetTick();
+    while (CORE_GetTick() - start < I2C_XFER_TIMEOUT)
+    {
+    	if (_I2C_GET_FLAGS(i2c) & I2C_FLAG_STOPF)
+    	{
+    		break;
+    	}
+    }
+
+    __HAL_I2C_CLEAR_FLAG( i2c, I2C_FLAG_STOPF | I2C_FLAG_AF);
+    I2C_FlushTXDR(i2c);
+    I2C_RESET_CR2(i2c);
+
+    return true;
+  }
+  return false;
+}
+
+static inline void I2C_StartTransfer(I2C_t * i2c, uint8_t address, uint8_t size, uint32_t mode)
+{
+	MODIFY_REG(i2c->Instance->CR2, ((I2C_CR2_SADD | I2C_CR2_NBYTES | I2C_CR2_RELOAD | I2C_CR2_AUTOEND | I2C_CR2_RD_WRN | I2C_CR2_START | I2C_CR2_STOP)), \
+             (uint32_t)((uint32_t)address | ((uint32_t)size << I2C_CR2_NBYTES_Pos) | mode));
+}
 
 static uint32_t I2C_SelectTiming(uint32_t bitrate)
 {
@@ -334,163 +417,3 @@ static void I2Cx_Deinit(I2C_t * i2c)
 /*
  * INTERRUPT ROUTINES
  */
-
-/*
- * HAL GARBAGE
- */
-
-static HAL_StatusTypeDef I2C_WaitOnFlagUntilTimeout(I2C_t *hi2c, uint32_t Flag, FlagStatus Status, uint32_t Timeout, uint32_t Tickstart)
-{
-  while (__HAL_I2C_GET_FLAG(hi2c, Flag) == Status)
-  {
-    /* Check for the Timeout */
-    if (Timeout != HAL_MAX_DELAY)
-    {
-      if (((HAL_GetTick() - Tickstart) > Timeout) || (Timeout == 0U))
-      {
-        return HAL_ERROR;
-      }
-    }
-  }
-  return HAL_OK;
-}
-
-static HAL_StatusTypeDef I2C_WaitOnTXISFlagUntilTimeout(I2C_t *hi2c, uint32_t Timeout, uint32_t Tickstart)
-{
-  while (__HAL_I2C_GET_FLAG(hi2c, I2C_FLAG_TXIS) == RESET)
-  {
-    /* Check if a NACK is detected */
-    if (I2C_IsAcknowledgeFailed(hi2c, Timeout, Tickstart) != HAL_OK)
-    {
-      return HAL_ERROR;
-    }
-
-    /* Check for the Timeout */
-    if (Timeout != HAL_MAX_DELAY)
-    {
-      if (((HAL_GetTick() - Tickstart) > Timeout) || (Timeout == 0U))
-      {
-        return HAL_ERROR;
-      }
-    }
-  }
-  return HAL_OK;
-}
-
-static HAL_StatusTypeDef I2C_WaitOnSTOPFlagUntilTimeout(I2C_t *hi2c, uint32_t Timeout, uint32_t Tickstart)
-{
-  while (__HAL_I2C_GET_FLAG(hi2c, I2C_FLAG_STOPF) == RESET)
-  {
-    /* Check if a NACK is detected */
-    if (I2C_IsAcknowledgeFailed(hi2c, Timeout, Tickstart) != HAL_OK)
-    {
-      return HAL_ERROR;
-    }
-
-    /* Check for the Timeout */
-    if (((HAL_GetTick() - Tickstart) > Timeout) || (Timeout == 0U))
-    {
-      return HAL_ERROR;
-    }
-  }
-  return HAL_OK;
-}
-
-static HAL_StatusTypeDef I2C_WaitOnRXNEFlagUntilTimeout(I2C_t * hi2c, uint32_t Timeout, uint32_t Tickstart)
-{
-  while (__HAL_I2C_GET_FLAG(hi2c, I2C_FLAG_RXNE) == RESET)
-  {
-    /* Check if a NACK is detected */
-    if (I2C_IsAcknowledgeFailed(hi2c, Timeout, Tickstart) != HAL_OK)
-    {
-      return HAL_ERROR;
-    }
-
-    /* Check if a STOPF is detected */
-    if (__HAL_I2C_GET_FLAG(hi2c, I2C_FLAG_STOPF) == SET)
-    {
-      /* Check if an RXNE is pending */
-      /* Store Last receive data if any */
-      if ((__HAL_I2C_GET_FLAG(hi2c, I2C_FLAG_RXNE) == SET))
-      {
-        /* Return HAL_OK */
-        /* The Reading of data from RXDR will be done in caller function */
-        return HAL_OK;
-      }
-      else
-      {
-        /* Clear STOP Flag */
-        __HAL_I2C_CLEAR_FLAG(hi2c, I2C_FLAG_STOPF);
-
-        /* Clear Configuration Register 2 */
-        I2C_RESET_CR2(hi2c);
-        return HAL_ERROR;
-      }
-    }
-
-    /* Check for the Timeout */
-    if (((HAL_GetTick() - Tickstart) > Timeout) || (Timeout == 0U))
-    {
-      return HAL_ERROR;
-    }
-  }
-  return HAL_OK;
-}
-
-static void I2C_Flush_TXDR(I2C_t *hi2c)
-{
-  /* If a pending TXIS flag is set */
-  /* Write a dummy data in TXDR to clear it */
-  if (__HAL_I2C_GET_FLAG(hi2c, I2C_FLAG_TXIS) != RESET)
-  {
-    hi2c->Instance->TXDR = 0x00U;
-  }
-
-  /* Flush TX register if not empty */
-  if (__HAL_I2C_GET_FLAG(hi2c, I2C_FLAG_TXE) == RESET)
-  {
-    __HAL_I2C_CLEAR_FLAG(hi2c, I2C_FLAG_TXE);
-  }
-}
-
-static HAL_StatusTypeDef I2C_IsAcknowledgeFailed(I2C_t *hi2c, uint32_t Timeout, uint32_t Tickstart)
-{
-  if (__HAL_I2C_GET_FLAG(hi2c, I2C_FLAG_AF) == SET)
-  {
-    /* Wait until STOP Flag is reset */
-    /* AutoEnd should be initiate after AF */
-    while (__HAL_I2C_GET_FLAG(hi2c, I2C_FLAG_STOPF) == RESET)
-    {
-      /* Check for the Timeout */
-      if (Timeout != HAL_MAX_DELAY)
-      {
-        if (((HAL_GetTick() - Tickstart) > Timeout) || (Timeout == 0U))
-        {
-          return HAL_ERROR;
-        }
-      }
-    }
-
-    /* Clear NACKF Flag */
-    __HAL_I2C_CLEAR_FLAG(hi2c, I2C_FLAG_AF);
-
-    /* Clear STOP Flag */
-    __HAL_I2C_CLEAR_FLAG(hi2c, I2C_FLAG_STOPF);
-
-    /* Flush TX register */
-    I2C_Flush_TXDR(hi2c);
-
-    /* Clear Configuration Register 2 */
-    I2C_RESET_CR2(hi2c);
-
-    return HAL_ERROR;
-  }
-  return HAL_OK;
-}
-
-static void I2C_TransferConfig(I2C_t *hi2c, uint16_t DevAddress, uint8_t Size, uint32_t Mode, uint32_t Request)
-{
-  /* update CR2 register */
-  MODIFY_REG(hi2c->Instance->CR2, ((I2C_CR2_SADD | I2C_CR2_NBYTES | I2C_CR2_RELOAD | I2C_CR2_AUTOEND | (I2C_CR2_RD_WRN & (uint32_t)(Request >> (31U - I2C_CR2_RD_WRN_Pos))) | I2C_CR2_START | I2C_CR2_STOP)), \
-             (uint32_t)(((uint32_t)DevAddress & I2C_CR2_SADD) | (((uint32_t)Size << I2C_CR2_NBYTES_Pos) & I2C_CR2_NBYTES) | (uint32_t)Mode | (uint32_t)Request));
-}
