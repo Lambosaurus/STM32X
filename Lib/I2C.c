@@ -28,17 +28,17 @@
 
 #define NS_TO_CYCLES(clk, ns)		(clk/(1000000000/ns))
 
-
 #define _I2C_GET_FLAGS(i2c)			(i2c->Instance->ISR)
 
 #define I2C_BUSY_TIMEOUT			10
 #define I2C_XFER_TIMEOUT			5
 
-
 #define I2C_READ_MODE				I2C_CR2_RD_WRN
 #define I2C_WRITE_MODE				0U
 #define I2C_START_MODE				I2C_CR2_START
 
+#define SET_FMP_BIT(bit)			(SYSCFG->CFGR2 |= bit)
+#define CLR_FMP_BIT(bit)			(SYSCFG->CFGR2 &= ~bit)
 
 /*
  * PRIVATE TYPES
@@ -59,6 +59,10 @@ static bool I2C_WaitForRXNE(I2C_t * i2c);
 static inline void I2C_StartTransfer(I2C_t * i2c, uint8_t address, uint8_t size, uint32_t mode);
 
 static bool I2C_XferBlock(I2C_t * i2c, uint8_t address, uint8_t * data, uint32_t count, uint32_t rw, uint32_t endMode);
+
+#ifdef USE_I2C_FASTMODEPLUS
+static uint32_t I2C_GetFMPBit(I2C_t * i2c);
+#endif
 
 /*
  * PRIVATE VARIABLES
@@ -90,6 +94,7 @@ I2C_t * I2C_3 = &gI2C_3;
 
 void I2C_Init(I2C_t * i2c, I2C_Mode_t mode)
 {
+	i2c->mode = mode;
 	I2Cx_Init(i2c);
 	
 	__HAL_I2C_DISABLE(i2c);
@@ -110,13 +115,29 @@ void I2C_Init(I2C_t * i2c, I2C_Mode_t mode)
 	//i2c->Instance->OAR2 &= ~I2C_OAR2_OA2EN;
 	//i2c->Instance->OAR2 = I2C_OAR2_OA2EN | ownAddress2 | SMBUS_OA2_NOMASK;
 	
-	//void HAL_I2CEx_EnableFastModePlus(uint32_t ConfigFastModePlus)
+#ifdef USE_I2C_FASTMODEPLUS
+	if (mode >= I2C_Mode_FastPlus)
+	{
+		uint32_t bit = I2C_GetFMPBit(i2c);
+		SET_FMP_BIT(bit);
+	}
+#endif
 
 	__HAL_I2C_ENABLE(i2c);
 }
 
 void I2C_Deinit(I2C_t * i2c)
 {
+	__HAL_I2C_DISABLE(i2c);
+
+#ifdef USE_I2C_FASTMODEPLUS
+	if (i2c->mode >= I2C_Mode_FastPlus)
+	{
+		uint32_t bit = I2C_GetFMPBit(i2c);
+		CLR_FMP_BIT(bit);
+	}
+#endif
+
 	I2Cx_Deinit(i2c);
 }
 
@@ -413,6 +434,36 @@ static void I2Cx_Deinit(I2C_t * i2c)
 	}
 #endif
 }
+
+#ifdef USE_I2C_FASTMODEPLUS
+static uint32_t I2C_GetFMPBit(I2C_t * i2c)
+{
+	uint32_t bit;
+#ifdef I2C1_GPIO
+	if (i2c == I2C_1)
+	{
+		bit = I2C_FASTMODEPLUS_I2C1;
+	}
+#endif
+#ifdef I2C2_GPIO
+	if (i2c == I2C_2)
+	{
+		bit = I2C_FASTMODEPLUS_I2C2;
+	}
+#endif
+#ifdef I2C3_GPIO
+	if (i2c == I2C_3)
+	{
+		bit = I2C_FASTMODEPLUS_I2C3;
+	}
+#endif
+	if (bit & I2C_FMP_NOT_SUPPORTED)
+	{
+		return 0;
+	}
+	return bit;
+}
+#endif
 
 /*
  * INTERRUPT ROUTINES

@@ -30,6 +30,12 @@
 //#define SPI1_PINS		    (GPIO_PIN_3 | GPIO_PIN_4 | GPIO_PIN_5)
 //#define SPI1_AF			GPIO_AF0_SPI1
 
+// I2C config
+//#define I2C1_GPIO		GPIOB
+//#define I2C1_PINS		(GPIO_PIN_6 | GPIO_PIN_7)
+//#define I2C1_AF			GPIO_AF1_I2C1
+//#define USE_I2C_FASTMODEPLUS
+
 // CAN config
 //#define CAN_GPIO			GPIOB
 //#define CAN_PINS			(GPIO_PIN_8 | GPIO_PIN_9)

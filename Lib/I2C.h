@@ -17,16 +17,18 @@
  * PUBLIC TYPES
  */
 
-typedef struct {
-	I2C_TypeDef * Instance;
-	uint32_t bitrate;
-} I2C_t;
-
 typedef enum {
 	I2C_Mode_Standard 	=  100000,
 	I2C_Mode_Fast 		=  400000,
+#ifdef USE_I2C_FASTMODEPLUS
 	I2C_Mode_FastPlus 	= 1000000,
+#endif
 } I2C_Mode_t;
+
+typedef struct {
+	I2C_TypeDef * Instance;
+	I2C_Mode_t mode;
+} I2C_t;
 
 /*
  * PUBLIC FUNCTIONS
