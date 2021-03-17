@@ -61,7 +61,7 @@ static inline void I2C_StartTransfer(I2C_t * i2c, uint8_t address, uint8_t size,
 static bool I2C_XferBlock(I2C_t * i2c, uint8_t address, uint8_t * data, uint32_t count, uint32_t rw, uint32_t endMode);
 
 #ifdef USE_I2C_FASTMODEPLUS
-static uint32_t I2C_GetFMPBit(I2C_t * i2c);
+static uint32_t I2Cx_GetFMPBit(I2C_t * i2c);
 #endif
 
 /*
@@ -118,7 +118,7 @@ void I2C_Init(I2C_t * i2c, I2C_Mode_t mode)
 #ifdef USE_I2C_FASTMODEPLUS
 	if (mode > I2C_Mode_Fast)
 	{
-		uint32_t bit = I2C_GetFMPBit(i2c);
+		uint32_t bit = I2Cx_GetFMPBit(i2c);
 		SET_FMP_BIT(bit);
 	}
 #endif
@@ -131,9 +131,9 @@ void I2C_Deinit(I2C_t * i2c)
 	__HAL_I2C_DISABLE(i2c);
 
 #ifdef USE_I2C_FASTMODEPLUS
-	if (i2c->mode >= I2C_Mode_Fast)
+	if (i2c->mode > I2C_Mode_Fast)
 	{
-		uint32_t bit = I2C_GetFMPBit(i2c);
+		uint32_t bit = I2Cx_GetFMPBit(i2c);
 		CLR_FMP_BIT(bit);
 	}
 #endif
@@ -359,17 +359,21 @@ static uint32_t I2C_SelectTiming(uint32_t bitrate)
 
 	uint32_t scl_del;
 	uint32_t sda_del = 0;
-	if (bitrate <= I2C_Mode_Standard)
+
+#ifdef USE_I2C_FASTMODEPLUS
+	if (bitrate > I2C_Mode_Fast)
 	{
-		scl_del = NS_TO_CYCLES(clk, 250);
+		scl_del = NS_TO_CYCLES(clk, 50);
 	}
-	else if (bitrate <= I2C_Mode_Fast)
+	else
+#endif
+	if (bitrate > I2C_Mode_Standard)
 	{
 		scl_del = NS_TO_CYCLES(clk, 100);
 	}
 	else
 	{
-		scl_del = NS_TO_CYCLES(clk, 50);
+		scl_del = NS_TO_CYCLES(clk, 250);
 	}
 
 	return (prescalar << 28) | (scl_del << 20) | (sda_del << 16) | (scl_h << 8) | scl_l;
@@ -437,7 +441,7 @@ static void I2Cx_Deinit(I2C_t * i2c)
 }
 
 #ifdef USE_I2C_FASTMODEPLUS
-static uint32_t I2C_GetFMPBit(I2C_t * i2c)
+static uint32_t I2Cx_GetFMPBit(I2C_t * i2c)
 {
 	uint32_t bit;
 #ifdef I2C1_GPIO
