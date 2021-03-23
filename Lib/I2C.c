@@ -28,8 +28,6 @@
 
 #define NS_TO_CYCLES(clk, ns)		(clk/(1000000000/ns))
 
-#define _I2C_GET_FLAGS(i2c)			(i2c->Instance->ISR)
-
 #define I2C_BUSY_TIMEOUT			10
 #define I2C_XFER_TIMEOUT			5
 
@@ -37,8 +35,9 @@
 #define I2C_WRITE_MODE				0U
 #define I2C_START_MODE				I2C_CR2_START
 
-#define SET_FMP_BIT(bit)			(SYSCFG->CFGR2 |= bit)
-#define CLR_FMP_BIT(bit)			(SYSCFG->CFGR2 &= ~bit)
+#define _I2C_GET_FLAGS(i2c)			(i2c->Instance->ISR)
+#define _I2C_SET_FMP(bit)			(SYSCFG->CFGR2 |= bit)
+#define _I2C_CLR_FMP(bit)			(SYSCFG->CFGR2 &= ~bit)
 
 /*
  * PRIVATE TYPES
@@ -119,7 +118,7 @@ void I2C_Init(I2C_t * i2c, I2C_Mode_t mode)
 	if (mode > I2C_Mode_Fast)
 	{
 		uint32_t bit = I2Cx_GetFMPBit(i2c);
-		SET_FMP_BIT(bit);
+		_I2C_SET_FMP(bit);
 	}
 #endif
 
@@ -134,7 +133,7 @@ void I2C_Deinit(I2C_t * i2c)
 	if (i2c->mode > I2C_Mode_Fast)
 	{
 		uint32_t bit = I2Cx_GetFMPBit(i2c);
-		CLR_FMP_BIT(bit);
+		_I2C_CLR_FMP(bit);
 	}
 #endif
 
@@ -385,6 +384,7 @@ static void I2Cx_Init(I2C_t * i2c)
 	gpio.Mode = GPIO_MODE_AF_OD;
 	gpio.Pull = GPIO_NOPULL;
 	gpio.Speed = GPIO_SPEED_HIGH;
+	UNUSED(gpio);
 
 #ifdef I2C1_GPIO
 	if (i2c == I2C_1)

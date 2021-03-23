@@ -182,7 +182,7 @@ static void UARTx_Init(UART_t * uart)
 	gpio.Mode = GPIO_MODE_AF_PP;
 	gpio.Pull = GPIO_NOPULL;
 	gpio.Speed = GPIO_SPEED_MEDIUM;
-
+	UNUSED(gpio);
 
 #ifdef UART1_GPIO
 	if (uart == UART_1)
