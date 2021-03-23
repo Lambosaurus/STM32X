@@ -66,6 +66,9 @@ extern TIM_t * TIM_2;
 #ifdef USE_TIM3
 extern TIM_t * TIM_3;
 #endif
+#ifdef USE_TIM6
+extern TIM_t * TIM_6;
+#endif
 #ifdef USE_TIM14
 extern TIM_t * TIM_14;
 #endif

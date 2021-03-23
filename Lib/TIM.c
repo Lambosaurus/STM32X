@@ -53,6 +53,12 @@ static TIM_t gTIM_3 = {
 };
 TIM_t * TIM_3 = &gTIM_3;
 #endif
+#ifdef USE_TIM6
+static TIM_t gTIM_6 = {
+	.Instance = TIM6
+};
+TIM_t * TIM_6 = &gTIM_6;
+#endif
 #ifdef USE_TIM14
 static TIM_t gTIM_14 = {
 	.Instance = TIM14
@@ -268,6 +274,13 @@ static void TIMx_Init(TIM_t * tim)
 		__HAL_RCC_TIM3_CLK_ENABLE();
 	}
 #endif
+#ifdef USE_TIM6
+	if (tim == TIM_6)
+	{
+		HAL_NVIC_EnableIRQ(TIM6_IRQn);
+		__HAL_RCC_TIM6_CLK_ENABLE();
+	}
+#endif
 #ifdef USE_TIM14
 	if (tim == TIM_14)
 	{
@@ -329,6 +342,13 @@ static void TIMx_Deinit(TIM_t * tim)
 	{
 		HAL_NVIC_DisableIRQ(TIM3_IRQn);
 		__HAL_RCC_TIM3_CLK_DISABLE();
+	}
+#endif
+#ifdef USE_TIM6
+	if (tim == TIM_6)
+	{
+		HAL_NVIC_DisableIRQ(TIM6_IRQn);
+		__HAL_RCC_TIM6_CLK_DISABLE();
 	}
 #endif
 #ifdef USE_TIM14
@@ -424,6 +444,12 @@ void TIM2_IRQHandler(void)
 void TIM3_IRQHandler(void)
 {
 	TIM_IRQHandler(TIM_3);
+}
+#endif
+#ifdef USE_TIM6
+void TIM6_IRQHandler(void)
+{
+	TIM_IRQHandler(TIM_6);
 }
 #endif
 #ifdef USE_TIM14
