@@ -35,11 +35,11 @@ void CAN_EnableFilter(uint32_t bank, uint32_t id, uint32_t mask);
 void CAN_Deinit(void);
 
 // Transmit
-bool CAN_Tx(const CANMsg_t * msg);
+bool CAN_Write(const CANMsg_t * msg);
 
 // Receive
-uint8_t CAN_RxCount(void);
-bool CAN_Rx(CANMsg_t * msg);
+uint8_t CAN_ReadCount(void);
+bool CAN_Read(CANMsg_t * msg);
 
 
 #endif

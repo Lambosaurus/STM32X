@@ -141,19 +141,19 @@ void I2C_Deinit(I2C_t * i2c)
 	i2c->mode = 0;
 }
 
-bool I2C_Tx(I2C_t * i2c, uint8_t address, const uint8_t * data, uint32_t count)
+bool I2C_Write(I2C_t * i2c, uint8_t address, const uint8_t * data, uint32_t count)
 {
 	return I2C_WaitForIdle(i2c)
 		&& I2C_XferBlock(i2c, address, (uint8_t *)data, count, I2C_WRITE_MODE, I2C_AUTOEND_MODE);
 }
 
-bool I2C_Rx(I2C_t * i2c, uint8_t address, uint8_t * data, uint32_t count)
+bool I2C_Read(I2C_t * i2c, uint8_t address, uint8_t * data, uint32_t count)
 {
 	return I2C_WaitForIdle(i2c)
 		&& I2C_XferBlock(i2c, address, data, count, I2C_READ_MODE, I2C_AUTOEND_MODE);
 }
 
-bool I2C_TxRx(I2C_t * i2c, uint8_t address, const uint8_t * txdata, uint32_t txcount, uint8_t * rxdata, uint32_t rxcount)
+bool I2C_Transfer(I2C_t * i2c, uint8_t address, const uint8_t * txdata, uint32_t txcount, uint8_t * rxdata, uint32_t rxcount)
 {
 	return I2C_WaitForIdle(i2c)
 		&& I2C_XferBlock(i2c, address, (uint8_t *)txdata, txcount, I2C_WRITE_MODE, I2C_SOFTEND_MODE)
@@ -162,7 +162,7 @@ bool I2C_TxRx(I2C_t * i2c, uint8_t address, const uint8_t * txdata, uint32_t txc
 
 bool I2C_Scan(I2C_t * i2c, uint8_t address)
 {
-	return I2C_Tx(i2c, address, NULL, 0);
+	return I2C_Write(i2c, address, NULL, 0);
 }
 
 /*
@@ -421,21 +421,21 @@ static void I2Cx_Deinit(I2C_t * i2c)
 	if (i2c == I2C_1)
 	{
 		__HAL_RCC_I2C1_CLK_DISABLE();
-		GPIO_Disable(I2C1_GPIO, I2C1_PINS);
+		GPIO_Deinit(I2C1_GPIO, I2C1_PINS);
 	}
 #endif
 #ifdef I2C2_GPIO
 	if (i2c == I2C_2)
 	{
 		__HAL_RCC_I2C2_CLK_DISABLE();
-		GPIO_Disable(I2C2_GPIO, I2C2_PINS);
+		GPIO_Deinit(I2C2_GPIO, I2C2_PINS);
 	}
 #endif
 #ifdef I2C3_GPIO
 	if (i2c == I2C_3)
 	{
 		__HAL_RCC_I2C3_CLK_DISABLE();
-		GPIO_Disable(I2C3_GPIO, I2C3_PINS);
+		GPIO_Deinit(I2C3_GPIO, I2C3_PINS);
 	}
 #endif
 }

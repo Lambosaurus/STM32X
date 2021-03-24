@@ -39,9 +39,9 @@ void SPI_Init(SPI_t * spi, uint32_t bitrate, SPIMode_t mode);
 void SPI_Deinit(SPI_t * spi);
 
 // Transaction functions
-void SPI_Tx(SPI_t * spi, const uint8_t * data, uint32_t count);
-void SPI_Rx(SPI_t * spi, uint8_t * data, uint32_t count);
-void SPI_TxRx(SPI_t * spi, const uint8_t * txdata, uint8_t * rxdata, uint32_t count);
+void SPI_Write(SPI_t * spi, const uint8_t * data, uint32_t count);
+void SPI_Read(SPI_t * spi, uint8_t * data, uint32_t count);
+void SPI_Transfer(SPI_t * spi, const uint8_t * txdata, uint8_t * rxdata, uint32_t count);
 uint8_t SPI_Xfer(SPI_t * spi, uint8_t data);
 
 

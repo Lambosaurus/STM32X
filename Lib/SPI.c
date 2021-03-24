@@ -73,7 +73,7 @@ void SPI_Deinit(SPI_t * spi)
 	SPIx_Deinit(spi);
 }
 
-void SPI_Tx(SPI_t * spi, const uint8_t * data, uint32_t count)
+void SPI_Write(SPI_t * spi, const uint8_t * data, uint32_t count)
 {
 	for (uint32_t i = 0; i < count; i++)
 	{
@@ -84,7 +84,7 @@ void SPI_Tx(SPI_t * spi, const uint8_t * data, uint32_t count)
 	__HAL_SPI_CLEAR_OVRFLAG(spi);
 }
 
-void SPI_Rx(SPI_t * spi, uint8_t * data, uint32_t count)
+void SPI_Read(SPI_t * spi, uint8_t * data, uint32_t count)
 {
 	for (uint32_t i = 0; i < count; i++)
 	{
@@ -97,7 +97,7 @@ void SPI_Rx(SPI_t * spi, uint8_t * data, uint32_t count)
 	__HAL_SPI_CLEAR_OVRFLAG(spi);
 }
 
-void SPI_TxRx(SPI_t * spi, const uint8_t * txdata, uint8_t * rxdata, uint32_t count)
+void SPI_Transfer(SPI_t * spi, const uint8_t * txdata, uint8_t * rxdata, uint32_t count)
 {
 	for (uint32_t i = 0; i < count; i++)
 	{
@@ -183,21 +183,21 @@ static void SPIx_Deinit(SPI_t * spi)
 	if (spi == SPI_1)
 	{
 		__HAL_RCC_SPI1_CLK_DISABLE();
-		GPIO_Disable(SPI1_GPIO, SPI1_PINS);
+		GPIO_Deinit(SPI1_GPIO, SPI1_PINS);
 	}
 #endif
 #ifdef SPI2_GPIO
 	if (spi == SPI_2)
 	{
 		__HAL_RCC_SPI2_CLK_DISABLE();
-		GPIO_Disable(SPI2_GPIO, SPI2_PINS);
+		GPIO_Deinit(SPI2_GPIO, SPI2_PINS);
 	}
 #endif
 #ifdef SPI3_GPIO
 	if (spi == SPI_3)
 	{
 		__HAL_RCC_SPI3_CLK_DISABLE();
-		GPIO_Disable(SPI3_GPIO, SPI3_PINS);
+		GPIO_Deinit(SPI3_GPIO, SPI3_PINS);
 	}
 #endif
 }

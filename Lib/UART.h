@@ -44,15 +44,15 @@ void UART_Init(UART_t * uart, uint32_t baud);
 void UART_Deinit(UART_t * uart);
 
 // Transmit
-void UART_Tx(UART_t * uart, const uint8_t * data, uint32_t count);
-void UART_TxStr(UART_t * uart, const char * str);
-void UART_TxFlush(UART_t * uart);
+void UART_Write(UART_t * uart, const uint8_t * data, uint32_t count);
+void UART_WriteStr(UART_t * uart, const char * str);
+void UART_FlushWrite(UART_t * uart);
 
 // Recieve
-uint32_t UART_RxCount(UART_t * uart);
-uint32_t UART_Rx(UART_t * uart, uint8_t * data, uint32_t count);
-uint8_t UART_RxPop(UART_t * uart);
-void UART_RxFlush(UART_t * uart);
+uint32_t UART_ReadCount(UART_t * uart);
+uint32_t UART_Read(UART_t * uart, uint8_t * data, uint32_t count);
+uint8_t UART_Pop(UART_t * uart);
+void UART_FlushRead(UART_t * uart);
 
 
 /*

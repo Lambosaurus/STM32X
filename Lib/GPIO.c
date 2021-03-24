@@ -90,7 +90,7 @@ void GPIO_EnableIRQ(GPIO_t * gpio, uint32_t pin, uint32_t pullup, GPIO_IT_Dir_t 
 }
 #endif //GPIO_USE_IRQS
 
-void GPIO_Disable(GPIO_t * gpio, uint32_t pin)
+void GPIO_Deinit(GPIO_t * gpio, uint32_t pin)
 {
 	GPIO_InitTypeDef init = {
 	  .Mode = GPIO_MODE_ANALOG,
