@@ -20,10 +20,10 @@
 
 typedef struct {
 	TIM_TypeDef * Instance;
-#ifdef USE_TIM_IRQS
+#ifdef TIM_USE_IRQS
 	VoidFunction_t ReloadCallback;
 	VoidFunction_t PulseCallback[4];
-#endif //USE_TIM_IRQS
+#endif //TIM_USE_IRQS
 } TIM_t;
 
 
@@ -45,10 +45,10 @@ static inline uint32_t TIM_GetCounter(TIM_t * tim);
 // Channel features
 void TIM_SetPulse(TIM_t * tim, uint32_t ch, uint32_t pulse);
 
-#ifdef USE_TIM_IRQS
+#ifdef TIM_USE_IRQS
 void TIM_OnReload(TIM_t * tim, VoidFunction_t callback);
 void TIM_OnPulse(TIM_t * tim, uint32_t ch, VoidFunction_t callback);
-#endif //USE_TIM_IRQS
+#endif //TIM_USE_IRQS
 
 void TIM_EnablePwm(TIM_t * tim, uint32_t ch, GPIO_t * gpio, uint32_t pin, uint32_t af);
 
@@ -57,31 +57,31 @@ void TIM_EnablePwm(TIM_t * tim, uint32_t ch, GPIO_t * gpio, uint32_t pin, uint32
  * EXTERN DECLARATIONS
  */
 
-#ifdef USE_TIM1
+#ifdef TIM1_ENABLE
 extern TIM_t * TIM_1;
 #endif
-#ifdef USE_TIM2
+#ifdef TIM2_ENABLE
 extern TIM_t * TIM_2;
 #endif
-#ifdef USE_TIM3
+#ifdef TIM3_ENABLE
 extern TIM_t * TIM_3;
 #endif
-#ifdef USE_TIM6
+#ifdef TIM6_ENABLE
 extern TIM_t * TIM_6;
 #endif
-#ifdef USE_TIM14
+#ifdef TIM14_ENABLE
 extern TIM_t * TIM_14;
 #endif
-#ifdef USE_TIM16
+#ifdef TIM16_ENABLE
 extern TIM_t * TIM_16;
 #endif
-#ifdef USE_TIM17
+#ifdef TIM17_ENABLE
 extern TIM_t * TIM_17;
 #endif
-#ifdef USE_TIM21
+#ifdef TIM21_ENABLE
 extern TIM_t * TIM_21;
 #endif
-#ifdef USE_TIM22
+#ifdef TIM22_ENABLE
 extern TIM_t * TIM_22;
 #endif
 

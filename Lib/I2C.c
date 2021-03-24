@@ -59,7 +59,7 @@ static inline void I2C_StartTransfer(I2C_t * i2c, uint8_t address, uint8_t size,
 
 static bool I2C_XferBlock(I2C_t * i2c, uint8_t address, uint8_t * data, uint32_t count, uint32_t rw, uint32_t endMode);
 
-#ifdef USE_I2C_FASTMODEPLUS
+#ifdef I2C_USE_FASTMODEPLUS
 static uint32_t I2Cx_GetFMPBit(I2C_t * i2c);
 #endif
 
@@ -114,7 +114,7 @@ void I2C_Init(I2C_t * i2c, I2C_Mode_t mode)
 	//i2c->Instance->OAR2 &= ~I2C_OAR2_OA2EN;
 	//i2c->Instance->OAR2 = I2C_OAR2_OA2EN | ownAddress2 | SMBUS_OA2_NOMASK;
 	
-#ifdef USE_I2C_FASTMODEPLUS
+#ifdef I2C_USE_FASTMODEPLUS
 	if (mode > I2C_Mode_Fast)
 	{
 		uint32_t bit = I2Cx_GetFMPBit(i2c);
@@ -129,7 +129,7 @@ void I2C_Deinit(I2C_t * i2c)
 {
 	__HAL_I2C_DISABLE(i2c);
 
-#ifdef USE_I2C_FASTMODEPLUS
+#ifdef I2C_USE_FASTMODEPLUS
 	if (i2c->mode > I2C_Mode_Fast)
 	{
 		uint32_t bit = I2Cx_GetFMPBit(i2c);
@@ -359,7 +359,7 @@ static uint32_t I2C_SelectTiming(uint32_t bitrate)
 	uint32_t scl_del;
 	uint32_t sda_del = 0;
 
-#ifdef USE_I2C_FASTMODEPLUS
+#ifdef I2C_USE_FASTMODEPLUS
 	if (bitrate > I2C_Mode_Fast)
 	{
 		scl_del = NS_TO_CYCLES(clk, 50);
@@ -440,7 +440,7 @@ static void I2Cx_Deinit(I2C_t * i2c)
 #endif
 }
 
-#ifdef USE_I2C_FASTMODEPLUS
+#ifdef I2C_USE_FASTMODEPLUS
 static uint32_t I2Cx_GetFMPBit(I2C_t * i2c)
 {
 	uint32_t bit;
