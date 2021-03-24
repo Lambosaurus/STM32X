@@ -40,7 +40,7 @@ void TIM_SetReload(TIM_t * tim, uint32_t reload);
 // Base counter features
 void TIM_Start(TIM_t * tim);
 void TIM_Stop(TIM_t * tim);
-static inline uint32_t TIM_GetCounter(TIM_t * tim);
+static inline uint32_t TIM_Read(TIM_t * tim);
 
 // Channel features
 void TIM_SetPulse(TIM_t * tim, uint32_t ch, uint32_t pulse);
