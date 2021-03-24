@@ -1,6 +1,5 @@
 
 #include "SPI.h"
-#include "Core.h"
 #include "GPIO.h"
 
 /*

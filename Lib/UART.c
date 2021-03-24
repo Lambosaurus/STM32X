@@ -1,6 +1,7 @@
 
 #include "UART.h"
 #include "Core.h"
+#include "GPIO.h"
 #include <string.h>
 
 /*
