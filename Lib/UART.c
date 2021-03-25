@@ -11,7 +11,7 @@
 #error "UART_BFR_SIZE must be a power of two"
 #endif
 
-#define UART_BFR_INCR(v) ((v + 1) & (UART_BFR_SIZE - 1))
+#define UART_BFR_WRAP(v)	((v) & (UART_BFR_SIZE - 1))
 
 #define __UART_RX_ENABLE(uart) 	(uart->Instance->CR1 |= USART_CR1_RXNEIE)
 #define __UART_RX_DISABLE(uart) (uart->Instance->CR1 &= ~USART_CR1_RXNEIE)
@@ -108,7 +108,7 @@ void UART_Tx(UART_t * uart, const uint8_t * data, uint32_t count)
 	while (count--)
 	{
 		// calculate the next head. We cant assign it yet, as the IRQ relies on it.
-		uint32_t head = UART_BFR_INCR(uart->tx.head);
+		uint32_t head = UART_BFR_WRAP(uart->tx.head + 1);
 
 		// If the head has caught up with tail.. wait.
 		while (head == uart->tx.tail) { CORE_Idle(); }
@@ -130,9 +130,7 @@ uint32_t UART_RxCount(UART_t * uart)
 {
 	__UART_RX_DISABLE(uart);
 	// We have to disable the IRQs, as the IRQ may bump the tail.
-	uint32_t count = uart->rx.head >= uart->rx.tail
-				   ? uart->rx.head - uart->rx.tail
-				   : UART_BFR_SIZE + uart->rx.head - uart->rx.tail;
+	uint32_t count = UART_BFR_WRAP(uart->rx.head - uart->rx.tail);
 	__UART_RX_ENABLE(uart);
 	return count;
 }
@@ -150,7 +148,7 @@ uint32_t UART_Rx(UART_t * uart, uint8_t * data, uint32_t count)
 	for (uint32_t i = 0; i < count; i++)
 	{
 		*data++ = uart->rx.buffer[tail];
-		tail = UART_BFR_INCR(tail);
+		tail = UART_BFR_WRAP(tail + 1);
 	}
 	uart->rx.tail = tail;
 
@@ -161,7 +159,7 @@ uint8_t UART_RxPop(UART_t * uart)
 {
 	uint32_t tail = uart->rx.tail;
 	uint8_t b = uart->rx.buffer[tail];
-	uart->rx.tail = UART_BFR_INCR(tail);
+	uart->rx.tail = UART_BFR_WRAP(tail + 1);
 	return b;
 }
 
@@ -257,11 +255,11 @@ void USART_IRQHandler(UART_t *uart)
 	{
 		// New RX data. Put it in the RX buffer.
 		uart->rx.buffer[uart->rx.head] = uart->Instance->RDR;
-		uart->rx.head = UART_BFR_INCR(uart->rx.head);
+		uart->rx.head = UART_BFR_WRAP(uart->rx.head + 1);
 		if (uart->rx.head == uart->rx.tail) {
 			// The head just caught up with the tail. Uh oh. Increment the tail.
 			// Note, this causes flaming huge issues.
-			uart->rx.tail = UART_BFR_INCR(uart->rx.tail);
+			uart->rx.tail = UART_BFR_WRAP(uart->rx.tail + 1);
 		}
 	}
 
@@ -272,7 +270,7 @@ void USART_IRQHandler(UART_t *uart)
 		{
 			// Send a byte out.
 			uart->Instance->TDR = uart->tx.buffer[uart->tx.tail];
-			uart->tx.tail = UART_BFR_INCR(uart->tx.tail);
+			uart->tx.tail = UART_BFR_WRAP(uart->tx.tail + 1);
 		}
 		else
 		{
