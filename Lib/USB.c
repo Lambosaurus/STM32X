@@ -7,6 +7,7 @@
 #include "usbd_core.h"
 #include "usbd_desc.h"
 #include "usb/USB_CDC.h"
+#include "usb/USB_EP.h"
 
 
 /*
@@ -58,8 +59,8 @@ void USB_Init(void)
 	USB_PCD_Init();
 
 	// Initialise the ctrl endpoints
-	USB_PCD_EP_Open(CTL_IN_EP, USBD_EP_TYPE_CTRL, USB_PACKET_SIZE, false);
-	USB_PCD_EP_Open(CTL_OUT_EP, USBD_EP_TYPE_CTRL, USB_PACKET_SIZE, false);
+	USB_EP_Open(CTL_IN_EP, USBD_EP_TYPE_CTRL, USB_PACKET_SIZE);
+	USB_EP_Open(CTL_OUT_EP, USBD_EP_TYPE_CTRL, USB_PACKET_SIZE);
 
 	USB_PCD_Start();
 
@@ -110,7 +111,7 @@ void USB_IRQHandler(void)
 
 	if (istr & USB_ISTR_CTR)
 	{
-		USB_PCD_EP_ISR_Handler(hpcd);
+		USB_EP_IRQHandler();
 	}
 	else if (istr & USB_ISTR_RESET)
 	{

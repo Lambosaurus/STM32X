@@ -1,5 +1,6 @@
 
 #include "USB_CDC.h"
+#include "USB_EP.h"
 #include "USB_PCD.h"
 #include "Core.h"
 
@@ -80,19 +81,19 @@ void USB_CDC_Init(void)
 	gCDC.txBusy = false;
 
 	// Data endpoints
-	USB_PCD_EP_Open(CDC_IN_EP, USBD_EP_TYPE_BULK, USB_PACKET_SIZE, false);
-	USB_PCD_EP_Open(CDC_OUT_EP, USBD_EP_TYPE_BULK, USB_PACKET_SIZE, false);
+	USB_EP_Open(CDC_IN_EP, USBD_EP_TYPE_BULK, USB_PACKET_SIZE);
+	USB_EP_Open(CDC_OUT_EP, USBD_EP_TYPE_BULK, USB_PACKET_SIZE);
 	// Command endpoint
-	USB_PCD_EP_Open(CDC_CMD_EP, USBD_EP_TYPE_BULK, USB_PACKET_SIZE, false);
+	USB_EP_Open(CDC_CMD_EP, USBD_EP_TYPE_BULK, USB_PACKET_SIZE);
 
-	USB_PCD_EP_StartRx(CDC_OUT_EP, gRxBuffer, USB_PACKET_SIZE);
+	USB_EP_Rx(CDC_OUT_EP, gRxBuffer, USB_PACKET_SIZE);
 }
 
 void USB_CDC_Deinit(void)
 {
-	USB_PCD_EP_Close(CDC_IN_EP);
-	USB_PCD_EP_Close(CDC_OUT_EP);
-	USB_PCD_EP_Close(CDC_CMD_EP);
+	USB_EP_Close(CDC_IN_EP);
+	USB_EP_Close(CDC_OUT_EP);
+	USB_EP_Close(CDC_CMD_EP);
 	gRx.head = gRx.tail = 0;
 }
 
@@ -116,7 +117,7 @@ void USB_CDC_Tx(const uint8_t * data, uint32_t count)
 			// Transmit a packet
 			uint32_t packet_size = count > USB_PACKET_SIZE ? USB_PACKET_SIZE : count;
 			gCDC.txBusy = true;
-			USB_PCD_EP_StartTx(CDC_IN_EP, data, count);
+			USB_EP_Tx(CDC_IN_EP, data, count);
 			count -= packet_size;
 			data += packet_size;
 		}
@@ -215,7 +216,7 @@ static void USB_CDC_ReceiveData(uint8_t* data, uint32_t count)
 		gRx.head = newhead;
 	}
 
-	USB_PCD_EP_StartRx(CDC_OUT_EP, gRxBuffer, USB_PACKET_SIZE);
+	USB_EP_Rx(CDC_OUT_EP, gRxBuffer, USB_PACKET_SIZE);
 }
 
 /*
@@ -649,7 +650,7 @@ static uint8_t  USBD_CDC_DataIn(USBD_HandleTypeDef *pdev, uint8_t epnum)
 	if ((pdev->ep_in[epnum].total_length > 0U) && ((pdev->ep_in[epnum].total_length % hpcd->IN_ep[epnum].maxpacket) == 0U))
 	{
 		/* Send ZLP */
-		USB_PCD_EP_StartTx(epnum, NULL, 0U);
+		USB_EP_Tx(epnum, NULL, 0U);
 	}
 	else
 	{
@@ -702,7 +703,7 @@ uint8_t  *USBD_CDC_GetDeviceQualifierDescriptor(uint16_t *length)
 
 uint8_t USBD_CDC_ReceivePacket(USBD_HandleTypeDef *pdev)
 {
-	USB_PCD_EP_StartRx(CDC_OUT_EP, gRxBuffer, USB_PACKET_SIZE);
+	USB_EP_Rx(CDC_OUT_EP, gRxBuffer, USB_PACKET_SIZE);
     return USBD_OK;
 }
 
