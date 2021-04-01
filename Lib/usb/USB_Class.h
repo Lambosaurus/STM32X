@@ -15,8 +15,16 @@
 #define USB_CLASS_CLASSID				USB_CDC_CLASSID
 #define USB_CLASS_SUBCLASSID			USB_CDC_SUBCLASSID
 #define USB_CLASS_PROTOCOLID			USB_CDC_PROTOCOLID
-
 #define USB_CLASS_DEVICE_DESCRIPTOR 	USB_CDC_CONFIG_DESC
+
+
+#define USB_CLASS_INIT(config)			USB_CDC_Init(config)
+#define USB_CLASS_DEINIT()				USB_CDC_Deinit()
+#define USB_CLASS_SETUP(request) 		USB_CDC_Setup(request)
+#define USB_CLASS_DATAIN(endpoint)		USB_CDC_DataIn(endpoint)
+#define USB_CLASS_DATAOUT(endpoint)		USB_CDC_DataOut(endpoint)
+#define USB_CLASS_CTL_RXREADY()			USB_CDC_CtlRxReady()
+//#define USB_CLASS_CTL_TXDONE
 
 #else
 #error "No USB Class defined"
@@ -26,9 +34,15 @@
  * PUBLIC DEFINITIONS
  */
 
-#define USB_CLASS_INIT(config)		(hUsbDeviceFS.pClass->Init(&hUsbDeviceFS, config))
-#define USB_CLASS_DEINIT()			(hUsbDeviceFS.pClass->DeInit(&hUsbDeviceFS, 0))
-#define USB_CLASS_SETUP(request) 	(hUsbDeviceFS.pClass->Setup(&hUsbDeviceFS, request))
+/*
+#define USB_CLASS_INIT(config)			(hUsbDeviceFS.pClass->Init(&hUsbDeviceFS, config))
+#define USB_CLASS_DEINIT()				(hUsbDeviceFS.pClass->DeInit(&hUsbDeviceFS, 0))
+#define USB_CLASS_SETUP(request) 		(hUsbDeviceFS.pClass->Setup(&hUsbDeviceFS, request))
+#define USB_CLASS_DATAIN(endpoint)		(hUsbDeviceFS.pClass->DataIn(&hUsbDeviceFS, endpoint))
+#define USB_CLASS_DATAOUT(endpoint)		(hUsbDeviceFS.pClass->DataOut(&hUsbDeviceFS, endpoint))
+#define USB_CLASS_EVENT(evt)			USB_CDC_CtlEvent(evt)
+*/
+// TODO: The events can probably be factored out.
 
 /*
  * PUBLIC TYPES

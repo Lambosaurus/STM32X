@@ -631,11 +631,12 @@ void USB_EP_IRQHandler(void)
 	{
 		uint32_t istr = hpcd->Instance->ISTR;
 		uint8_t epnum = (uint8_t)(istr & USB_ISTR_EP_ID);
+		uint16_t epReg = PCD_GET_ENDPOINT(hpcd->Instance, epnum);
 
 		if (epnum == 0)
 		{
 			// Control endpoint
-			if ((istr & USB_ISTR_DIR) == 0)
+			if ( epReg & USB_EP_CTR_TX )// (istr & USB_ISTR_DIR) == 0)
 			{
 				// IN endpoint
 				PCD_CLEAR_TX_EP_CTR(USB, epnum);
@@ -650,16 +651,18 @@ void USB_EP_IRQHandler(void)
 			{
 				// OUT endpoint
 				PCD_EPTypeDef * ep = &hpcd->OUT_ep[epnum];
-				uint16_t epReg = PCD_GET_ENDPOINT(hpcd->Instance, PCD_ENDP0);
+
 				ep->xfer_count = PCD_GET_EP_RX_CNT(USB, ep->num);
 
 				if (epReg & USB_EP_SETUP)
 				{
-					USB_PMA_Read(ep->pmaadress, (uint8_t *)hpcd->Setup, ep->xfer_count);
+					// Handle this transfer in a local buffer. The xfer_buff will not be allocated.
+					uint8_t setup[8];
+					USB_PMA_Read(ep->pmaadress, setup, ep->xfer_count);
 
 					// SETUP bit kept frozen while CTR_RX
 					PCD_CLEAR_RX_EP_CTR(USB, 0);
-					USB_CTL_HandleSetup((uint8_t *)hpcd->Setup);
+					USB_CTL_HandleSetup(setup);
 				}
 				else if (epReg & USB_EP_CTR_RX)
 				{
@@ -681,8 +684,39 @@ void USB_EP_IRQHandler(void)
 		else
 		{
 			// Other endpoints
-			uint16_t epReg = PCD_GET_ENDPOINT(USB, epnum);
 
+			if (epReg & USB_EP_CTR_TX)
+			{
+				PCD_EPTypeDef * ep = &hpcd->IN_ep[epnum];
+				PCD_CLEAR_TX_EP_CTR(USB, epnum);
+
+				// Manage all non bulk transaction or Bulk Single Buffer Transaction
+				if ((ep->type != USB_EP_TYPE_BULK) || (epReg & USB_EP_KIND) == 0U)
+				{
+					uint16_t count = (uint16_t)PCD_GET_EP_TX_CNT(USB, ep->num);
+
+					ep->xfer_len = ep->xfer_len > count ? ep->xfer_len - count : 0;
+
+					if (ep->xfer_len == 0U)
+					{
+						// ZLP indicates TX complete
+						USB_CTL_DataInStage(ep->num, ep->xfer_buff);
+					}
+					else
+					{
+						// Transfer is not yet done
+						ep->xfer_buff += count;
+						ep->xfer_count += count;
+						USB_EP_StartIn(ep);
+					}
+				}
+#ifdef USE_EP_DOUBLEBUFFER
+				else
+				{
+					USB_EP_TransmitDB(ep, epReg);
+				}
+#endif //USE_EP_DOUBLEBUFFER
+			}
 			if (epReg & USB_EP_CTR_RX)
 			{
 				PCD_CLEAR_RX_EP_CTR(USB, epnum);

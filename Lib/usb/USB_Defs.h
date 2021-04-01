@@ -5,9 +5,10 @@
 #include "STM32X.h"
 
 /*
- * USB CONFIGURATION
+ * PUBLIC DEFINITIONS: USB CONFIGURATION
  * These may be overridden in the user Board.h
  */
+
 #ifndef USB_VID
 #define USB_VID						0x0483
 #endif
@@ -59,7 +60,7 @@
 #endif
 
 /*
- * HELPER MACROS
+ * PUBLIC DEFINITIONS: HELPER MACROS
  */
 
 #define SWAPBYTE(addr)       	(((uint16_t)(*(addr))) | (((uint16_t)(*((addr) + 1))) << 8))
@@ -71,7 +72,7 @@
 
 
 /*
- * 	USB DESCRIPTOR CONSTANTS
+ * PUBLIC DEFINITIONS: USB DESCRIPTOR DEFS
  */
 
 #define USB_FEATURE_EP_HALT                             0x00
@@ -129,6 +130,10 @@
 #define  USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION        0x07
 #define  USB_DESC_TYPE_BOS                              0x0F
 
+
+/*
+ * 	PUBLIC TYPES
+ */
 
 typedef struct usb_setup_req
 {

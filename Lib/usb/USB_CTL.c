@@ -21,7 +21,17 @@ typedef enum {
 	USB_STATE_ADDRESSED,
 	USB_STATE_CONFIGURED,
 	USB_STATE_SUSPENDED
-} USB_CTL_State_t;
+} USB_State_t;
+
+typedef enum {
+	CTL_STATE_IDLE,
+	CTL_STATE_SETUP,
+	CTL_STATE_DATA_IN,
+	CTL_STATE_DATA_OUT,
+	CTL_STATE_STATUS_IN,
+	CTL_STATE_STATUS_OUT,
+	CTL_STATE_STALL,
+} CTL_State_t;
 
 /*
  * PRIVATE TYPES
@@ -56,7 +66,7 @@ static void USB_CTL_SendStatus(void);
 //static void USB_CTL_Send(uint8_t * data, uint16_t size);
 static void USB_CTL_ReceiveStatus(void);
 //static void USB_CTL_Receive(uint8_t * data, uint16_t size);
-//static void USB_CTL_Error(void);
+static void USB_CTL_Error(void);
 
 
 /*
@@ -68,8 +78,11 @@ static void USB_CTL_ReceiveStatus(void);
 static struct {
 	uint8_t address;
 	uint8_t class_config;
+	uint8_t usb_state;
+	bool remote_wakeup;
+	uint8_t ctl_state;
+	uint16_t ctl_len;
 	uint8_t buffer[CTL_BUFFER_SIZE];
-	uint8_t state;
 } gCTL;
 
 __ALIGNED(4) const uint8_t cUsbDeviceDescriptor[USB_LEN_DEV_DESC] =
@@ -105,7 +118,8 @@ void USB_CTL_Init(void)
 	USB_EP_Open(CTL_OUT_EP, USB_EP_TYPE_CTRL, CTL_EP_SIZE);
 	gCTL.address = 0;
 	gCTL.class_config = 0;
-	gCTL.state = USB_STATE_DEFAULT;
+	gCTL.usb_state = USB_STATE_DEFAULT;
+	gCTL.remote_wakeup = false;
 }
 
 void USB_CTL_Deinit(void)
@@ -128,8 +142,7 @@ void USB_CTL_Reset(void)
 	// Reinit the CTRL EP's
 	USB_CTL_Init();
 
-	hUsbDeviceFS.ep0_state = USBD_EP0_IDLE;
-	hUsbDeviceFS.dev_remote_wakeup = 0U;
+	gCTL.ctl_state = CTL_STATE_IDLE;
 }
 
 void USB_CTL_HandleSetup(uint8_t * data)
@@ -141,8 +154,8 @@ void USB_CTL_HandleSetup(uint8_t * data)
 	req.wIndex = SWAPBYTE(data + 4U);
 	req.wLength = SWAPBYTE(data + 6U);
 
-	hUsbDeviceFS.ep0_state = USBD_EP0_SETUP;
-	hUsbDeviceFS.ep0_data_len = req.wLength;
+	gCTL.ctl_state = CTL_STATE_SETUP;
+	gCTL.ctl_len = req.wLength;
 
 	switch (req.bmRequest & 0x1F)
 	{
@@ -168,7 +181,7 @@ void USB_CTL_HandleSetup(uint8_t * data)
 void USB_CTL_Send(uint8_t * data, uint16_t size)
 {
 	USBD_HandleTypeDef * pdev = &hUsbDeviceFS;
-	pdev->ep0_state = USBD_EP0_DATA_IN;
+	gCTL.ctl_state = CTL_STATE_DATA_IN;
 	pdev->ep_in[0].total_length = size;
 	pdev->ep_in[0].rem_length   = size;
 	USB_EP_Write(CTL_IN_EP, data, size);
@@ -177,7 +190,7 @@ void USB_CTL_Send(uint8_t * data, uint16_t size)
 void USB_CTL_Receive(uint8_t * data, uint16_t size)
 {
 	USBD_HandleTypeDef * pdev = &hUsbDeviceFS;
-	pdev->ep0_state = USBD_EP0_DATA_OUT;
+	gCTL.ctl_state = CTL_STATE_DATA_OUT;
 	pdev->ep_out[0].total_length = size;
 	pdev->ep_out[0].rem_length   = size;
 	USB_EP_Read(CTL_OUT_EP, data, size);
@@ -185,14 +198,13 @@ void USB_CTL_Receive(uint8_t * data, uint16_t size)
 
 void USB_CTL_ReceiveStatus(void)
 {
-	USBD_HandleTypeDef * pdev = &hUsbDeviceFS;
-	pdev->ep0_state = USBD_EP0_STATUS_OUT;
+	gCTL.ctl_state = CTL_STATE_STATUS_OUT;
 	USB_EP_Read(CTL_OUT_EP, NULL, 0);
 }
 
 static void USB_CTL_SendStatus(void)
 {
-	hUsbDeviceFS.ep0_state = USBD_EP0_STATUS_IN;
+	gCTL.ctl_state = CTL_STATE_STATUS_IN;
 	USB_EP_Write(0x00U, NULL, 0U);
 }
 
@@ -217,7 +229,7 @@ static void USB_CTL_EndpointRequest(USB_SetupRequest_t  *req)
 		switch (req->bRequest)
 		{
 		case USB_REQ_SET_FEATURE:
-			switch (gCTL.state)
+			switch (gCTL.usb_state)
 			{
 			case USB_STATE_ADDRESSED:
 				if ((endpoint != CTL_OUT_EP) && (endpoint != CTL_IN_EP))
@@ -240,7 +252,7 @@ static void USB_CTL_EndpointRequest(USB_SetupRequest_t  *req)
 			}
 			break;
 		case USB_REQ_CLEAR_FEATURE:
-			switch (gCTL.state)
+			switch (gCTL.usb_state)
 			{
 			case USB_STATE_ADDRESSED:
 				if ((endpoint & 0x7FU) != 0x00U)
@@ -263,10 +275,10 @@ static void USB_CTL_EndpointRequest(USB_SetupRequest_t  *req)
 			}
 			break;
 		case USB_REQ_GET_STATUS:
-			switch (gCTL.state)
+			switch (gCTL.usb_state)
 			{
-			case USBD_STATE_ADDRESSED:
-			case USBD_STATE_CONFIGURED:
+			case USB_STATE_ADDRESSED:
+			case USB_STATE_CONFIGURED:
 				if (USB_EP_IsOpen(endpoint))
 				{
 					uint16_t status = USB_EP_IsStalled(endpoint) ? 0x0001 : 0x0000;
@@ -284,8 +296,7 @@ static void USB_CTL_EndpointRequest(USB_SetupRequest_t  *req)
 
 static void USB_CTL_StandardClassRequest(USB_SetupRequest_t  *req)
 {
-	USBD_HandleTypeDef * pdev = &hUsbDeviceFS;
-	if (gCTL.state == USB_STATE_CONFIGURED)
+	if (gCTL.usb_state == USB_STATE_CONFIGURED)
 	{
 		switch (req->bRequest)
 		{
@@ -353,24 +364,26 @@ static void USB_CTL_SetFeature(USB_SetupRequest_t * req)
 {
 	if (req->wValue == USB_FEATURE_REMOTE_WAKEUP)
 	{
-		hUsbDeviceFS.dev_remote_wakeup = 1U;
+		// Support for issuing a remote wakeup is missing.
+		// USB_CNTR_RESUME should be set when resume is requested.
+		gCTL.remote_wakeup = true;
 		USB_CTL_SendStatus();
 	}
 }
 
 static void USB_CTL_ClearFeature(USB_SetupRequest_t * req)
 {
-	switch (gCTL.state)
+	switch (gCTL.usb_state)
 	{
 	case USB_STATE_DEFAULT:
 	case USB_STATE_ADDRESSED:
 	case USB_STATE_CONFIGURED:
 		if (req->wValue == USB_FEATURE_REMOTE_WAKEUP)
 		{
-			hUsbDeviceFS.dev_remote_wakeup = 0U;
+			gCTL.remote_wakeup = false;
 			USB_CTL_SendStatus();
+			return;
 		}
-		return;
 	}
 	USB_CTL_Error();
 }
@@ -379,10 +392,10 @@ static void USB_CTL_SetAddress(USB_SetupRequest_t * req)
 {
 	if ((req->wIndex == 0) && (req->wLength == 0) && (req->wValue < 128))
 	{
-		if (gCTL.state != USB_STATE_CONFIGURED)
+		if (gCTL.usb_state != USB_STATE_CONFIGURED)
 		{
 			uint8_t address = (uint8_t)(req->wValue) & 0x7FU;
-			gCTL.state = (address != 0) ? USB_STATE_ADDRESSED : USB_STATE_DEFAULT;
+			gCTL.usb_state = (address != 0) ? USB_STATE_ADDRESSED : USB_STATE_DEFAULT;
 			gCTL.address = address;
 			USB_CTL_SendStatus();
 			return;
@@ -402,17 +415,17 @@ static void USB_CTL_SetConfig(USB_SetupRequest_t * req)
 			USB_CLASS_DEINIT();
 		}
 
-		switch (gCTL.state)
+		switch (gCTL.usb_state)
 		{
 		case USB_STATE_ADDRESSED:
 		case USB_STATE_CONFIGURED:
 			if (config == 0)
 			{
-				gCTL.state = USB_STATE_ADDRESSED;
+				gCTL.usb_state = USB_STATE_ADDRESSED;
 			}
 			else
 			{
-				gCTL.state = USB_STATE_CONFIGURED;
+				gCTL.usb_state = USB_STATE_CONFIGURED;
 				gCTL.class_config = config;
 				USB_CLASS_INIT(config);
 			}
@@ -427,7 +440,7 @@ static void USB_CTL_GetConfig(USB_SetupRequest_t * req)
 {
 	if (req->wLength == 1)
 	{
-		switch (gCTL.state)
+		switch (gCTL.usb_state)
 		{
 		case USB_STATE_DEFAULT:
 		case USB_STATE_ADDRESSED:
@@ -441,11 +454,11 @@ static void USB_CTL_GetConfig(USB_SetupRequest_t * req)
 
 static void USB_CTL_GetStatus(USB_SetupRequest_t * req)
 {
-	switch (gCTL.state)
+	switch (gCTL.usb_state)
 	{
-	case USBD_STATE_DEFAULT:
-	case USBD_STATE_ADDRESSED:
-	case USBD_STATE_CONFIGURED:
+	case USB_STATE_DEFAULT:
+	case USB_STATE_ADDRESSED:
+	case USB_STATE_CONFIGURED:
 		if (req->wLength == 0x2U)
 		{
 #ifdef USB_SELF_POWERED
@@ -453,7 +466,7 @@ static void USB_CTL_GetStatus(USB_SetupRequest_t * req)
 #else
 			uint16_t status = 0;
 #endif
-			if (hUsbDeviceFS.dev_remote_wakeup)
+			if (gCTL.remote_wakeup)
 			{
 				status |= USB_CONFIG_REMOTE_WAKEUP;
 			}
@@ -471,7 +484,7 @@ static void USB_CTL_InterfaceRequest(USB_SetupRequest_t * req)
 	case USB_REQ_TYPE_CLASS:
 	case USB_REQ_TYPE_VENDOR:
 	case USB_REQ_TYPE_STANDARD:
-		switch (gCTL.state)
+		switch (gCTL.usb_state)
 		{
 		case USB_STATE_DEFAULT:
 		case USB_STATE_ADDRESSED:
@@ -614,7 +627,7 @@ static uint16_t USB_CTL_GetLangIdDescriptor(uint8_t * data)
 	return 4;
 }
 
-void USB_CTL_Error(void)
+static void USB_CTL_Error(void)
 {
 	USB_EP_Stall(CTL_IN_EP);
 	USB_EP_Stall(CTL_OUT_EP);
@@ -626,15 +639,13 @@ void USB_CTL_Error(void)
 
 void USB_CTL_DataOutStage(uint8_t epnum, uint8_t * pdata)
 {
-	USBD_HandleTypeDef * pdev = &hUsbDeviceFS;
-	USBD_EndpointTypeDef *pep;
-
 	if (epnum == 0U)
 	{
-		pep = &pdev->ep_out[0];
+		USBD_EndpointTypeDef * pep = &hUsbDeviceFS.ep_out[0];
 
-		if (pdev->ep0_state == USBD_EP0_DATA_OUT)
+		switch (gCTL.ctl_state)
 		{
+		case CTL_STATE_DATA_OUT:
 			if (pep->rem_length > pep->maxpacket)
 			{
 				pep->rem_length -= pep->maxpacket;
@@ -643,44 +654,43 @@ void USB_CTL_DataOutStage(uint8_t epnum, uint8_t * pdata)
 			}
 			else
 			{
-				if ((pdev->pClass->EP0_RxReady != NULL) &&
-						(gCTL.state == USB_STATE_CONFIGURED))
+#ifdef USB_CLASS_CTL_RXREADY
+				if (gCTL.usb_state == USB_STATE_CONFIGURED)
 				{
-					pdev->pClass->EP0_RxReady(pdev);
+					USB_CLASS_CTL_RXREADY();
 				}
+#endif
 				USB_CTL_SendStatus();
 			}
-		}
-		else
-		{
-			if (pdev->ep0_state == USBD_EP0_STATUS_OUT)
+			break;
+		case CTL_STATE_STATUS_OUT:
+			if (gCTL.ctl_state == USB_STATE_CONFIGURED)
 			{
-				/*
-				 * STATUS PHASE completed, update ep0_state to idle
-				 */
-				pdev->ep0_state = USBD_EP0_IDLE;
+				// STATUS PHASE completed, update ep0_state to idle
+				gCTL.ctl_state = CTL_STATE_IDLE;
 				USB_EP_Stall(CTL_OUT_EP);
 			}
+			break;
 		}
 	}
-	else if ((pdev->pClass->DataOut != NULL) &&
-			(gCTL.state == USB_STATE_CONFIGURED))
+	else
 	{
-		pdev->pClass->DataOut(pdev, epnum);
+		if (gCTL.usb_state == USB_STATE_CONFIGURED)
+		{
+			USB_CLASS_DATAOUT(epnum);
+		}
 	}
 }
 
 void USB_CTL_DataInStage(uint8_t epnum, uint8_t * pdata)
 {
-	USBD_HandleTypeDef * pdev = &hUsbDeviceFS;
-	USBD_EndpointTypeDef *pep;
-
 	if (epnum == 0U)
 	{
-		pep = &pdev->ep_in[0];
+		USBD_EndpointTypeDef * pep = &hUsbDeviceFS.ep_in[0];
 
-		if (pdev->ep0_state == USBD_EP0_DATA_IN)
+		switch (gCTL.ctl_state)
 		{
+		case CTL_STATE_DATA_IN:
 			if (pep->rem_length > pep->maxpacket)
 			{
 				pep->rem_length -= pep->maxpacket;
@@ -689,34 +699,32 @@ void USB_CTL_DataInStage(uint8_t epnum, uint8_t * pdata)
 			}
 			else
 			{
-				/* last packet is MPS multiple, so send ZLP packet */
+				// last packet is MPS multiple, so send ZLP packet
 				if ((pep->total_length % pep->maxpacket == 0U) &&
 						(pep->total_length >= pep->maxpacket) &&
-						(pep->total_length < pdev->ep0_data_len))
+						(pep->total_length < gCTL.ctl_len))
 				{
 					USB_EP_Write(CTL_IN_EP, NULL, 0);
-					pdev->ep0_data_len = 0U;
+					gCTL.ctl_len = 0;
 					USB_EP_Read(CTL_OUT_EP, NULL, 0);
 				}
 				else
 				{
-					if ((pdev->pClass->EP0_TxSent != NULL) &&
-							(gCTL.state == USB_STATE_CONFIGURED))
+#ifdef USB_CLASS_CTL_TXDONE
+					if (gCTL.usb_state == USB_STATE_CONFIGURED)
 					{
-						pdev->pClass->EP0_TxSent(pdev);
+						USB_CLASS_CTL_TXDONE();
 					}
+#endif
 					USB_EP_Stall(CTL_IN_EP);
 					USB_CTL_ReceiveStatus();
 				}
 			}
-		}
-		else
-		{
-			if ((pdev->ep0_state == USBD_EP0_STATUS_IN) ||
-					(pdev->ep0_state == USBD_EP0_IDLE))
-			{
-				USB_EP_Stall(CTL_IN_EP);
-			}
+			break;
+		case CTL_STATE_STATUS_IN:
+		case CTL_STATE_IDLE:
+			USB_EP_Stall(CTL_IN_EP);
+			break;
 		}
 
 		if (gCTL.address != 0)
@@ -725,10 +733,12 @@ void USB_CTL_DataInStage(uint8_t epnum, uint8_t * pdata)
 			gCTL.address = 0;
 		}
 	}
-	else if ((pdev->pClass->DataIn != NULL) &&
-			(gCTL.state == USB_STATE_CONFIGURED))
+	else
 	{
-		pdev->pClass->DataIn(pdev, epnum);
+		if (gCTL.usb_state == USB_STATE_CONFIGURED)
+		{
+			USB_CLASS_DATAIN(epnum);
+		}
 	}
 }
 

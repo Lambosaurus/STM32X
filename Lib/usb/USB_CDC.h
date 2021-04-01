@@ -2,6 +2,7 @@
 #define USB_CDC_H
 
 #include "STM32X.h"
+#include "USB_Defs.h"
 
 /*
  * FUNCTIONAL TESTING
@@ -28,45 +29,27 @@
  * PUBLIC FUNCTIONS
  */
 
+// Callbacks for USB_CTL.
+// These should be referenced in USB_Class.h
+void USB_CDC_Init(uint8_t config);
+void USB_CDC_Deinit(void);
+void USB_CDC_CtlRxReady(void);
+void USB_CDC_Setup(USB_SetupRequest_t * req);
+
+// TODO: rework these.
+void USB_CDC_DataIn(uint8_t epnum);
+void USB_CDC_DataOut(uint8_t epnum);
+
+// Interface to user
+uint32_t USB_CDC_ReadReady(void);
+uint32_t USB_CDC_Read(uint8_t * data, uint32_t count);
+void USB_CDC_Write(const uint8_t * data, uint32_t count);
+
 /*
  * EXTERN DECLARATIONS
  */
 
 extern const uint8_t cUSB_CDC_ConfigDescriptor[USB_CDC_CONFIG_DESC_SIZE];
-
-/*
- * DELETE LATER
- */
-
-#include "usbd_def.h"
-
-uint32_t USB_CDC_Read(uint8_t * data, uint32_t count);
-void USB_CDC_Write(const uint8_t * data, uint32_t count);
-
-
-#define CDC_IN_EP                                   0x81
-#define CDC_OUT_EP                                  0x01
-#define CDC_CMD_EP                                  0x82
-
-#define CDC_BINTERVAL                          		0x10
-#define CDC_PACKET_SIZE								USB_PACKET_SIZE
-#define CDC_CMD_PACKET_SIZE                         8
-
-
-
-#define CDC_SEND_ENCAPSULATED_COMMAND               0x00U
-#define CDC_GET_ENCAPSULATED_RESPONSE               0x01U
-#define CDC_SET_COMM_FEATURE                        0x02U
-#define CDC_GET_COMM_FEATURE                        0x03U
-#define CDC_CLEAR_COMM_FEATURE                      0x04U
-#define CDC_SET_LINE_CODING                         0x20U
-#define CDC_GET_LINE_CODING                         0x21U
-#define CDC_SET_CONTROL_LINE_STATE                  0x22U
-#define CDC_SEND_BREAK                              0x23U
-
-
-
-extern USBD_ClassTypeDef  USBD_CDC;
 
 
 #endif //USB_CDC_H

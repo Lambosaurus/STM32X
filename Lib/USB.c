@@ -45,9 +45,6 @@ void USB_Init(void)
 {
 	CORE_EnableUSBClock();
 	USBx_Init();
-
-	hUsbDeviceFS.pClass = &USBD_CDC;
-
 	USB_PCD_Init();
 	USB_CTL_Init();
 	USB_PCD_Start();
@@ -55,6 +52,7 @@ void USB_Init(void)
 
 void USB_Deinit(void)
 {
+	// TODO: Disable USB Clock
 	USB_PCD_Stop();
 	USB_CTL_Deinit();
 	USB_PCD_Deinit();
