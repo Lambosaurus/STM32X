@@ -1,6 +1,7 @@
 
 #include "USB_PCD.h"
 #include "USB_EP.h"
+#include "USB_CLASS.h"
 
 /*
  * PRIVATE DEFINITIONS
@@ -20,7 +21,7 @@
 
 // DELETE THIS
 USBD_HandleTypeDef hUsbDeviceFS;
-
+PCD_HandleTypeDef hpcd_USB_FS;
 
 /*
  * PUBLIC FUNCTIONS
@@ -60,31 +61,10 @@ void USB_PCD_Start(void)
 	USB->BCDR |= USB_BCDR_DPPU;
 }
 
-/*
-void USB_PCD_Reset(void)
-{
-	gPCD.pma_head = BTABLE_SIZE;
-
-	hUsbDeviceFS.dev_state = USBD_STATE_DEFAULT;
-	hUsbDeviceFS.ep0_state = USBD_EP0_IDLE;
-	hUsbDeviceFS.dev_config = 0U;
-	hUsbDeviceFS.dev_remote_wakeup = 0U;
-
-	USB_PCD_EP_Open(CTL_IN_EP, USBD_EP_TYPE_CTRL, USB_PACKET_SIZE);
-	USB_PCD_EP_Open(CTL_OUT_EP, USBD_EP_TYPE_CTRL, USB_PACKET_SIZE);
-
-	if (hUsbDeviceFS.pClassData)
-	{
-		hUsbDeviceFS.pClass->DeInit(&hUsbDeviceFS, hUsbDeviceFS.dev_config);
-	}
-}
-*/
-
 void USB_PCD_Stop(void)
 {
 	// disable all interrupts and force USB reset
 	USB->CNTR = USB_CNTR_FRES;
-	// clear interrupt status register
 	USB->ISTR = 0U;
 	// switch-off device
 	USB->CNTR = USB_CNTR_FRES | USB_CNTR_PDWN;
@@ -98,11 +78,10 @@ void USB_PCD_Stop(void)
 void USB_PCD_SetAddress(uint8_t address)
 {
 	hpcd_USB_FS.USB_Address = address;
-
-	if (address == 0U)
+	if (address == 0)
 	{
-		/* set device address and enable function */
-		USB->DADDR = (uint16_t)USB_DADDR_EF;
+		// Looking for new address
+		USB->DADDR = USB_DADDR_EF;
 	}
 }
 

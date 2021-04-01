@@ -38,9 +38,6 @@ void USB_CDC_Tx(const uint8_t * data, uint32_t count);
 
 
 
-
-
-
 #include  "usbd_ioreq.h"
 
 

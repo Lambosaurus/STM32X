@@ -31,9 +31,7 @@
 void USB_PCD_Init(void);
 void USB_PCD_Start(void);
 void USB_PCD_Stop(void);
-
-
-void USB_PCD_Reset(void);
+void USB_PCD_Deinit(void);
 
 /*
  * EXTERN DECLARATIONS
@@ -42,6 +40,7 @@ void USB_PCD_Reset(void);
 // DELETE THIS
 #include  "usbd_ioreq.h"
 extern USBD_HandleTypeDef hUsbDeviceFS;
+extern PCD_HandleTypeDef hpcd_USB_FS;
 
 HAL_StatusTypeDef USB_PCD_EP_ISR_Handler(PCD_HandleTypeDef *hpcd);
 void USB_PCD_SetAddress(uint8_t address);

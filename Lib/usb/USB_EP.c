@@ -1,6 +1,6 @@
 
 #include "USB_EP.h"
-
+#include "USB_CTL.h"
 #include "USB_PCD.h"
 
 /*
@@ -10,7 +10,7 @@
 #define USB_ENDPOINTS		8
 #define BTABLE_SIZE			(USB_ENDPOINTS * 8)
 
-#define PMA_SIZE			512
+#define PMA_SIZE			1024
 #define PMA_BASE			(((uint32_t)USB) + 0x400)
 
 /*
@@ -23,16 +23,19 @@
 
 static uint16_t USB_PMA_Alloc(uint16_t size);
 //TODO: Remove from header when able.
-//static void USB_PMA_Write(uint16_t address, uint8_t * data, uint16_t count);
-//static void USB_PMA_Read(uint16_t address, uint8_t * data, uint16_t count);
+static void USB_PMA_Write(uint16_t address, uint8_t * data, uint16_t count);
+static void USB_PMA_Read(uint16_t address, uint8_t * data, uint16_t count);
+//static void USB_EP_Activate(USB_EPTypeDef *ep);
+//static void USB_EP_Deactivate(USB_EPTypeDef *ep);
 
 static PCD_EPTypeDef * USB_EP_GetEP(uint8_t endpoint);
+static void USB_EP_StartIn(USB_EPTypeDef *ep);
+static void USB_EP_StartOut(USB_EPTypeDef *ep);
 
-//#ifdef USE_EP_DOUBLEBUFFER
-//TODO: Fix doublebuffer partitioning
+#ifdef USE_EP_DOUBLEBUFFER
 static uint16_t USB_EP_ReceiveDB(PCD_EPTypeDef *ep, uint16_t wEPVal);
 static void USB_EP_TransmitDB(PCD_EPTypeDef *ep, uint16_t wEPVal);
-//#endif
+#endif //USE_EP_DOUBLEBUFFER
 
 
 
@@ -75,6 +78,11 @@ void USB_EP_Init(void)
 	}
 }
 
+void USB_EP_Reset(void)
+{
+	gEP.pma_head = BTABLE_SIZE;
+}
+
 void USB_EP_Deinit(void)
 {
 
@@ -87,11 +95,13 @@ void USB_EP_Open(uint8_t endpoint, uint8_t type, uint16_t size)
 	{
 		ep = &hpcd->IN_ep[endpoint & EP_ADDR_MSK];
 		hUsbDeviceFS.ep_in[endpoint & EP_ADDR_MSK].is_used = 1;
+		hUsbDeviceFS.ep_in[endpoint & EP_ADDR_MSK].maxpacket = size;
 	}
 	else
 	{
 		ep = &hpcd->OUT_ep[endpoint & EP_ADDR_MSK];
 		hUsbDeviceFS.ep_out[endpoint & EP_ADDR_MSK].is_used = 1;
+		hUsbDeviceFS.ep_out[endpoint & EP_ADDR_MSK].maxpacket = size;
 	}
 	ep->maxpacket = size;
 	ep->type = type;
@@ -106,10 +116,10 @@ void USB_EP_Open(uint8_t endpoint, uint8_t type, uint16_t size)
 	{
 		ep->pmaadress = USB_PMA_Alloc(size);
 	}
-#else
+#else // USE_EP_DOUBLEBUFFER
 	ep->pmaadress = USB_PMA_Alloc(size);
 #endif
-	USB_ActivateEndpoint(USB, ep);
+	USB_EP_Activate(ep);
 }
 
 void USB_EP_Close(uint8_t endpoint)
@@ -125,7 +135,7 @@ void USB_EP_Close(uint8_t endpoint)
 		ep = &hpcd->OUT_ep[endpoint & EP_ADDR_MSK];
 		hUsbDeviceFS.ep_out[endpoint & EP_ADDR_MSK].is_used = 0;
 	}
-	USB_DeactivateEndpoint(USB, ep);
+	USB_EP_Deactivate(ep);
 }
 
 void USB_EP_Rx(uint8_t endpoint, uint8_t *data, uint32_t count)
@@ -134,7 +144,7 @@ void USB_EP_Rx(uint8_t endpoint, uint8_t *data, uint32_t count)
 	ep->xfer_buff = data;
 	ep->xfer_len = count;
 	ep->xfer_count = 0;
-	USB_EPStartXfer(USB, ep);
+	USB_EP_StartOut(ep);
 }
 
 void USB_EP_Tx(uint8_t endpoint, const uint8_t * data, uint32_t count)
@@ -146,7 +156,12 @@ void USB_EP_Tx(uint8_t endpoint, const uint8_t * data, uint32_t count)
 	ep->xfer_len_db = count;
 	ep->xfer_count = 0;
 	hUsbDeviceFS.ep_in[endpoint & EP_ADDR_MSK].total_length = count;
-	USB_EPStartXfer(USB, ep);
+	USB_EP_StartIn(ep);
+}
+
+uint32_t USB_EP_RxCount(uint8_t endpoint)
+{
+	return hpcd_USB_FS.OUT_ep[endpoint & EP_ADDR_MSK].xfer_count;
 }
 
 void USB_EP_Stall(uint8_t endpoint)
@@ -185,6 +200,12 @@ void USB_EP_Destall(uint8_t endpoint)
 	}
 }
 
+bool USB_EP_IsStalled(uint8_t endpoint)
+{
+	PCD_EPTypeDef * ep = USB_EP_GetEP(endpoint);
+	return ep->is_stall;
+}
+
 /*
  * PRIVATE FUNCTIONS
  */
@@ -213,7 +234,7 @@ static uint16_t USB_PMA_Alloc(uint16_t size)
 	return head;
 }
 
-void USB_PMA_Write(uint16_t address, uint8_t * data, uint16_t count)
+static void USB_PMA_Write(uint16_t address, uint8_t * data, uint16_t count)
 {
 	uint16_t * __restrict pma = (uint16_t * __restrict)(PMA_BASE + ((uint32_t)address * PMA_ACCESS));
 	uint32_t words = (count + 1) / 2;
@@ -226,7 +247,7 @@ void USB_PMA_Write(uint16_t address, uint8_t * data, uint16_t count)
 	}
 }
 
-void USB_PMA_Read(uint16_t address, uint8_t * data, uint16_t count)
+static void USB_PMA_Read(uint16_t address, uint8_t * data, uint16_t count)
 {
 	uint16_t * __restrict pma = (uint16_t * __restrict)(PMA_BASE + ((uint32_t)address * PMA_ACCESS));
 	uint32_t words = count / 2;
@@ -246,214 +267,362 @@ void USB_PMA_Read(uint16_t address, uint8_t * data, uint16_t count)
 	}
 }
 
-static uint16_t USB_EP_ReceiveDB(PCD_EPTypeDef *ep, uint16_t wEPVal)
+void USB_EP_Activate(USB_EPTypeDef *ep)
 {
-  uint16_t count;
+	uint16_t epReg = PCD_GET_ENDPOINT(USB, ep->num) & USB_EP_T_MASK;
 
-  /* Manage Buffer0 OUT */
-  if ((wEPVal & USB_EP_DTOG_RX) != 0U)
-  {
-    /* Get count of received Data on buffer0 */
-    count = (uint16_t)PCD_GET_EP_DBUF0_CNT(hpcd->Instance, ep->num);
+	switch (ep->type)
+	{
+	case EP_TYPE_CTRL:
+		epReg |= USB_EP_CONTROL;
+	  break;
+	case EP_TYPE_BULK:
+		epReg |= USB_EP_BULK;
+	  break;
+	case EP_TYPE_INTR:
+		epReg |= USB_EP_INTERRUPT;
+	  break;
+	case EP_TYPE_ISOC:
+		epReg |= USB_EP_ISOCHRONOUS;
+	  break;
+	}
 
-    if (ep->xfer_len >= count)
-    {
-      ep->xfer_len -= count;
-    }
-    else
-    {
-      ep->xfer_len = 0U;
-    }
+	PCD_SET_ENDPOINT(USB, ep->num, (epReg | USB_EP_CTR_RX | USB_EP_CTR_TX));
+	PCD_SET_EP_ADDRESS(USB, ep->num, ep->num);
 
-    if (ep->xfer_len == 0U)
-    {
-      /* set NAK to OUT endpoint since double buffer is enabled */
-      PCD_SET_EP_RX_STATUS(hpcd->Instance, ep->num, USB_EP_RX_NAK);
-    }
+#ifdef USE_EP_DOUBLEBUFFER
+	if (ep->doublebuffer)
+	{
+		PCD_SET_EP_DBUF(USB, ep->num);
+		PCD_SET_EP_DBUF_ADDR(USB, ep->num, ep->pmaaddr0, ep->pmaaddr1);
+		PCD_CLEAR_RX_DTOG(USB, ep->num);
+		PCD_CLEAR_TX_DTOG(USB, ep->num);
 
-    /* Check if Buffer1 is in blocked sate which requires to toggle */
-    if ((wEPVal & USB_EP_DTOG_TX) != 0U)
-    {
-      PCD_FreeUserBuffer(hpcd->Instance, ep->num, 0U);
-    }
-
-    if (count != 0U)
-    {
-      USB_PMA_Read(ep->pmaaddr0, ep->xfer_buff, count);
-    }
-  }
-  /* Manage Buffer 1 DTOG_RX=0 */
-  else
-  {
-    /* Get count of received data */
-    count = (uint16_t)PCD_GET_EP_DBUF1_CNT(hpcd->Instance, ep->num);
-
-    if (ep->xfer_len >= count)
-    {
-      ep->xfer_len -= count;
-    }
-    else
-    {
-      ep->xfer_len = 0U;
-    }
-
-    if (ep->xfer_len == 0U)
-    {
-      /* set NAK on the current endpoint */
-      PCD_SET_EP_RX_STATUS(hpcd->Instance, ep->num, USB_EP_RX_NAK);
-    }
-
-    /*Need to FreeUser Buffer*/
-    if ((wEPVal & USB_EP_DTOG_TX) == 0U)
-    {
-      PCD_FreeUserBuffer(hpcd->Instance, ep->num, 0U);
-    }
-
-    if (count != 0U)
-    {
-      USB_PMA_Read(ep->pmaaddr1, ep->xfer_buff, count);
-    }
-  }
-
-  return count;
+		if (ep->is_in)
+		{
+			if (ep->type != EP_TYPE_ISOC)
+			{
+				PCD_SET_EP_TX_STATUS(USB, ep->num, USB_EP_TX_NAK);
+			}
+			PCD_SET_EP_RX_STATUS(USB, ep->num, USB_EP_RX_DIS);
+		}
+		else
+		{
+			// Clear the data toggle bits for the endpoint IN/OUT
+			PCD_SET_EP_RX_STATUS(USB, ep->num, USB_EP_RX_VALID);
+			PCD_SET_EP_TX_STATUS(USB, ep->num, USB_EP_TX_DIS);
+		}
+		return
+	}
+#endif //USE_EP_DOUBLEBUFFER
+	if (ep->is_in)
+	{
+		PCD_SET_EP_TX_ADDRESS(USB, ep->num, ep->pmaadress);
+		PCD_CLEAR_TX_DTOG(USB, ep->num);
+		// Isochronos should leave their TX EP disabled.
+		if (ep->type != EP_TYPE_ISOC)
+		{
+			PCD_SET_EP_TX_STATUS(USB, ep->num, USB_EP_TX_NAK);
+		}
+	}
+	else
+	{
+		PCD_SET_EP_RX_ADDRESS(USB, ep->num, ep->pmaadress);
+		PCD_SET_EP_RX_CNT(USB, ep->num, ep->maxpacket);
+		PCD_CLEAR_RX_DTOG(USB, ep->num);
+		PCD_SET_EP_RX_STATUS(USB, ep->num, USB_EP_RX_VALID);
+	}
 }
 
-static void USB_EP_TransmitDB(PCD_EPTypeDef *ep, uint16_t wEPVal)
+void USB_EP_Deactivate(USB_EPTypeDef *ep)
 {
-  uint32_t len;
-  uint16_t TxByteNbre;
+#ifdef USE_EP_DOUBLEBUFFER
+	if (ep->doublebuffer)
+	{
+		PCD_CLEAR_RX_DTOG(USB, ep->num);
+		PCD_CLEAR_TX_DTOG(USB, ep->num);
+		if (ep->is_in)
+		{
+			PCD_RX_DTOG(USB, ep->num);
+		}
+		else
+		{
+			PCD_TX_DTOG(USB, ep->num);
+		}
+		PCD_SET_EP_RX_STATUS(USB, ep->num, USB_EP_RX_DIS);
+		PCD_SET_EP_TX_STATUS(USB, ep->num, USB_EP_TX_DIS);
+		return;
+	}
+#endif //USE_EP_DOUBLEBUFFER
+	if (ep->is_in)
+	{
+		PCD_CLEAR_TX_DTOG(USB, ep->num);
+		PCD_SET_EP_TX_STATUS(USB, ep->num, USB_EP_TX_DIS);
+	}
+	else
+	{
+		PCD_CLEAR_RX_DTOG(USB, ep->num);
+		PCD_SET_EP_RX_STATUS(USB, ep->num, USB_EP_RX_DIS);
+	}
+}
 
-  /* Data Buffer0 ACK received */
-  if ((wEPVal & USB_EP_DTOG_TX) != 0U)
-  {
-    /* multi-packet on the NON control IN endpoint */
-    TxByteNbre = (uint16_t)PCD_GET_EP_DBUF0_CNT(hpcd->Instance, ep->num);
 
-    if (ep->xfer_len > TxByteNbre)
-    {
-      ep->xfer_len -= TxByteNbre;
-    }
-    else
-    {
-      ep->xfer_len = 0U;
-    }
-    /* Transfer is completed */
-    if (ep->xfer_len == 0U)
-    {
-      HAL_PCD_DataInStageCallback(hpcd, ep->num);
+#ifdef USE_EP_DOUBLEBUFFER
+static uint16_t USB_EP_ReceiveDB(PCD_EPTypeDef *ep, uint16_t epReg)
+{
+	bool db0 = epReg & USB_EP_DTOG_RX;
+	uint16_t count;
+	uint16_t pmaaddr;
+	if (db0)
+	{
+		count = PCD_GET_EP_DBUF0_CNT(USB, ep->num);
+		pmaaddr = ep->pmaaddr0;
+	}
+	else
+	{
+		count = PCD_GET_EP_DBUF1_CNT(USB, ep->num);
+		pmaaddr = ep->pmaaddr1;
+	}
 
-      if ((wEPVal & USB_EP_DTOG_RX) != 0U)
-      {
-        PCD_FreeUserBuffer(hpcd->Instance, ep->num, 1U);
-      }
-    }
-    else /* Transfer is not yet Done */
-    {
-      /* need to Free USB Buff */
-      if ((wEPVal & USB_EP_DTOG_RX) != 0U)
-      {
-        PCD_FreeUserBuffer(hpcd->Instance, ep->num, 1U);
-      }
+	if (ep->type == EP_TYPE_BULK)
+	{
+		ep->xfer_len = ep->xfer_len >= count ? ep->xfer_len - count : 0;
+		PCD_SET_EP_RX_STATUS(USB, ep->num, USB_EP_RX_NAK);
 
-      /* Still there is data to Fill in the next Buffer */
-      if (ep->xfer_fill_db == 1U)
-      {
-        ep->xfer_buff += TxByteNbre;
-        ep->xfer_count += TxByteNbre;
+		bool db1 = epReg & USB_EP_DTOG_TX;
+		if (db0 == db1)
+		{
+			// I dont quite understand this logic.
+			// It seems the buffers are swapped in this case.
+			PCD_TX_DTOG(USB, ep->num);
+		}
+	}
+	else
+	{
+		PCD_TX_DTOG(USB, ep->num);
+	}
 
-        /* Calculate the len of the new buffer to fill */
-        if (ep->xfer_len_db >= ep->maxpacket)
-        {
-          len = ep->maxpacket;
-          ep->xfer_len_db -= len;
-        }
-        else if (ep->xfer_len_db == 0U)
-        {
-          len = TxByteNbre;
-          ep->xfer_fill_db = 0U;
-        }
-        else
-        {
-          ep->xfer_fill_db = 0U;
-          len = ep->xfer_len_db;
-          ep->xfer_len_db = 0U;
-        }
+	USB_PMA_Read(pmaaddr, ep->xfer_buff, count);
+	return count;
+}
 
-        /* Write remaining Data to Buffer */
-        /* Set the Double buffer counter for pma buffer1 */
-        PCD_SET_EP_DBUF0_CNT(hpcd->Instance, ep->num, ep->is_in, len);
+static void USB_EP_TransmitDB(PCD_EPTypeDef *ep, uint16_t epReg)
+{
+	bool db0 = epReg & USB_EP_DTOG_TX;
+	uint16_t count;
+	if (db0)
+	{
+		count = PCD_GET_EP_DBUF0_CNT(USB, ep->num);
+	}
+	else
+	{
+		count = PCD_GET_EP_DBUF1_CNT(USB, ep->num);
+	}
 
-        /* Copy user buffer to USB PMA */
-        USB_PMA_Write(ep->pmaaddr0, ep->xfer_buff, (uint16_t)len);
-      }
-    }
-  }
-  else /* Data Buffer1 ACK received */
-  {
-    /* multi-packet on the NON control IN endpoint */
-    TxByteNbre = (uint16_t)PCD_GET_EP_DBUF1_CNT(hpcd->Instance, ep->num);
+	if (ep->xfer_len == 0)
+	{
+		HAL_PCD_DataInStageCallback(hpcd, ep->num);
+	}
 
-    if (ep->xfer_len >= TxByteNbre)
-    {
-      ep->xfer_len -= TxByteNbre;
-    }
-    else
-    {
-      ep->xfer_len = 0U;
-    }
+	bool db1 = epReg & USB_EP_DTOG_RX;
+	if (db0 == db1)
+	{
+		PCD_RX_DTOG(USB, ep->num);
+	}
 
-    /* Transfer is completed */
-    if (ep->xfer_len == 0U)
-    {
-      HAL_PCD_DataInStageCallback(hpcd, ep->num);
+	if (ep->xfer_len && ep->xfer_fill_db)
+	{
+		ep->xfer_buff += count;
+		ep->xfer_count += count;
 
-      if ((wEPVal & USB_EP_DTOG_RX) == 0U)
-      {
-        PCD_FreeUserBuffer(hpcd->Instance, ep->num, 1U);
-      }
-    }
-    else /* Transfer is not yet Done */
-    {
-      /* need to Free USB Buff */
-      if ((wEPVal & USB_EP_DTOG_RX) == 0U)
-      {
-        PCD_FreeUserBuffer(hpcd->Instance, ep->num, 1U);
-      }
+		uint32_t nextCount;
+		if (ep->xfer_len_db >= ep->maxpacket)
+		{
+			nextCount = ep->maxpacket;
+			ep->xfer_len_db -= nextCount;
+		}
+		else if (ep->xfer_len_db == 0)
+		{
+			nextCount = count;
+			ep->xfer_fill_db = 0;
+		}
+		else
+		{
+			ep->xfer_fill_db = 0;
+			nextCount = ep->xfer_len_db;
+			ep->xfer_len_db = 0;
+		}
 
-      /* Still there is data to Fill in the next Buffer */
-      if (ep->xfer_fill_db == 1U)
-      {
-        ep->xfer_buff += TxByteNbre;
-        ep->xfer_count += TxByteNbre;
+		if (db0)
+		{
+			PCD_SET_EP_DBUF0_CNT(hpcd->Instance, ep->num, ep->is_in, nextCount);
+			USB_PMA_Write(ep->pmaaddr0, ep->xfer_buff, nextCount);
+		}
+		else
+		{
+			PCD_SET_EP_DBUF1_CNT(hpcd->Instance, ep->num, ep->is_in, nextCount);
+			USB_PMA_Write(ep->pmaaddr1, ep->xfer_buff, nextCount);
+		}
+	}
+	PCD_SET_EP_TX_STATUS(hpcd->Instance, ep->num, USB_EP_TX_VALID);
+}
+#endif //USE_EP_DOUBLEBUFFER
 
-        /* Calculate the len of the new buffer to fill */
-        if (ep->xfer_len_db >= ep->maxpacket)
-        {
-          len = ep->maxpacket;
-          ep->xfer_len_db -= len;
-        }
-        else if (ep->xfer_len_db == 0U)
-        {
-          len = TxByteNbre;
-          ep->xfer_fill_db = 0U;
-        }
-        else
-        {
-          len = ep->xfer_len_db;
-          ep->xfer_len_db = 0U;
-          ep->xfer_fill_db = 0;
-        }
+static void USB_EP_StartIn(USB_EPTypeDef *ep)
+{
+	uint32_t len;
 
-        /* Set the Double buffer counter for pmabuffer1 */
-        PCD_SET_EP_DBUF1_CNT(hpcd->Instance, ep->num, ep->is_in, len);
+	if (ep->xfer_len > ep->maxpacket)
+	{
+		len = ep->maxpacket;
+	}
+	else
+	{
+		len = ep->xfer_len;
+	}
 
-        /* Copy the user buffer to USB PMA */
-        USB_PMA_Write(ep->pmaaddr1, ep->xfer_buff, (uint16_t)len);
-      }
-    }
-  }
+#ifdef USE_EP_DOUBLEBUFFER
+	if (ep->doublebuffer)
+	{
+		uint32_t pmabuffer;
 
-  PCD_SET_EP_TX_STATUS(hpcd->Instance, ep->num, USB_EP_TX_VALID);
+		if (ep->type == EP_TYPE_BULK)
+		{
+			if (ep->xfer_len_db > ep->maxpacket)
+			{
+				PCD_SET_EP_DBUF(USB, ep->num);
+
+				bool db1 = PCD_GET_ENDPOINT(USB, ep->num) & USB_EP_DTOG_TX;
+
+				if (db1)
+				{
+					PCD_SET_EP_DBUF1_CNT(USB, ep->num, 1, len);
+					pmabuffer = ep->pmaaddr1;
+				}
+				else
+				{
+					PCD_SET_EP_DBUF0_CNT(USB, ep->num, 1, len);
+					pmabuffer = ep->pmaaddr0;
+				}
+
+				USB_PMA_Write(pmabuffer, ep->xfer_buff, len);
+				ep->xfer_len_db -= len;
+				ep->xfer_buff += len;
+				if (ep->xfer_len_db > ep->maxpacket)
+				{
+					ep->xfer_len_db -= len;
+				}
+				else
+				{
+					len = ep->xfer_len_db;
+					ep->xfer_len_db = 0;
+				}
+
+				if (db1)
+				{
+					PCD_SET_EP_DBUF0_CNT(USB, ep->num, 1, len);
+					pmabuffer = ep->pmaaddr0;
+				}
+				else
+				{
+					PCD_SET_EP_DBUF1_CNT(USB, ep->num, 1, len);
+					pmabuffer = ep->pmaaddr1;
+				}
+
+				USB_PMA_Write(pmabuffer, ep->xfer_buff, len);
+			}
+			else
+			{
+				// Double buffer not required for this payload
+				len = ep->xfer_len_db;
+				PCD_CLEAR_EP_DBUF(USB, ep->num);
+				PCD_SET_EP_TX_CNT(USB, ep->num, len);
+				pmabuffer = ep->pmaaddr0;
+				USB_PMA_Write(pmabuffer, ep->xfer_buff, len);
+			}
+		}
+		else // ISO Doublebuffer
+		{
+			if ((PCD_GET_ENDPOINT(USB, ep->num) & USB_EP_DTOG_TX) != 0U)
+			{
+				PCD_SET_EP_DBUF1_CNT(USB, ep->num, 1, len);
+				pmabuffer = ep->pmaaddr1;
+			}
+			else
+			{
+				PCD_SET_EP_DBUF0_CNT(USB, ep->num, 1, len);
+				pmabuffer = ep->pmaaddr0;
+			}
+
+			USB_PMA_Write(pmabuffer, ep->xfer_buff, (uint16_t)len);
+			PCD_RX_DTOG(USB, ep->num);
+		}
+	}
+	else
+#endif //USE_EP_DOUBLEBUFFER
+	{
+		USB_PMA_Write(ep->pmaadress, ep->xfer_buff, len);
+		PCD_SET_EP_TX_CNT(USB, ep->num, len);
+	}
+
+	PCD_SET_EP_TX_STATUS(USB, ep->num, USB_EP_TX_VALID);
+}
+
+static void USB_EP_StartOut(USB_EPTypeDef *ep)
+{
+	uint32_t len;
+#ifdef USE_EP_DOUBLEBUFFER
+	if (ep->doublebuffer)
+	{
+		if (ep->type == EP_TYPE_BULK)
+		{
+			PCD_SET_EP_DBUF_CNT(USB, ep->num, 0, ep->maxpacket);
+
+			// Coming from ISR
+			if (ep->xfer_count != 0U)
+			{
+				// Check if buffers are blocked.
+				uint16_t epReg = PCD_GET_ENDPOINT(USB, ep->num);
+				if ((((epReg & USB_EP_DTOG_RX) != 0U) && ((epReg & USB_EP_DTOG_TX) != 0U)) ||
+						(((epReg & USB_EP_DTOG_RX) == 0U) && ((epReg & USB_EP_DTOG_TX) == 0U)))
+				{
+					PCD_TX_DTOG(USB, ep->num);
+				}
+			}
+		}
+		else if (ep->type == EP_TYPE_ISOC)
+		{
+			// ISO out doublebuffer
+			if (ep->xfer_len > ep->maxpacket)
+			{
+				len = ep->maxpacket;
+				ep->xfer_len -= len;
+			}
+			else
+			{
+				len = ep->xfer_len;
+				ep->xfer_len = 0;
+			}
+			PCD_SET_EP_DBUF_CNT(USB, ep->num, 0, len);
+		}
+	}
+	else
+#endif //USE_EP_DOUBLEBUFFER
+	{
+		if (ep->xfer_len > ep->maxpacket)
+		{
+			len = ep->maxpacket;
+			ep->xfer_len -= len;
+		}
+		else
+		{
+			len = ep->xfer_len;
+			ep->xfer_len = 0U;
+		}
+		PCD_SET_EP_RX_CNT(USB, ep->num, len);
+	}
+
+	PCD_SET_EP_RX_STATUS(USB, ep->num, USB_EP_RX_VALID);
 }
 
 /*
@@ -462,162 +631,136 @@ static void USB_EP_TransmitDB(PCD_EPTypeDef *ep, uint16_t wEPVal)
 
 void USB_EP_IRQHandler(void)
 {
-  while (hpcd->Instance->ISTR & USB_ISTR_CTR)
-  {
-    uint32_t istr = hpcd->Instance->ISTR;
-    uint8_t epnum = (uint8_t)(istr & USB_ISTR_EP_ID);
+	while (hpcd->Instance->ISTR & USB_ISTR_CTR)
+	{
+		uint32_t istr = hpcd->Instance->ISTR;
+		uint8_t epnum = (uint8_t)(istr & USB_ISTR_EP_ID);
 
-    if (epnum == 0)
-    {
-      // Control endpoint
+		if (epnum == 0)
+		{
+			// Control endpoint
+			if ((istr & USB_ISTR_DIR) == 0)
+			{
+				// IN endpoint
+				PCD_CLEAR_TX_EP_CTR(USB, epnum);
+				PCD_EPTypeDef * ep = &hpcd->IN_ep[epnum];
 
-      if ((istr & USB_ISTR_DIR) == 0)
-      {
-        // IN endpoint
+				ep->xfer_count = PCD_GET_EP_TX_CNT(USB, ep->num);
+				ep->xfer_buff += ep->xfer_count;
 
-        PCD_CLEAR_TX_EP_CTR(USB, epnum);
-        PCD_EPTypeDef * ep = &hpcd->IN_ep[epnum];
+				USB_CTL_DataInStage(ep->num, ep->xfer_buff);
 
-        ep->xfer_count = PCD_GET_EP_TX_CNT(USB, ep->num);
-        ep->xfer_buff += ep->xfer_count;
+				// DELETE THIS GARBAGE.
+				if ((hpcd->USB_Address > 0U) && (ep->xfer_len == 0U))
+				{
+					hpcd->Instance->DADDR = ((uint16_t)hpcd->USB_Address | USB_DADDR_EF);
+					hpcd->USB_Address = 0U;
+				}
+			}
+			else
+			{
+				// OUT endpoint
+				PCD_EPTypeDef * ep = &hpcd->OUT_ep[epnum];
+				uint16_t epReg = PCD_GET_ENDPOINT(hpcd->Instance, PCD_ENDP0);
+				ep->xfer_count = PCD_GET_EP_RX_CNT(USB, ep->num);
 
-        HAL_PCD_DataInStageCallback(hpcd, ep->num);
+				if (epReg & USB_EP_SETUP)
+				{
+					USB_PMA_Read(ep->pmaadress, (uint8_t *)hpcd->Setup, ep->xfer_count);
 
-        // DELETE THIS GARBAGE.
-        if ((hpcd->USB_Address > 0U) && (ep->xfer_len == 0U))
-        {
-          hpcd->Instance->DADDR = ((uint16_t)hpcd->USB_Address | USB_DADDR_EF);
-          hpcd->USB_Address = 0U;
-        }
-      }
-      else
-      {
-        // OUT endpoint
-    	PCD_EPTypeDef * ep = &hpcd->OUT_ep[epnum];
-        uint16_t epReg = PCD_GET_ENDPOINT(hpcd->Instance, PCD_ENDP0);
-        ep->xfer_count = PCD_GET_EP_RX_CNT(USB, ep->num);
+					// SETUP bit kept frozen while CTR_RX
+					PCD_CLEAR_RX_EP_CTR(USB, 0);
+					USB_CTL_HandleSetup((uint8_t *)hpcd->Setup);
+				}
+				else if (epReg & USB_EP_CTR_RX)
+				{
+					PCD_CLEAR_RX_EP_CTR(USB, 0);
 
-        if (epReg & USB_EP_SETUP)
-        {
-          USB_PMA_Read(ep->pmaadress, (uint8_t *)hpcd->Setup, ep->xfer_count);
+					if ((ep->xfer_count != 0U) && (ep->xfer_buff != 0U))
+					{
+						USB_PMA_Read(ep->pmaadress, ep->xfer_buff, ep->xfer_count);
 
-          // SETUP bit kept frozen while CTR_RX
-          PCD_CLEAR_RX_EP_CTR(USB, 0);
-          HAL_PCD_SetupStageCallback(hpcd);
-        }
-        else if (epReg & USB_EP_CTR_RX)
-        {
-          PCD_CLEAR_RX_EP_CTR(USB, 0);
+						ep->xfer_buff += ep->xfer_count;
+						USB_CTL_DataOutStage(ep->num, ep->xfer_buff);
+					}
 
-          if ((ep->xfer_count != 0U) && (ep->xfer_buff != 0U))
-          {
-            USB_PMA_Read(ep->pmaadress, ep->xfer_buff, ep->xfer_count);
+					PCD_SET_EP_RX_CNT(USB, 0, ep->maxpacket);
+					PCD_SET_EP_RX_STATUS(USB, 0, USB_EP_RX_VALID);
+				}
+			}
+		}
+		else
+		{
+			// Other endpoints
+			uint16_t epReg = PCD_GET_ENDPOINT(USB, epnum);
 
-            ep->xfer_buff += ep->xfer_count;
-            HAL_PCD_DataOutStageCallback(hpcd, 0U);
-          }
+			if (epReg & USB_EP_CTR_RX)
+			{
+				PCD_CLEAR_RX_EP_CTR(USB, epnum);
+				PCD_EPTypeDef * ep = &hpcd->OUT_ep[epnum];
+				uint16_t count;
 
-          PCD_SET_EP_RX_CNT(USB, 0, ep->maxpacket);
-          PCD_SET_EP_RX_STATUS(USB, 0, USB_EP_RX_VALID);
-        }
-      }
-    }
-    else
-    {
-    	// Other endpoints
-      uint16_t epReg = PCD_GET_ENDPOINT(USB, epnum);
+#ifdef USE_EP_DOUBLEBUFFER
+				if (ep->doublebuffer)
+				{
+					count = USB_EP_ReceiveDB(ep, epReg);
+				}
+				else
+#endif //USE_EP_DOUBLEBUFFER
+				{
+					count = PCD_GET_EP_RX_CNT(USB, ep->num);
+					if (count)
+					{
+						USB_PMA_Read(ep->pmaadress, ep->xfer_buff, count);
+					}
+				}
 
-      if (epReg & USB_EP_CTR_RX)
-      {
-        PCD_CLEAR_RX_EP_CTR(USB, epnum);
-        PCD_EPTypeDef * ep = &hpcd->OUT_ep[epnum];
+				ep->xfer_count += count;
+				ep->xfer_buff += count;
 
-        uint16_t count;
+				if ((ep->xfer_len == 0U) || (count < ep->maxpacket))
+				{
+					USB_CTL_DataOutStage(ep->num, ep->xfer_buff);
+				}
+				else
+				{
+					USB_EP_StartOut(ep);
+				}
+			}
 
-        if (ep->doublebuffer == 0U)
-        {
-          count = PCD_GET_EP_RX_CNT(USB, ep->num);
-          if (count)
-          {
-            USB_PMA_Read(ep->pmaadress, ep->xfer_buff, count);
-          }
-        }
-        else // Double buffered
-        {
-          if (ep->type == EP_TYPE_BULK)
-          {
-             count = USB_EP_ReceiveDB(ep, epReg);
-          }
-          else // Double buffered Iso out
-          {
-            /* free EP OUT Buffer */
-            PCD_FreeUserBuffer(USB, ep->num, 0);
+			if (epReg & USB_EP_CTR_TX)
+			{
+				PCD_EPTypeDef * ep = &hpcd->IN_ep[epnum];
+				PCD_CLEAR_TX_EP_CTR(USB, epnum);
 
-            if (PCD_GET_ENDPOINT(USB, ep->num) & USB_EP_DTOG_RX)
-            {
-              count = (uint16_t)PCD_GET_EP_DBUF0_CNT(USB, ep->num);
+				// Manage all non bulk transaction or Bulk Single Buffer Transaction
+				if (   (ep->type != EP_TYPE_BULK)
+						|| ((ep->type == EP_TYPE_BULK) && ((epReg & USB_EP_KIND) == 0U)))
+				{
+					uint16_t count = (uint16_t)PCD_GET_EP_TX_CNT(USB, ep->num);
 
-              if (count)
-              {
-                 USB_PMA_Read(ep->pmaaddr0, ep->xfer_buff, count);
-              }
-            }
-            else
-            {
-              /* read from endpoint BUF1Addr buffer */
-              count = (uint16_t)PCD_GET_EP_DBUF1_CNT(hpcd->Instance, ep->num);
+					ep->xfer_len = ep->xfer_len > count ? ep->xfer_len - count : 0;
 
-              if (count)
-              {
-                 USB_PMA_Read(ep->pmaaddr1, ep->xfer_buff, count);
-              }
-            }
-          }
-        }
-        ep->xfer_count += count;
-        ep->xfer_buff += count;
-
-        if ((ep->xfer_len == 0U) || (count < ep->maxpacket))
-        {
-          HAL_PCD_DataOutStageCallback(hpcd, ep->num);
-        }
-        else
-        {
-          USB_EPStartXfer(USB, ep);
-        }
-      }
-
-      if (epReg & USB_EP_CTR_TX)
-      {
-    	PCD_EPTypeDef * ep = &hpcd->IN_ep[epnum];
-        PCD_CLEAR_TX_EP_CTR(USB, epnum);
-
-        /* Manage all non bulk transaction or Bulk Single Buffer Transaction */
-        if (   (ep->type != EP_TYPE_BULK)
-            || ((ep->type == EP_TYPE_BULK) && ((epReg & USB_EP_KIND) == 0U)))
-        {
-          uint16_t count = (uint16_t)PCD_GET_EP_TX_CNT(USB, ep->num);
-
-          ep->xfer_len = ep->xfer_len > count ? ep->xfer_len - count : 0;
-
-          if (ep->xfer_len == 0U)
-          {
-            // ZLP indicates TX complete
-            HAL_PCD_DataInStageCallback(hpcd, ep->num);
-          }
-          else
-          {
-            /* Transfer is not yet Done */
-            ep->xfer_buff += count;
-            ep->xfer_count += count;
-            USB_EPStartXfer(USB, ep);
-          }
-        }
-        else
-        {
-          USB_EP_TransmitDB(ep, epReg);
-        }
-      }
-    }
-  }
+					if (ep->xfer_len == 0U)
+					{
+						// ZLP indicates TX complete
+						USB_CTL_DataInStage(ep->num, ep->xfer_buff);
+					}
+					else
+					{
+						// Transfer is not yet done
+						ep->xfer_buff += count;
+						ep->xfer_count += count;
+						USB_EP_StartIn(ep);
+					}
+				}
+#ifdef USE_EP_DOUBLEBUFFER
+				else
+				{
+					USB_EP_TransmitDB(ep, epReg);
+				}
+#endif //USE_EP_DOUBLEBUFFER
+			}
+		}
+	}
 }

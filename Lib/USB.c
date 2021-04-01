@@ -3,11 +3,12 @@
 #include "Core.h"
 
 #include "usb/USB_PCD.h"
+#include "usb/USB_CDC.h"
+#include "usb/USB_EP.h"
+#include "usb/USB_CTL.h"
 
 #include "usbd_core.h"
 #include "usbd_desc.h"
-#include "usb/USB_CDC.h"
-#include "usb/USB_EP.h"
 
 
 /*
@@ -22,9 +23,6 @@
 
 #define USB_GET_IRQ() 		(USB->ISTR)
 #define USB_CLR_IRQ(flag)	(USB->ISTR &= ~flag)
-
-#define CTL_IN_EP		0x80
-#define CTL_OUT_EP		0x00
 
 /*
  * PRIVATE TYPES
@@ -52,23 +50,19 @@ void USB_Init(void)
 
 	hUsbDeviceFS.pDesc = &FS_Desc;
 	hUsbDeviceFS.dev_state = USBD_STATE_DEFAULT;
-	hUsbDeviceFS.id = DEVICE_FS;
 	hUsbDeviceFS.pClass = &USBD_CDC;
 	hUsbDeviceFS.pData = &hpcd_USB_FS;
 
 	USB_PCD_Init();
-
-	// Initialise the ctrl endpoints
-	USB_EP_Open(CTL_IN_EP, USBD_EP_TYPE_CTRL, USB_PACKET_SIZE);
-	USB_EP_Open(CTL_OUT_EP, USBD_EP_TYPE_CTRL, USB_PACKET_SIZE);
-
+	USB_CTL_Init();
 	USB_PCD_Start();
-
 }
 
 void USB_Deinit(void)
 {
 	USB_PCD_Stop();
+	USB_CTL_Deinit();
+	USB_PCD_Deinit();
 	USBx_Deinit();
 }
 
@@ -116,8 +110,7 @@ void USB_IRQHandler(void)
 	else if (istr & USB_ISTR_RESET)
 	{
 		USB_CLR_IRQ(USB_ISTR_RESET);
-		HAL_PCD_ResetCallback(hpcd);
-		USB_PCD_SetAddress(0U);
+		USB_CTL_Reset();
 	}
 	else if (istr & USB_ISTR_PMAOVR)
 	{
@@ -133,7 +126,7 @@ void USB_IRQHandler(void)
 	}
 	else if (istr & USB_ISTR_SUSP)
 	{
-		// Force low-power mode in the macrocell
+		// Force low-power mode in the peripheral
 		USB->CNTR |= USB_CNTR_FSUSP;
 		// clear of the ISTR bit must be done after setting of CNTR_FSUSP
 		USB_CLR_IRQ(USB_ISTR_SUSP);

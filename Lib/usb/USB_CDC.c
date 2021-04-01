@@ -2,6 +2,7 @@
 #include "USB_CDC.h"
 #include "USB_EP.h"
 #include "USB_PCD.h"
+#include "USB_CTL.h"
 #include "Core.h"
 
 /*
@@ -27,10 +28,8 @@
 #error "USB_CDC_BFR_SIZE must be a power of two"
 #endif
 
-#define CDC_BFR_INCR(v, count) ((v + count) & (CDC_BFR_SIZE - 1))
+#define CDC_BFR_WRAP(v) ((v) & (CDC_BFR_SIZE - 1))
 
-#define _CDC_DISABLE_RX()		__disable_irq()
-#define _CDC_ENABLE_RX()		__enable_irq()
 
 
 /*
@@ -83,7 +82,6 @@ void USB_CDC_Init(void)
 	// Data endpoints
 	USB_EP_Open(CDC_IN_EP, USBD_EP_TYPE_BULK, USB_PACKET_SIZE);
 	USB_EP_Open(CDC_OUT_EP, USBD_EP_TYPE_BULK, USB_PACKET_SIZE);
-	// Command endpoint
 	USB_EP_Open(CDC_CMD_EP, USBD_EP_TYPE_BULK, USB_PACKET_SIZE);
 
 	USB_EP_Rx(CDC_OUT_EP, gRxBuffer, USB_PACKET_SIZE);
@@ -126,11 +124,8 @@ void USB_CDC_Tx(const uint8_t * data, uint32_t count)
 
 uint32_t USB_CDC_RxReady(void)
 {
-	_CDC_DISABLE_RX();
-	uint32_t count = gRx.head >= gRx.tail
-				   ? gRx.head - gRx.tail
-				   : CDC_BFR_SIZE + gRx.head - gRx.tail;
-	_CDC_ENABLE_RX();
+	// Assume these reads are atomic
+	uint32_t count = CDC_BFR_WRAP(gRx.head - gRx.tail);
 	return count;
 }
 
@@ -145,7 +140,7 @@ uint32_t USB_CDC_Rx(uint8_t * data, uint32_t count)
 	if (count > 0)
 	{
 		uint32_t tail = gRx.tail;
-		uint32_t newtail = CDC_BFR_INCR( tail, count );
+		uint32_t newtail = CDC_BFR_WRAP( tail + count );
 		if (newtail > tail)
 		{
 			// We can read continuously from the buffer
@@ -200,7 +195,7 @@ static void USB_CDC_ReceiveData(uint8_t* data, uint32_t count)
 	if (count > 0)
 	{
 		uint32_t head = gRx.head;
-		uint32_t newhead = CDC_BFR_INCR( head, count );
+		uint32_t newhead = CDC_BFR_WRAP( head + count );
 		if (newhead > head)
 		{
 			// We can write continuously into the buffer
@@ -636,7 +631,7 @@ static uint8_t  USBD_CDC_Setup(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *r
 
 	if (ret == USBD_FAIL)
 	{
-		USBD_CtlError(pdev, req);
+		USB_CTL_Error();
 	}
 
 	return ret;
@@ -661,7 +656,7 @@ static uint8_t  USBD_CDC_DataIn(USBD_HandleTypeDef *pdev, uint8_t epnum)
 
 static uint8_t  USBD_CDC_DataOut(USBD_HandleTypeDef *pdev, uint8_t epnum)
 {
-	USB_CDC_ReceiveData(gRxBuffer, USBD_LL_GetRxDataSize(pdev, epnum));
+	USB_CDC_ReceiveData(gRxBuffer, USB_EP_RxCount(epnum));
 	return USBD_OK;
 }
 
