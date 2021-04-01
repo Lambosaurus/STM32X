@@ -134,7 +134,6 @@
 #define  USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION        0x07
 #define  USB_DESC_TYPE_BOS                              0x0F
 
-
 /*
  * 	PUBLIC TYPES
  */

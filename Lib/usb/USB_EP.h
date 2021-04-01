@@ -4,15 +4,8 @@
 #include "STM32X.h"
 
 /*
- * FUNCTIONAL TESTING
- * STM32L0: N
- * STM32F0: N
- */
-
-/*
  * PUBLIC DEFINITIONS
  */
-
 
 /*
  * PUBLIC TYPES
@@ -45,12 +38,7 @@ void USB_EP_Stall(uint8_t endpoint);
 void USB_EP_Destall(uint8_t endpoint);
 bool USB_EP_IsStalled(uint8_t endpoint);
 
-// TODO: Delete this when able.
-uint32_t USB_EP_RxCount(uint8_t endpoint);
-
 void USB_EP_IRQHandler(void);
-
-
 
 /*
  * EXTERN DECLARATIONS

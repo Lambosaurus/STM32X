@@ -122,6 +122,7 @@ void USB_CTL_Init(void)
 	gCTL.class_config = 0;
 	gCTL.usb_state = USB_STATE_DEFAULT;
 	gCTL.remote_wakeup = false;
+	gCTL.ctl_state = CTL_STATE_IDLE;
 }
 
 void USB_CTL_Deinit(void)
@@ -132,19 +133,6 @@ void USB_CTL_Deinit(void)
 		gCTL.class_config = 0;
 		USB_CLASS_DEINIT();
 	}
-}
-
-void USB_CTL_Reset(void)
-{
-	// Clear existing endpoint layouts.
-	USB_CTL_Deinit();
-	USB_EP_Reset();
-	USB_PCD_SetAddress(0);
-
-	// Reinit the CTRL EP's
-	USB_CTL_Init();
-
-	gCTL.ctl_state = CTL_STATE_IDLE;
 }
 
 void USB_CTL_HandleSetup(uint8_t * data)
@@ -176,10 +164,6 @@ void USB_CTL_HandleSetup(uint8_t * data)
 	}
 }
 
-/*
- * PRIVATE FUNCTIONS
- */
-
 void USB_CTL_Send(uint8_t * data, uint16_t size)
 {
 	gCTL.ctl_state = CTL_STATE_DATA_IN;
@@ -192,7 +176,12 @@ void USB_CTL_Receive(uint8_t * data, uint16_t size)
 	USB_EP_Read(CTL_OUT_EP, data, size);
 }
 
-void USB_CTL_ReceiveStatus(void)
+/*
+ * PRIVATE FUNCTIONS
+ */
+
+
+static void USB_CTL_ReceiveStatus(void)
 {
 	gCTL.ctl_state = CTL_STATE_STATUS_OUT;
 	USB_EP_Read(CTL_OUT_EP, NULL, 0);
@@ -686,23 +675,5 @@ static void USB_CTL_DataIn(uint32_t count)
 /*
  * INTERRUPT ROUTINES
  */
-
-/*
-void USB_CTL_Suspend(void)
-{
-	USBD_HandleTypeDef * pdev = &hUsbDeviceFS;
-	pdev->dev_old_state =  pdev->dev_state;
-	pdev->dev_state  = USBD_STATE_SUSPENDED;
-}
-
-void USB_CTL_Resume(void)
-{
-	USBD_HandleTypeDef * pdev = &hUsbDeviceFS;
-	if (pdev->dev_state == USBD_STATE_SUSPENDED)
-	{
-		pdev->dev_state = pdev->dev_old_state;
-	}
-}
-*/
 
 #endif //USB_ENABLE

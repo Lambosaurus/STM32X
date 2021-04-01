@@ -4,9 +4,7 @@
 #include "STM32X.h"
 
 /*
- * FUNCTIONAL TESTING
- * STM32L0: N
- * STM32F0: N
+ * PUBLIC DEFINITIONS
  */
 
 #if defined(USB_CLASS_CDC)
@@ -29,20 +27,6 @@
 #else
 #error "No USB Class defined"
 #endif
-
-/*
- * PUBLIC DEFINITIONS
- */
-
-/*
-#define USB_CLASS_INIT(config)			(hUsbDeviceFS.pClass->Init(&hUsbDeviceFS, config))
-#define USB_CLASS_DEINIT()				(hUsbDeviceFS.pClass->DeInit(&hUsbDeviceFS, 0))
-#define USB_CLASS_SETUP(request) 		(hUsbDeviceFS.pClass->Setup(&hUsbDeviceFS, request))
-#define USB_CLASS_DATAIN(endpoint)		(hUsbDeviceFS.pClass->DataIn(&hUsbDeviceFS, endpoint))
-#define USB_CLASS_DATAOUT(endpoint)		(hUsbDeviceFS.pClass->DataOut(&hUsbDeviceFS, endpoint))
-#define USB_CLASS_EVENT(evt)			USB_CDC_CtlEvent(evt)
-*/
-// TODO: The events can probably be factored out.
 
 /*
  * PUBLIC TYPES

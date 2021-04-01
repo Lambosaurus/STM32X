@@ -21,6 +21,8 @@
  * PRIVATE PROTOTYPES
  */
 
+static void USB_PCD_Reset(void);
+
 /*
  * PRIVATE VARIABLES
  */
@@ -85,6 +87,17 @@ void USB_PCD_SetAddress(uint8_t address)
  * PRIVATE FUNCTIONS
  */
 
+static void USB_PCD_Reset(void)
+{
+	// Clear existing endpoint layouts.
+	USB_CTL_Deinit();
+	USB_EP_Reset();
+	USB_PCD_SetAddress(0);
+
+	// Reinit the CTRL EP's
+	USB_CTL_Init();
+}
+
 /*
  * INTERRUPT ROUTINES
  */
@@ -100,7 +113,7 @@ void USB_IRQHandler(void)
 	else if (istr & USB_ISTR_RESET)
 	{
 		USB_CLR_IRQ(USB_ISTR_RESET);
-		USB_CTL_Reset();
+		USB_PCD_Reset();
 	}
 	else if (istr & USB_ISTR_PMAOVR)
 	{

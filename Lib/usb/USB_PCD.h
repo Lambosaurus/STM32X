@@ -5,12 +5,6 @@
 
 
 /*
- * FUNCTIONAL TESTING
- * STM32L0: N
- * STM32F0: N
- */
-
-/*
  * PUBLIC DEFINITIONS
  */
 

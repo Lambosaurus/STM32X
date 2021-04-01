@@ -36,4 +36,9 @@
 //#define CAN_AF			GPIO_AF4_CAN
 //#define CAN_DUAL_FIFO
 
+// USB config
+//#define USB_ENABLE
+//#define USB_CLASS_CDC
+//#define USB_CDC_BFR_SIZE	512
+
 #endif /* BOARD_H */

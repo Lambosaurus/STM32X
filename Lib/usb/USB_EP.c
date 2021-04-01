@@ -167,11 +167,6 @@ void USB_EP_Write(uint8_t endpoint, const uint8_t * data, uint32_t count)
 	USB_EP_StartIn(ep);
 }
 
-uint32_t USB_EP_RxCount(uint8_t endpoint)
-{
-	return gEP.out_ep[endpoint & EP_ADDR_MSK].xfer_count;
-}
-
 void USB_EP_Stall(uint8_t endpoint)
 {
 	USB_EP_t * ep = USB_EP_GetEP(endpoint);
@@ -277,7 +272,7 @@ static void USB_PMA_Read(uint16_t address, uint8_t * data, uint16_t count)
 	}
 }
 
-void USB_EP_Activate(USB_EP_t *ep)
+static void USB_EP_Activate(USB_EP_t *ep)
 {
 	uint16_t epReg = PCD_GET_ENDPOINT(USB, ep->num) & USB_EP_T_MASK;
 
@@ -344,7 +339,7 @@ void USB_EP_Activate(USB_EP_t *ep)
 	}
 }
 
-void USB_EP_Deactivate(USB_EP_t *ep)
+static void USB_EP_Deactivate(USB_EP_t *ep)
 {
 #ifdef USE_EP_DOUBLEBUFFER
 	if (ep->doublebuffer)

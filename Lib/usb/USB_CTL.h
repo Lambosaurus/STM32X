@@ -4,12 +4,6 @@
 #include "STM32X.h"
 
 /*
- * FUNCTIONAL TESTING
- * STM32L0: N
- * STM32F0: N
- */
-
-/*
  * PUBLIC DEFINITIONS
  */
 
@@ -23,11 +17,11 @@
 
 void USB_CTL_Init(void);
 void USB_CTL_Deinit(void);
-void USB_CTL_Reset(void);
 
+// Called by status requests on EP0
 void USB_CTL_HandleSetup(uint8_t * data);
 
-// May be required by classes in response to EP0 notifications
+// Required by classes to reply to EP0 requests
 void USB_CTL_Send(uint8_t * data, uint16_t size);
 void USB_CTL_Receive(uint8_t * data, uint16_t size);
 
