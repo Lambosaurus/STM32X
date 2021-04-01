@@ -35,7 +35,7 @@ static void USBx_Deinit(void);
 
 void USB_Init(void)
 {
-	CORE_EnableUSBClock();
+	CORE_EnableUSBClock(true);
 	USBx_Init();
 	USB_PCD_Init();
 	USB_CTL_Init();
@@ -49,6 +49,7 @@ void USB_Deinit(void)
 	USB_CTL_Deinit();
 	USB_PCD_Deinit();
 	USBx_Deinit();
+	CORE_EnableUSBClock(false);
 }
 
 #ifdef USB_CLASS_CDC
