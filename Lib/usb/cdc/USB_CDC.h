@@ -2,7 +2,7 @@
 #define USB_CDC_H
 
 #include "STM32X.h"
-#include "USB_Defs.h"
+#include "..\USB_Defs.h"
 
 /*
  * FUNCTIONAL TESTING

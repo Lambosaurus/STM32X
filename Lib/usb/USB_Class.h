@@ -10,7 +10,7 @@
  */
 
 #if defined(USB_CLASS_CDC)
-#include "USB_CDC.h"
+#include "cdc/USB_CDC.h"
 
 #define USB_CLASS_CLASSID				USB_CDC_CLASSID
 #define USB_CLASS_SUBCLASSID			USB_CDC_SUBCLASSID
@@ -25,6 +25,8 @@
 #define USB_CLASS_DATAOUT(endpoint)		USB_CDC_DataOut(endpoint)
 #define USB_CLASS_CTL_RXREADY()			USB_CDC_CtlRxReady()
 //#define USB_CLASS_CTL_TXDONE
+
+#define USB_ENDPOINTS					4
 
 #else
 #error "No USB Class defined"

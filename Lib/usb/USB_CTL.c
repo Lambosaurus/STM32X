@@ -1,8 +1,9 @@
 
+#include "USB_CTL.h"
+#ifdef USB_ENABLE
+
 #include "USB_Defs.h"
 #include "USB_Class.h"
-
-#include "USB_CTL.h"
 #include "USB_EP.h"
 #include "USB_PCD.h"
 
@@ -101,9 +102,9 @@ __ALIGNED(4) const uint8_t cUsbDeviceDescriptor[USB_LEN_DEV_DESC] =
 	HIBYTE(USB_PID),        	// idProduct
 	0x00,                       // bcdDevice rel. 2.00
 	0x02,
-	USBD_IDX_MFC_STR,           // Index of manufacturer  string
-	USBD_IDX_PRODUCT_STR,       // Index of product string
-	USBD_IDX_SERIAL_STR,        // Index of serial number string
+	USB_IDX_MFC_STR,           // Index of manufacturer  string
+	USB_IDX_PRODUCT_STR,       // Index of product string
+	USB_IDX_SERIAL_STR,        // Index of serial number string
 	USB_MAX_NUM_CONFIGURATION  // bNumConfigurations
 };
 
@@ -180,19 +181,13 @@ void USB_CTL_HandleSetup(uint8_t * data)
 
 void USB_CTL_Send(uint8_t * data, uint16_t size)
 {
-	USBD_HandleTypeDef * pdev = &hUsbDeviceFS;
 	gCTL.ctl_state = CTL_STATE_DATA_IN;
-	pdev->ep_in[0].total_length = size;
-	pdev->ep_in[0].rem_length   = size;
 	USB_EP_Write(CTL_IN_EP, data, size);
 }
 
 void USB_CTL_Receive(uint8_t * data, uint16_t size)
 {
-	USBD_HandleTypeDef * pdev = &hUsbDeviceFS;
 	gCTL.ctl_state = CTL_STATE_DATA_OUT;
-	pdev->ep_out[0].total_length = size;
-	pdev->ep_out[0].rem_length   = size;
 	USB_EP_Read(CTL_OUT_EP, data, size);
 }
 
@@ -533,22 +528,22 @@ static void USB_CTL_GetDescriptor(USB_SetupRequest_t * req)
 		data = gCTL.buffer;
 		switch ((uint8_t)(req->wValue))
 		{
-		case USBD_IDX_LANGID_STR:
+		case USB_IDX_LANGID_STR:
 			len = USB_CTL_GetLangIdDescriptor(data);
 			break;
-		case USBD_IDX_MFC_STR:
+		case USB_IDX_MFC_STR:
 			len = USB_CTL_GetStrDescriptor(data, USB_MANUFACTURER_STRING);
 			break;
-		case USBD_IDX_PRODUCT_STR:
+		case USB_IDX_PRODUCT_STR:
 			len = USB_CTL_GetStrDescriptor(data, USB_PRODUCT_STRING);
 			break;
-		case USBD_IDX_SERIAL_STR:
+		case USB_IDX_SERIAL_STR:
 			len = USB_CTL_GetSerialDescriptor(data);
 			break;
-		case USBD_IDX_CONFIG_STR:
+		case USB_IDX_CONFIG_STR:
 			len = USB_CTL_GetStrDescriptor(data, USB_CONFIGURATION_STRING);
 			break;
-		case USBD_IDX_INTERFACE_STR:
+		case USB_IDX_INTERFACE_STR:
 			len = USB_CTL_GetStrDescriptor(data, USB_INTERFACE_STRING);
 			break;
 		}
@@ -674,30 +669,17 @@ void USB_CTL_DataIn(uint8_t epnum, uint8_t * pdata)
 {
 	if (epnum == 0U)
 	{
-		USBD_EndpointTypeDef * pep = &hUsbDeviceFS.ep_in[0];
-
 		switch (gCTL.ctl_state)
 		{
 		case CTL_STATE_DATA_IN:
-			if ((pep->total_length % pep->maxpacket == 0U) &&
-					(pep->total_length >= pep->maxpacket) &&
-				(pep->total_length < gCTL.ctl_len))
-			{
-				USB_EP_Write(CTL_IN_EP, NULL, 0);
-				gCTL.ctl_len = 0;
-				USB_EP_Read(CTL_OUT_EP, NULL, 0);
-			}
-			else
-			{
 #ifdef USB_CLASS_CTL_TXDONE
-				if (gCTL.usb_state == USB_STATE_CONFIGURED)
-				{
-					USB_CLASS_CTL_TXDONE();
-				}
-#endif
-				USB_EP_Stall(CTL_IN_EP);
-				USB_CTL_ReceiveStatus();
+			if (gCTL.usb_state == USB_STATE_CONFIGURED)
+			{
+				USB_CLASS_CTL_TXDONE();
 			}
+#endif
+			USB_EP_Stall(CTL_IN_EP);
+			USB_CTL_ReceiveStatus();
 			break;
 		case CTL_STATE_STATUS_IN:
 		case CTL_STATE_IDLE:
@@ -742,3 +724,4 @@ void USB_CTL_Resume(void)
 }
 */
 
+#endif //USB_ENABLE

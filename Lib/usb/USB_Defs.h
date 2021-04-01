@@ -59,6 +59,10 @@
 #define USB_PACKET_SIZE		64
 #endif
 
+#define BTABLE_ADDRESS                         0x0000
+#define PMA_ACCESS                             1
+#define EP_ADDR_MSK                            0x7
+
 /*
  * PUBLIC DEFINITIONS: HELPER MACROS
  */
@@ -92,12 +96,12 @@
 #define  USB_LEN_LANGID_STR_DESC                        0x04
 #define  USB_LEN_OTHER_SPEED_DESC_SIZ                   0x09
 
-#define  USBD_IDX_LANGID_STR                            0x00
-#define  USBD_IDX_MFC_STR                               0x01
-#define  USBD_IDX_PRODUCT_STR                           0x02
-#define  USBD_IDX_SERIAL_STR                            0x03
-#define  USBD_IDX_CONFIG_STR                            0x04
-#define  USBD_IDX_INTERFACE_STR                         0x05
+#define  USB_IDX_LANGID_STR                             0x00
+#define  USB_IDX_MFC_STR                                0x01
+#define  USB_IDX_PRODUCT_STR                            0x02
+#define  USB_IDX_SERIAL_STR                             0x03
+#define  USB_IDX_CONFIG_STR                             0x04
+#define  USB_IDX_INTERFACE_STR                          0x05
 
 #define  USB_REQ_TYPE_STANDARD                          0x00
 #define  USB_REQ_TYPE_CLASS                             0x20

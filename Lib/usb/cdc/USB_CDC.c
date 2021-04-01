@@ -1,12 +1,10 @@
 
 #include "USB_CDC.h"
 
-#include "USB_EP.h"
-#include "USB_PCD.h"
-#include "USB_CTL.h"
-#include "USB_Defs.h"
-
+#include "..\USB_EP.h"
+#include "..\USB_CTL.h"
 #include "Core.h"
+#include <string.h>
 
 /*
  * PRIVATE DEFINITIONS
@@ -365,16 +363,7 @@ static void USB_CDC_ReceiveData(uint8_t* data, uint32_t count)
 
 void USB_CDC_DataIn(uint8_t epnum)
 {
-	USBD_HandleTypeDef * pdev = &hUsbDeviceFS;
-	if ((pdev->ep_in[epnum].total_length > 0U) && ((pdev->ep_in[epnum].total_length % hpcd_USB_FS.IN_ep[epnum].maxpacket) == 0U))
-	{
-		// Send ZLP
-		USB_EP_Write(epnum, NULL, 0U);
-	}
-	else
-	{
-		gCDC.txBusy = false;
-	}
+	gCDC.txBusy = false;
 }
 
 void USB_CDC_DataOut(uint8_t epnum)

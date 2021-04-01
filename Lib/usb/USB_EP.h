@@ -47,10 +47,6 @@ uint32_t USB_EP_RxCount(uint8_t endpoint);
 
 void USB_EP_IRQHandler(void);
 
-// TODO: Hide these when able
-void USB_EP_Activate(USB_EPTypeDef *ep);
-void USB_EP_Deactivate(USB_EPTypeDef *ep);
-
 /*
  * EXTERN DECLARATIONS
  */
