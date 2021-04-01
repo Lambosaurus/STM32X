@@ -109,7 +109,7 @@ void SPI_Transfer(SPI_t * spi, const uint8_t * txdata, uint8_t * rxdata, uint32_
 	__HAL_SPI_CLEAR_OVRFLAG(spi);
 }
 
-uint8_t SPI_Xfer(SPI_t * spi, uint8_t byte)
+uint8_t SPI_TransferByte(SPI_t * spi, uint8_t byte)
 {
 	while (!__HAL_SPI_GET_FLAG(spi, SPI_FLAG_TXE));
 	_SPI_TX(spi, byte);

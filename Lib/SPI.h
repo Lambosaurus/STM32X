@@ -42,7 +42,7 @@ void SPI_Deinit(SPI_t * spi);
 void SPI_Write(SPI_t * spi, const uint8_t * data, uint32_t count);
 void SPI_Read(SPI_t * spi, uint8_t * data, uint32_t count);
 void SPI_Transfer(SPI_t * spi, const uint8_t * txdata, uint8_t * rxdata, uint32_t count);
-uint8_t SPI_Xfer(SPI_t * spi, uint8_t data);
+uint8_t SPI_TransferByte(SPI_t * spi, uint8_t data);
 
 
 /*
