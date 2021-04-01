@@ -27,8 +27,8 @@ void USB_CTL_Reset(void);
 
 void USB_CTL_HandleSetup(uint8_t * data);
 
-void USB_CTL_DataOutStage(uint8_t endpoint, uint8_t * data);
-void USB_CTL_DataInStage(uint8_t endpoint, uint8_t * data);
+void USB_CTL_DataOut(uint8_t endpoint, uint8_t * data);
+void USB_CTL_DataIn(uint8_t endpoint, uint8_t * data);
 
 // May be required by classes in response to EP0 notifications
 void USB_CTL_Send(uint8_t * data, uint16_t size);

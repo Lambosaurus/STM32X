@@ -633,35 +633,21 @@ static void USB_CTL_Error(void)
 	USB_EP_Stall(CTL_OUT_EP);
 }
 
-/*
- * INTERRUPT ROUTINES
- */
 
-void USB_CTL_DataOutStage(uint8_t epnum, uint8_t * pdata)
+void USB_CTL_DataOut(uint8_t epnum, uint8_t * pdata)
 {
 	if (epnum == 0U)
 	{
-		USBD_EndpointTypeDef * pep = &hUsbDeviceFS.ep_out[0];
-
 		switch (gCTL.ctl_state)
 		{
 		case CTL_STATE_DATA_OUT:
-			if (pep->rem_length > pep->maxpacket)
-			{
-				pep->rem_length -= pep->maxpacket;
-
-				USB_EP_Read(CTL_OUT_EP, pdata, MIN(pep->rem_length, pep->maxpacket));
-			}
-			else
-			{
 #ifdef USB_CLASS_CTL_RXREADY
-				if (gCTL.usb_state == USB_STATE_CONFIGURED)
-				{
-					USB_CLASS_CTL_RXREADY();
-				}
-#endif
-				USB_CTL_SendStatus();
+			if (gCTL.usb_state == USB_STATE_CONFIGURED)
+			{
+				USB_CLASS_CTL_RXREADY();
 			}
+#endif
+			USB_CTL_SendStatus();
 			break;
 		case CTL_STATE_STATUS_OUT:
 			if (gCTL.ctl_state == USB_STATE_CONFIGURED)
@@ -672,6 +658,8 @@ void USB_CTL_DataOutStage(uint8_t epnum, uint8_t * pdata)
 			}
 			break;
 		}
+
+		USB_EP_Read(CTL_OUT_EP, gCTL.buffer, CTL_EP_SIZE);
 	}
 	else
 	{
@@ -682,7 +670,7 @@ void USB_CTL_DataOutStage(uint8_t epnum, uint8_t * pdata)
 	}
 }
 
-void USB_CTL_DataInStage(uint8_t epnum, uint8_t * pdata)
+void USB_CTL_DataIn(uint8_t epnum, uint8_t * pdata)
 {
 	if (epnum == 0U)
 	{
@@ -691,34 +679,24 @@ void USB_CTL_DataInStage(uint8_t epnum, uint8_t * pdata)
 		switch (gCTL.ctl_state)
 		{
 		case CTL_STATE_DATA_IN:
-			if (pep->rem_length > pep->maxpacket)
+			if ((pep->total_length % pep->maxpacket == 0U) &&
+					(pep->total_length >= pep->maxpacket) &&
+				(pep->total_length < gCTL.ctl_len))
 			{
-				pep->rem_length -= pep->maxpacket;
-				USB_EP_Write(CTL_IN_EP, pdata, pep->rem_length);
+				USB_EP_Write(CTL_IN_EP, NULL, 0);
+				gCTL.ctl_len = 0;
 				USB_EP_Read(CTL_OUT_EP, NULL, 0);
 			}
 			else
 			{
-				// last packet is MPS multiple, so send ZLP packet
-				if ((pep->total_length % pep->maxpacket == 0U) &&
-						(pep->total_length >= pep->maxpacket) &&
-						(pep->total_length < gCTL.ctl_len))
-				{
-					USB_EP_Write(CTL_IN_EP, NULL, 0);
-					gCTL.ctl_len = 0;
-					USB_EP_Read(CTL_OUT_EP, NULL, 0);
-				}
-				else
-				{
 #ifdef USB_CLASS_CTL_TXDONE
-					if (gCTL.usb_state == USB_STATE_CONFIGURED)
-					{
-						USB_CLASS_CTL_TXDONE();
-					}
-#endif
-					USB_EP_Stall(CTL_IN_EP);
-					USB_CTL_ReceiveStatus();
+				if (gCTL.usb_state == USB_STATE_CONFIGURED)
+				{
+					USB_CLASS_CTL_TXDONE();
 				}
+#endif
+				USB_EP_Stall(CTL_IN_EP);
+				USB_CTL_ReceiveStatus();
 			}
 			break;
 		case CTL_STATE_STATUS_IN:
@@ -741,6 +719,10 @@ void USB_CTL_DataInStage(uint8_t epnum, uint8_t * pdata)
 		}
 	}
 }
+
+/*
+ * INTERRUPT ROUTINES
+ */
 
 /*
 void USB_CTL_Suspend(void)

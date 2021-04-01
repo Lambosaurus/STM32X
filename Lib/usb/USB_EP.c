@@ -625,6 +625,8 @@ static void USB_EP_StartOut(USB_EPTypeDef *ep)
  * INTERRUPT ROUTINES
  */
 
+
+
 void USB_EP_IRQHandler(void)
 {
 	while (hpcd->Instance->ISTR & USB_ISTR_CTR)
@@ -633,96 +635,58 @@ void USB_EP_IRQHandler(void)
 		uint8_t epnum = (uint8_t)(istr & USB_ISTR_EP_ID);
 		uint16_t epReg = PCD_GET_ENDPOINT(hpcd->Instance, epnum);
 
-		if (epnum == 0)
+		// Control endpoint
+		if ( epReg & USB_EP_CTR_TX )
 		{
-			// Control endpoint
-			if ( epReg & USB_EP_CTR_TX )// (istr & USB_ISTR_DIR) == 0)
+			// IN endpoint
+			PCD_EPTypeDef * ep = &hpcd->IN_ep[epnum];
+			PCD_CLEAR_TX_EP_CTR(USB, epnum);
+
+#ifdef USE_EP_DOUBLEBUFFER
+			if (epReg & USB_EP_KIND && ep->type == USB_EP_TYPE_BULK)
 			{
-				// IN endpoint
-				PCD_CLEAR_TX_EP_CTR(USB, epnum);
-				PCD_EPTypeDef * ep = &hpcd->IN_ep[epnum];
-
-				ep->xfer_count = PCD_GET_EP_TX_CNT(USB, ep->num);
-				ep->xfer_buff += ep->xfer_count;
-
-				USB_CTL_DataInStage(ep->num, ep->xfer_buff);
+				USB_EP_TransmitDB(ep, epReg);
 			}
 			else
+#endif
 			{
-				// OUT endpoint
-				PCD_EPTypeDef * ep = &hpcd->OUT_ep[epnum];
-
-				ep->xfer_count = PCD_GET_EP_RX_CNT(USB, ep->num);
-
-				if (epReg & USB_EP_SETUP)
+				uint16_t count = (uint16_t)PCD_GET_EP_TX_CNT(USB, ep->num);
+				ep->xfer_len = ep->xfer_len > count ? ep->xfer_len - count : 0;
+				if (ep->xfer_len == 0U)
 				{
-					// Handle this transfer in a local buffer. The xfer_buff will not be allocated.
-					uint8_t setup[8];
-					USB_PMA_Read(ep->pmaadress, setup, ep->xfer_count);
-
-					// SETUP bit kept frozen while CTR_RX
-					PCD_CLEAR_RX_EP_CTR(USB, 0);
-					USB_CTL_HandleSetup(setup);
+					// ZLP indicates TX complete
+					USB_CTL_DataIn(ep->num, ep->xfer_buff);
 				}
-				else if (epReg & USB_EP_CTR_RX)
+				else
 				{
-					PCD_CLEAR_RX_EP_CTR(USB, 0);
-
-					if ((ep->xfer_count != 0U) && (ep->xfer_buff != 0U))
-					{
-						USB_PMA_Read(ep->pmaadress, ep->xfer_buff, ep->xfer_count);
-
-						ep->xfer_buff += ep->xfer_count;
-						USB_CTL_DataOutStage(ep->num, ep->xfer_buff);
-					}
-
-					PCD_SET_EP_RX_CNT(USB, 0, ep->maxpacket);
-					PCD_SET_EP_RX_STATUS(USB, 0, USB_EP_RX_VALID);
+					// Transfer is not yet done
+					ep->xfer_buff += count;
+					ep->xfer_count += count;
+					USB_EP_StartIn(ep);
 				}
 			}
 		}
 		else
 		{
-			// Other endpoints
-
-			if (epReg & USB_EP_CTR_TX)
+			// OUT endpoint
+			PCD_EPTypeDef * ep = &hpcd->OUT_ep[epnum];
+			if (epReg & USB_EP_SETUP)
 			{
-				PCD_EPTypeDef * ep = &hpcd->IN_ep[epnum];
-				PCD_CLEAR_TX_EP_CTR(USB, epnum);
+				ep->xfer_count = PCD_GET_EP_RX_CNT(USB, ep->num);
 
-				// Manage all non bulk transaction or Bulk Single Buffer Transaction
-				if ((ep->type != USB_EP_TYPE_BULK) || (epReg & USB_EP_KIND) == 0U)
-				{
-					uint16_t count = (uint16_t)PCD_GET_EP_TX_CNT(USB, ep->num);
+				// Handle this transfer in a local buffer. The xfer_buff will not be allocated.
+				uint8_t setup[8];
+				USB_PMA_Read(ep->pmaadress, setup, ep->xfer_count);
 
-					ep->xfer_len = ep->xfer_len > count ? ep->xfer_len - count : 0;
-
-					if (ep->xfer_len == 0U)
-					{
-						// ZLP indicates TX complete
-						USB_CTL_DataInStage(ep->num, ep->xfer_buff);
-					}
-					else
-					{
-						// Transfer is not yet done
-						ep->xfer_buff += count;
-						ep->xfer_count += count;
-						USB_EP_StartIn(ep);
-					}
-				}
-#ifdef USE_EP_DOUBLEBUFFER
-				else
-				{
-					USB_EP_TransmitDB(ep, epReg);
-				}
-#endif //USE_EP_DOUBLEBUFFER
+				// SETUP bit kept frozen while CTR_RX
+				PCD_CLEAR_RX_EP_CTR(USB, 0);
+				USB_CTL_HandleSetup(setup);
 			}
-			if (epReg & USB_EP_CTR_RX)
+			else if (epReg & USB_EP_CTR_RX)
 			{
 				PCD_CLEAR_RX_EP_CTR(USB, epnum);
-				PCD_EPTypeDef * ep = &hpcd->OUT_ep[epnum];
-				uint16_t count;
 
+				uint16_t count;
 #ifdef USE_EP_DOUBLEBUFFER
 				if (ep->doublebuffer)
 				{
@@ -743,45 +707,12 @@ void USB_EP_IRQHandler(void)
 
 				if ((ep->xfer_len == 0U) || (count < ep->maxpacket))
 				{
-					USB_CTL_DataOutStage(ep->num, ep->xfer_buff);
+					USB_CTL_DataOut(ep->num, ep->xfer_buff);
 				}
 				else
 				{
 					USB_EP_StartOut(ep);
 				}
-			}
-
-			if (epReg & USB_EP_CTR_TX)
-			{
-				PCD_EPTypeDef * ep = &hpcd->IN_ep[epnum];
-				PCD_CLEAR_TX_EP_CTR(USB, epnum);
-
-				// Manage all non bulk transaction or Bulk Single Buffer Transaction
-				if ((ep->type != USB_EP_TYPE_BULK) || (epReg & USB_EP_KIND) == 0U)
-				{
-					uint16_t count = (uint16_t)PCD_GET_EP_TX_CNT(USB, ep->num);
-
-					ep->xfer_len = ep->xfer_len > count ? ep->xfer_len - count : 0;
-
-					if (ep->xfer_len == 0U)
-					{
-						// ZLP indicates TX complete
-						USB_CTL_DataInStage(ep->num, ep->xfer_buff);
-					}
-					else
-					{
-						// Transfer is not yet done
-						ep->xfer_buff += count;
-						ep->xfer_count += count;
-						USB_EP_StartIn(ep);
-					}
-				}
-#ifdef USE_EP_DOUBLEBUFFER
-				else
-				{
-					USB_EP_TransmitDB(ep, epReg);
-				}
-#endif //USE_EP_DOUBLEBUFFER
 			}
 		}
 	}
