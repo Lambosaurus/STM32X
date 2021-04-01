@@ -224,9 +224,10 @@ void USB_CDC_Write(const uint8_t * data, uint32_t count)
 		else
 		{
 			// Transmit a packet
-			uint32_t packet_size = count > CDC_PACKET_SIZE ? CDC_PACKET_SIZE : count;
+			// We send packets of length 63. This gets around an issue where windows can drop full sized serial packets.
+			uint32_t packet_size = count > (CDC_PACKET_SIZE - 1) ? (CDC_PACKET_SIZE - 1) : count;
 			gCDC.txBusy = true;
-			USB_EP_Write(CDC_IN_EP, data, count);
+			USB_EP_Write(CDC_IN_EP, data, packet_size);
 			count -= packet_size;
 			data += packet_size;
 		}
