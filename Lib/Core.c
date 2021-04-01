@@ -77,6 +77,22 @@ void CORE_OnTick(VoidFunction_t callback)
 }
 #endif
 
+#ifdef USB_ENABLE
+void CORE_EnableUSBClock(bool enable)
+{
+	__HAL_RCC_USB_CONFIG(RCC_USBCLKSOURCE_HSI48);
+	if(enable)
+	{
+		__HAL_RCC_HSI48_ENABLE();
+		while(!__HAL_RCC_GET_FLAG(RCC_FLAG_HSI48RDY));
+	}
+	else
+	{
+		__HAL_RCC_HSI48_DISABLE();
+		while(__HAL_RCC_GET_FLAG(RCC_FLAG_HSI48RDY));
+	}
+}
+#endif
 
 /*
  * PRIVATE FUNCTIONS
