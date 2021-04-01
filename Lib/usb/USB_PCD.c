@@ -39,7 +39,6 @@ void USB_PCD_Init(void)
 
 	USB_EP_Init();
 
-	hpcd_USB_FS.USB_Address = 0U;
 	hpcd_USB_FS.State = HAL_PCD_STATE_READY;
 
 #ifdef USB_USE_LPM
@@ -77,12 +76,7 @@ void USB_PCD_Stop(void)
 
 void USB_PCD_SetAddress(uint8_t address)
 {
-	hpcd_USB_FS.USB_Address = address;
-	if (address == 0)
-	{
-		// Looking for new address
-		USB->DADDR = USB_DADDR_EF;
-	}
+	USB->DADDR = address | USB_DADDR_EF;
 }
 
 /*

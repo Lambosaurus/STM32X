@@ -13,6 +13,13 @@
  * PUBLIC DEFINITIONS
  */
 
+#define USB_CDC_CLASSID				0x02
+#define USB_CDC_SUBCLASSID			0x02
+#define USB_CDC_PROTOCOLID			0x00
+
+#define USB_CDC_CONFIG_DESC_SIZE	67
+#define USB_CDC_CONFIG_DESC			cUSB_CDC_ConfigDescriptor
+
 /*
  * PUBLIC TYPES
  */
@@ -25,49 +32,28 @@
  * EXTERN DECLARATIONS
  */
 
+extern const uint8_t cUSB_CDC_ConfigDescriptor[USB_CDC_CONFIG_DESC_SIZE];
+
 /*
  * DELETE LATER
  */
+
+#include "usbd_def.h"
 
 uint32_t USB_CDC_Read(uint8_t * data, uint32_t count);
 void USB_CDC_Write(const uint8_t * data, uint32_t count);
 
 
+#define CDC_IN_EP                                   0x81
+#define CDC_OUT_EP                                  0x01
+#define CDC_CMD_EP                                  0x82
+
+#define CDC_BINTERVAL                          		0x10
+#define CDC_PACKET_SIZE								USB_PACKET_SIZE
+#define CDC_CMD_PACKET_SIZE                         8
 
 
 
-
-
-#include  "usbd_ioreq.h"
-
-
-#define CDC_IN_EP                                   0x81U  /* EP1 for data IN */
-#define CDC_OUT_EP                                  0x01U  /* EP1 for data OUT */
-#define CDC_CMD_EP                                  0x82U  /* EP2 for CDC commands */
-
-#ifndef CDC_HS_BINTERVAL
-#define CDC_HS_BINTERVAL                          0x10U
-#endif /* CDC_HS_BINTERVAL */
-
-#ifndef CDC_FS_BINTERVAL
-#define CDC_FS_BINTERVAL                          0x10U
-#endif /* CDC_FS_BINTERVAL */
-
-/* CDC Endpoints parameters: you can fine tune these values depending on the needed baudrates and performance. */
-#define CDC_DATA_HS_MAX_PACKET_SIZE                 512U  	/* Endpoint IN & OUT Packet size */
-#define CDC_DATA_FS_MAX_PACKET_SIZE                 64U  	/* Endpoint IN & OUT Packet size */
-#define CDC_CMD_PACKET_SIZE                         8U  	/* Control Endpoint Packet size */
-
-#define USB_CDC_CONFIG_DESC_SIZ                     67U
-#define CDC_DATA_HS_IN_PACKET_SIZE                  CDC_DATA_HS_MAX_PACKET_SIZE
-#define CDC_DATA_HS_OUT_PACKET_SIZE                 CDC_DATA_HS_MAX_PACKET_SIZE
-
-#define CDC_DATA_FS_IN_PACKET_SIZE                  CDC_DATA_FS_MAX_PACKET_SIZE
-#define CDC_DATA_FS_OUT_PACKET_SIZE                 CDC_DATA_FS_MAX_PACKET_SIZE
-
-/*---------------------------------------------------------------------*/
-/*  CDC definitions                                                    */
-/*---------------------------------------------------------------------*/
 #define CDC_SEND_ENCAPSULATED_COMMAND               0x00U
 #define CDC_GET_ENCAPSULATED_RESPONSE               0x01U
 #define CDC_SET_COMM_FEATURE                        0x02U

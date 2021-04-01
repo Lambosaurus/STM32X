@@ -7,6 +7,7 @@
  * PRIVATE DEFINITIONS
  */
 
+//TODO: break out this macro.
 #define USB_ENDPOINTS		8
 #define BTABLE_SIZE			(USB_ENDPOINTS * 8)
 
@@ -223,7 +224,7 @@ static uint16_t USB_PMA_Alloc(uint16_t size)
 	gEP.pma_head += size;
 	if (gEP.pma_head > PMA_SIZE)
 	{
-		// TODO: fix this?
+		// TODO: handle this better.
 		__BKPT();
 	}
 	return head;
@@ -644,13 +645,6 @@ void USB_EP_IRQHandler(void)
 				ep->xfer_buff += ep->xfer_count;
 
 				USB_CTL_DataInStage(ep->num, ep->xfer_buff);
-
-				// DELETE THIS GARBAGE.
-				if ((hpcd->USB_Address > 0U) && (ep->xfer_len == 0U))
-				{
-					hpcd->Instance->DADDR = ((uint16_t)hpcd->USB_Address | USB_DADDR_EF);
-					hpcd->USB_Address = 0U;
-				}
 			}
 			else
 			{

@@ -7,9 +7,7 @@
 #include "usb/USB_EP.h"
 #include "usb/USB_CTL.h"
 
-#include "usbd_core.h"
-#include "usbd_desc.h"
-
+#include "usbd_def.h"
 
 /*
  * PRIVATE DEFINITIONS
@@ -48,10 +46,7 @@ void USB_Init(void)
 	CORE_EnableUSBClock();
 	USBx_Init();
 
-	hUsbDeviceFS.pDesc = &FS_Desc;
-	hUsbDeviceFS.dev_state = USBD_STATE_DEFAULT;
 	hUsbDeviceFS.pClass = &USBD_CDC;
-	hUsbDeviceFS.pData = &hpcd_USB_FS;
 
 	USB_PCD_Init();
 	USB_CTL_Init();

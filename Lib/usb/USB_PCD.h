@@ -14,12 +14,6 @@
  * PUBLIC DEFINITIONS
  */
 
-#ifdef USB_SPEED_FULL
-#define USB_PACKET_SIZE		512
-#else
-#define USB_PACKET_SIZE		64
-#endif
-
 /*
  * PUBLIC TYPES
  */
@@ -38,7 +32,7 @@ void USB_PCD_Deinit(void);
  */
 
 // DELETE THIS
-#include  "usbd_ioreq.h"
+#include  "usbd_def.h"
 extern USBD_HandleTypeDef hUsbDeviceFS;
 extern PCD_HandleTypeDef hpcd_USB_FS;
 

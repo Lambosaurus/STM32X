@@ -9,22 +9,25 @@
  * STM32F0: N
  */
 
-#ifdef USE_USB_CDC
+#if defined(USB_CLASS_CDC)
 #include "USB_CDC.h"
+
+#define USB_CLASS_CLASSID				USB_CDC_CLASSID
+#define USB_CLASS_SUBCLASSID			USB_CDC_SUBCLASSID
+#define USB_CLASS_PROTOCOLID			USB_CDC_PROTOCOLID
+
+#define USB_CLASS_DEVICE_DESCRIPTOR 	USB_CDC_CONFIG_DESC
+
+#else
+#error "No USB Class defined"
 #endif
 
 /*
  * PUBLIC DEFINITIONS
  */
 
-#define USB_CLASS_INIT(cfg)			(hUsbDeviceFS.pClass->Init(&hUsbDeviceFS, cfg))
-
-#define USB_CLASS_DEINIT()		\
-	if (hUsbDeviceFS.pClassData)\
-	{\
-		hUsbDeviceFS.pClass->DeInit(&hUsbDeviceFS, hUsbDeviceFS.dev_config);\
-	}\
-
+#define USB_CLASS_INIT(config)		(hUsbDeviceFS.pClass->Init(&hUsbDeviceFS, config))
+#define USB_CLASS_DEINIT()			(hUsbDeviceFS.pClass->DeInit(&hUsbDeviceFS, 0))
 #define USB_CLASS_SETUP(request) 	(hUsbDeviceFS.pClass->Setup(&hUsbDeviceFS, request))
 
 /*
