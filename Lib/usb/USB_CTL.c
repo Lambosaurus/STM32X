@@ -34,8 +34,10 @@ static void USB_CTL_InterfaceRequest(USBD_SetupReqTypedef  *req);
 static void USB_CTL_SetFeature(USBD_SetupReqTypedef *req);
 static void USB_CTL_ClearFeature(USBD_SetupReqTypedef *req);
 
-//static void USB_CTL_SendStatus(void);
-
+static void USB_CTL_SendStatus(void);
+//static void USB_CTL_Send(uint8_t * data, uint16_t size);
+static void USB_CTL_ReceiveStatus(void);
+//static void USB_CTL_Receive(uint8_t * data, uint16_t size);
 
 static void USBD_SetAddress(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req);
 static void USBD_SetConfig(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req);
@@ -55,8 +57,8 @@ static void USBD_GetDescriptor(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *r
 
 void USB_CTL_Init(void)
 {
-	USB_EP_Open(CTL_IN_EP, USBD_EP_TYPE_CTRL, CTL_EP_SIZE);
-	USB_EP_Open(CTL_OUT_EP, USBD_EP_TYPE_CTRL, CTL_EP_SIZE);
+	USB_EP_Open(CTL_IN_EP, USB_EP_TYPE_CTRL, CTL_EP_SIZE);
+	USB_EP_Open(CTL_OUT_EP, USB_EP_TYPE_CTRL, CTL_EP_SIZE);
 }
 
 void USB_CTL_Deinit(void)
@@ -70,8 +72,8 @@ void USB_CTL_Reset(void)
 	USB_CLASS_DEINIT();
 	USB_EP_Reset();
 
-	USB_EP_Open(CTL_IN_EP, USBD_EP_TYPE_CTRL, CTL_EP_SIZE);
-	USB_EP_Open(CTL_OUT_EP, USBD_EP_TYPE_CTRL, CTL_EP_SIZE);
+	USB_EP_Open(CTL_IN_EP, USB_EP_TYPE_CTRL, CTL_EP_SIZE);
+	USB_EP_Open(CTL_OUT_EP, USB_EP_TYPE_CTRL, CTL_EP_SIZE);
 
 	hUsbDeviceFS.dev_speed = USBD_SPEED_FULL;
 	hUsbDeviceFS.dev_state = USBD_STATE_DEFAULT;
@@ -115,10 +117,40 @@ void USB_CTL_HandleSetup(uint8_t * data)
  * PRIVATE FUNCTIONS
  */
 
+void USB_CTL_Send(uint8_t * data, uint16_t size)
+{
+	USBD_HandleTypeDef * pdev = &hUsbDeviceFS;
+	pdev->ep0_state = USBD_EP0_DATA_IN;
+	pdev->ep_in[0].total_length = size;
+	pdev->ep_in[0].rem_length   = size;
+	USB_EP_Write(CTL_IN_EP, data, size);
+}
+
+void USB_CTL_Receive(uint8_t * data, uint16_t size)
+{
+	USBD_HandleTypeDef * pdev = &hUsbDeviceFS;
+	pdev->ep0_state = USBD_EP0_DATA_OUT;
+	pdev->ep_out[0].total_length = size;
+	pdev->ep_out[0].rem_length   = size;
+	USB_EP_Read(CTL_OUT_EP, data, size);
+}
+
+void USB_CTL_ReceiveStatus(void)
+{
+	USBD_HandleTypeDef * pdev = &hUsbDeviceFS;
+	pdev->ep0_state = USBD_EP0_STATUS_OUT;
+	USB_EP_Read(CTL_OUT_EP, NULL, 0);
+}
+
+static void USB_CTL_SendStatus(void)
+{
+	hUsbDeviceFS.ep0_state = USBD_EP0_STATUS_IN;
+	USB_EP_Write(0x00U, NULL, 0U);
+}
+
 static void USB_CTL_EndpointRequest(USBD_SetupReqTypedef  *req)
 {
 	uint8_t endpoint = LOBYTE(req->wIndex);
-
 	USBD_HandleTypeDef * pdev = &hUsbDeviceFS;
 
 	switch (req->bmRequest & USB_REQ_TYPE_MASK)
@@ -127,11 +159,10 @@ static void USB_CTL_EndpointRequest(USBD_SetupReqTypedef  *req)
 	case USB_REQ_TYPE_VENDOR:
 		USB_CLASS_SETUP(req);
 		break;
-
 	case USB_REQ_TYPE_STANDARD:
-		/* Check if it is a class request */
 		if ((req->bmRequest & 0x60U) == 0x20U)
 		{
+			// This also indicates a class request?
 			USB_CLASS_SETUP(req);
 			return;
 		}
@@ -155,8 +186,7 @@ static void USB_CTL_EndpointRequest(USBD_SetupReqTypedef  *req)
 			case USBD_STATE_CONFIGURED:
 				if (req->wValue == USB_FEATURE_EP_HALT)
 				{
-					if ((endpoint != CTL_OUT_EP) &&
-						(endpoint != CTL_IN_EP) && (req->wLength == 0x00U))
+					if ((endpoint != CTL_OUT_EP) && (endpoint != CTL_IN_EP) && (req->wLength == 0x00U))
 					{
 						USB_EP_Stall(endpoint);
 					}
@@ -165,110 +195,68 @@ static void USB_CTL_EndpointRequest(USBD_SetupReqTypedef  *req)
 				break;
 			default:
 				USB_CTL_Error();
-			  break;
+				break;
 			}
 			break;
 
-		case USB_REQ_CLEAR_FEATURE:
-			switch (pdev->dev_state)
-			{
-			case USBD_STATE_ADDRESSED:
-				if ((endpoint != CTL_OUT_EP) && (endpoint != CTL_IN_EP))
+			case USB_REQ_CLEAR_FEATURE:
+				switch (pdev->dev_state)
 				{
-					USB_EP_Stall(endpoint);
-					USB_EP_Stall(CTL_IN_EP);
-				}
-				else
-				{
-					USB_CTL_Error();
-				}
-				break;
-
-			case USBD_STATE_CONFIGURED:
-				if (req->wValue == USB_FEATURE_EP_HALT)
-				{
+				case USBD_STATE_ADDRESSED:
 					if ((endpoint & 0x7FU) != 0x00U)
 					{
-						USB_EP_Destall(endpoint);
+						USB_EP_Stall(endpoint);
+						USB_EP_Stall(CTL_IN_EP);
 					}
-					USB_CTL_SendStatus();
-				}
-				break;
-
-			default:
-				USB_CTL_Error();
-				break;
-			}
-			break;
-
-		case USB_REQ_GET_STATUS:
-			switch (pdev->dev_state)
-			{
-			case USBD_STATE_ADDRESSED:
-			{
-				if ((endpoint != CTL_OUT_EP) && (endpoint != CTL_IN_EP))
-				{
-				  USB_CTL_Error();
-				  break;
-				}
-				USBD_EndpointTypeDef * pep = ((endpoint & 0x80U) == 0x80U) ? &pdev->ep_in[endpoint & 0x7FU] : \
-					&pdev->ep_out[endpoint & 0x7FU];
-
-				pep->status = 0x0000U;
-
-				USBD_CtlSendData(pdev, (uint8_t *)(void *)&pep->status, 2U);
-				break;
-			}
-			case USBD_STATE_CONFIGURED:
-			{
-				if ((endpoint & 0x80U) == 0x80U)
-				{
-					if (pdev->ep_in[endpoint & 0xFU].is_used == 0U)
+					else
 					{
 						USB_CTL_Error();
-					  break;
 					}
+					break;
+
+				case USBD_STATE_CONFIGURED:
+					if (req->wValue == USB_FEATURE_EP_HALT)
+					{
+						if ((endpoint & 0x7FU) != 0x00U)
+						{
+							USB_EP_Destall(endpoint);
+						}
+						USB_CTL_SendStatus();
+					}
+					break;
+
+				default:
+					USB_CTL_Error();
+					break;
 				}
-				else
+				break;
+
+			case USB_REQ_GET_STATUS:
+				switch (pdev->dev_state)
 				{
-					if (pdev->ep_out[endpoint & 0xFU].is_used == 0U)
+				case USBD_STATE_ADDRESSED:
+				case USBD_STATE_CONFIGURED:
+					if (!USB_EP_IsOpen(endpoint))
 					{
 						USB_CTL_Error();
 						break;
 					}
+					else
+					{
+						uint16_t status = USB_EP_IsStalled(endpoint) ? 0x0001 : 0x0000;
+						USB_CTL_Send((uint8_t *)&status, 2);
+					}
+					break;
+				default:
+					USB_CTL_Error();
+					break;
 				}
-
-				USBD_EndpointTypeDef * pep = ((endpoint & 0x80U) == 0x80U) ? &pdev->ep_in[endpoint & 0x7FU] : \
-					&pdev->ep_out[endpoint & 0x7FU];
-
-				if ((endpoint == 0x00U) || (endpoint == 0x80U))
-				{
-					pep->status = 0x0000U;
-				}
-				else if (USB_EP_IsStalled(endpoint))
-				{
-					pep->status = 0x0001U;
-				}
-				else
-				{
-					pep->status = 0x0000U;
-				}
-
-				USBD_CtlSendData(pdev, (uint8_t *)(void *)&pep->status, 2U);
 				break;
-			}
 			default:
 				USB_CTL_Error();
 				break;
-			}
-			break;
-
-		default:
-			USB_CTL_Error();
-			break;
 		}
 		break;
-
 	default:
 		USB_CTL_Error();
 		break;
@@ -331,46 +319,36 @@ static void USB_CTL_DeviceRequest(USBD_SetupReqTypedef *req)
   }
 }
 
-
 static void USB_CTL_InterfaceRequest(USBD_SetupReqTypedef  *req)
 {
-	USBD_HandleTypeDef * pdev = &hUsbDeviceFS;
-  switch (req->bmRequest & USB_REQ_TYPE_MASK)
-  {
-    case USB_REQ_TYPE_CLASS:
-    case USB_REQ_TYPE_VENDOR:
-    case USB_REQ_TYPE_STANDARD:
-      switch (pdev->dev_state)
-      {
-        case USBD_STATE_DEFAULT:
-        case USBD_STATE_ADDRESSED:
-        case USBD_STATE_CONFIGURED:
-
-          if (LOBYTE(req->wIndex) <= USBD_MAX_NUM_INTERFACES)
-          {
-            USB_CLASS_SETUP(req);
-
-            if ((req->wLength == 0U))
-            {
-            	USB_CTL_SendStatus();
-            }
-          }
-          else
-          {
-        	  USB_CTL_Error();
-          }
-          break;
-
-        default:
-          USB_CTL_Error();
-          break;
-      }
-      break;
-
-    default:
-    	USB_CTL_Error();
-      break;
-  }
+	bool success = false;
+	switch (req->bmRequest & USB_REQ_TYPE_MASK)
+	{
+	case USB_REQ_TYPE_CLASS:
+	case USB_REQ_TYPE_VENDOR:
+	case USB_REQ_TYPE_STANDARD:
+		switch (hUsbDeviceFS.dev_state)
+		{
+		case USBD_STATE_DEFAULT:
+		case USBD_STATE_ADDRESSED:
+		case USBD_STATE_CONFIGURED:
+			if (LOBYTE(req->wIndex) <= USBD_MAX_NUM_INTERFACES)
+			{
+				USB_CLASS_SETUP(req);
+				success = true;
+				if ((req->wLength == 0U))
+				{
+					USB_CTL_SendStatus();
+				}
+			}
+			break;
+		}
+		break;
+	}
+	if (!success)
+	{
+		USB_CTL_Error();
+	}
 }
 
 void USB_CTL_Error(void)
@@ -381,10 +359,9 @@ void USB_CTL_Error(void)
 
 static void USB_CTL_SetFeature(USBD_SetupReqTypedef *req)
 {
-	USBD_HandleTypeDef * pdev = &hUsbDeviceFS;
 	if (req->wValue == USB_FEATURE_REMOTE_WAKEUP)
 	{
-		pdev->dev_remote_wakeup = 1U;
+		hUsbDeviceFS.dev_remote_wakeup = 1U;
 		USB_CTL_SendStatus();
 	}
 }
@@ -588,7 +565,7 @@ static void USBD_GetDescriptor(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *r
     if ((len != 0U) && (req->wLength != 0U))
     {
       len = MIN(len, req->wLength);
-      (void)USBD_CtlSendData(pdev, pbuf, len);
+      USB_CTL_Send(pbuf, len);
     }
 
     if (req->wLength == 0U)
@@ -651,11 +628,7 @@ static void USBD_SetConfig(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req)
         {
           pdev->dev_config = cfgidx;
           pdev->dev_state = USBD_STATE_CONFIGURED;
-          if (USBD_SetClassConfig(pdev, cfgidx) == USBD_FAIL)
-          {
-        	  USB_CTL_Error();
-            return;
-          }
+          USB_CLASS_INIT(cfgidx);
           USB_CTL_SendStatus();
         }
         else
@@ -669,21 +642,16 @@ static void USBD_SetConfig(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req)
         {
           pdev->dev_state = USBD_STATE_ADDRESSED;
           pdev->dev_config = cfgidx;
-          USBD_ClrClassConfig(pdev, cfgidx);
+          USB_CLASS_DEINIT();
           USB_CTL_SendStatus();
         }
         else if (cfgidx != pdev->dev_config)
         {
-          /* Clear old configuration */
-          USBD_ClrClassConfig(pdev, (uint8_t)pdev->dev_config);
+          USB_CLASS_DEINIT();
 
           /* set new configuration */
           pdev->dev_config = cfgidx;
-          if (USBD_SetClassConfig(pdev, cfgidx) == USBD_FAIL)
-          {
-        	  USB_CTL_Error();
-            return;
-          }
+          USB_CLASS_INIT(cfgidx);
           USB_CTL_SendStatus();
         }
         else
@@ -694,7 +662,7 @@ static void USBD_SetConfig(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req)
 
       default:
     	  USB_CTL_Error();
-        USBD_ClrClassConfig(pdev, cfgidx);
+    	  USB_CLASS_DEINIT();
         break;
     }
   }
@@ -713,11 +681,11 @@ static void USBD_GetConfig(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req)
       case USBD_STATE_DEFAULT:
       case USBD_STATE_ADDRESSED:
         pdev->dev_default_config = 0U;
-        USBD_CtlSendData(pdev, (uint8_t *)(void *)&pdev->dev_default_config, 1U);
+        USB_CTL_Send((uint8_t *)(void *)&pdev->dev_default_config, 1U);
         break;
 
       case USBD_STATE_CONFIGURED:
-        USBD_CtlSendData(pdev, (uint8_t *)(void *)&pdev->dev_config, 1U);
+        USB_CTL_Send((uint8_t *)(void *)&pdev->dev_config, 1U);
         break;
 
       default:
@@ -751,7 +719,7 @@ static void USBD_GetStatus(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req)
         pdev->dev_config_status |= USB_CONFIG_REMOTE_WAKEUP;
       }
 
-      USBD_CtlSendData(pdev, (uint8_t *)(void *)&pdev->dev_config_status, 2U);
+      USB_CTL_Send((uint8_t *)(void *)&pdev->dev_config_status, 2U);
       break;
 
     default:
@@ -773,37 +741,6 @@ uint16_t USB_CTL_ToUnicode(uint8_t * unicode, char * str)
 	return i;
 }
 
-void USB_CTL_SendStatus(void)
-{
-	hUsbDeviceFS.ep0_state = USBD_EP0_STATUS_IN;
-	USB_EP_Tx(0x00U, NULL, 0U);
-}
-
-
-USBD_StatusTypeDef USBD_SetClassConfig(USBD_HandleTypeDef  *pdev, uint8_t cfgidx)
-{
-  USBD_StatusTypeDef ret = USBD_FAIL;
-
-  if (pdev->pClass != NULL)
-  {
-    /* Set configuration  and Start the Class*/
-    if (pdev->pClass->Init(pdev, cfgidx) == 0U)
-    {
-      ret = USBD_OK;
-    }
-  }
-
-  return ret;
-}
-
-USBD_StatusTypeDef USBD_ClrClassConfig(USBD_HandleTypeDef  *pdev, uint8_t cfgidx)
-{
-  /* Clear configuration  and De-initialize the Class process*/
-  pdev->pClass->DeInit(pdev, cfgidx);
-
-  return USBD_OK;
-}
-
 void USB_CTL_DataOutStage(uint8_t epnum, uint8_t *pdata)
 {
 	USBD_HandleTypeDef * pdev = &hUsbDeviceFS;
@@ -819,8 +756,7 @@ void USB_CTL_DataOutStage(uint8_t epnum, uint8_t *pdata)
       {
         pep->rem_length -= pep->maxpacket;
 
-        USBD_CtlContinueRx(pdev, pdata,
-                           (uint16_t)MIN(pep->rem_length, pep->maxpacket));
+        USB_EP_Read(CTL_OUT_EP, pdata, MIN(pep->rem_length, pep->maxpacket));
       }
       else
       {
@@ -849,13 +785,6 @@ void USB_CTL_DataOutStage(uint8_t epnum, uint8_t *pdata)
   {
     pdev->pClass->DataOut(pdev, epnum);
   }
-  else
-  {
-    /* should never be in this condition */
-    return USBD_FAIL;
-  }
-
-  return USBD_OK;
 }
 
 void USB_CTL_DataInStage(uint8_t epnum, uint8_t *pdata)
@@ -872,10 +801,8 @@ void USB_CTL_DataInStage(uint8_t epnum, uint8_t *pdata)
       if (pep->rem_length > pep->maxpacket)
       {
         pep->rem_length -= pep->maxpacket;
-
-        USBD_CtlContinueSendData(pdev, pdata, (uint16_t)pep->rem_length);
-
-        USB_EP_Rx(CTL_OUT_EP, NULL, 0);
+        USB_EP_Write(CTL_IN_EP, pdata, pep->rem_length);
+        USB_EP_Read(CTL_OUT_EP, NULL, 0);
       }
       else
       {
@@ -884,10 +811,9 @@ void USB_CTL_DataInStage(uint8_t epnum, uint8_t *pdata)
             (pep->total_length >= pep->maxpacket) &&
             (pep->total_length < pdev->ep0_data_len))
         {
-          USBD_CtlContinueSendData(pdev, NULL, 0U);
+          USB_EP_Write(CTL_IN_EP, NULL, 0);
           pdev->ep0_data_len = 0U;
-
-          USB_EP_Rx(CTL_OUT_EP, NULL, 0);
+          USB_EP_Read(CTL_OUT_EP, NULL, 0);
         }
         else
         {
@@ -897,7 +823,7 @@ void USB_CTL_DataInStage(uint8_t epnum, uint8_t *pdata)
             pdev->pClass->EP0_TxSent(pdev);
           }
           USB_EP_Stall(CTL_IN_EP);
-          USBD_CtlReceiveStatus(pdev);
+          USB_CTL_ReceiveStatus();
         }
       }
     }
@@ -915,167 +841,23 @@ void USB_CTL_DataInStage(uint8_t epnum, uint8_t *pdata)
   {
     pdev->pClass->DataIn(pdev, epnum);
   }
-  else
-  {
-    /* should never be in this condition */
-    return USBD_FAIL;
-  }
-
-  return USBD_OK;
 }
 
-USBD_StatusTypeDef USBD_LL_Suspend(USBD_HandleTypeDef *pdev)
+/*
+void USB_CTL_Suspend(void)
 {
-  pdev->dev_old_state =  pdev->dev_state;
-  pdev->dev_state  = USBD_STATE_SUSPENDED;
-
-  return USBD_OK;
+	USBD_HandleTypeDef * pdev = &hUsbDeviceFS;
+	pdev->dev_old_state =  pdev->dev_state;
+	pdev->dev_state  = USBD_STATE_SUSPENDED;
 }
 
-USBD_StatusTypeDef USBD_LL_Resume(USBD_HandleTypeDef *pdev)
+void USB_CTL_Resume(void)
 {
-  if (pdev->dev_state == USBD_STATE_SUSPENDED)
-  {
-    pdev->dev_state = pdev->dev_old_state;
-  }
-
-  return USBD_OK;
+	USBD_HandleTypeDef * pdev = &hUsbDeviceFS;
+	if (pdev->dev_state == USBD_STATE_SUSPENDED)
+	{
+		pdev->dev_state = pdev->dev_old_state;
+	}
 }
-
-USBD_StatusTypeDef USBD_LL_SOF(USBD_HandleTypeDef *pdev)
-{
-  if (pdev->dev_state == USBD_STATE_CONFIGURED)
-  {
-    if (pdev->pClass->SOF != NULL)
-    {
-      pdev->pClass->SOF(pdev);
-    }
-  }
-
-  return USBD_OK;
-}
-
-USBD_StatusTypeDef USBD_LL_IsoINIncomplete(USBD_HandleTypeDef *pdev,
-                                           uint8_t epnum)
-{
-  /* Prevent unused arguments compilation warning */
-  UNUSED(pdev);
-  UNUSED(epnum);
-
-  return USBD_OK;
-}
-
-USBD_StatusTypeDef USBD_LL_IsoOUTIncomplete(USBD_HandleTypeDef *pdev,
-                                            uint8_t epnum)
-{
-  /* Prevent unused arguments compilation warning */
-  UNUSED(pdev);
-  UNUSED(epnum);
-
-  return USBD_OK;
-}
-
-USBD_StatusTypeDef USBD_LL_DevConnected(USBD_HandleTypeDef *pdev)
-{
-  /* Prevent unused argument compilation warning */
-  UNUSED(pdev);
-
-  return USBD_OK;
-}
-
-USBD_StatusTypeDef USBD_LL_DevDisconnected(USBD_HandleTypeDef *pdev)
-{
-  /* Free Class Resources */
-  pdev->dev_state = USBD_STATE_DEFAULT;
-  pdev->pClass->DeInit(pdev, (uint8_t)pdev->dev_config);
-
-  return USBD_OK;
-}
-
-/**
-* @brief  USBD_CtlSendData
-*         send data on the ctl pipe
-* @param  pdev: device instance
-* @param  buff: pointer to data buffer
-* @param  len: length of data to be sent
-* @retval status
 */
-USBD_StatusTypeDef USBD_CtlSendData(USBD_HandleTypeDef *pdev, uint8_t *pbuf, uint16_t len)
-{
-  /* Set EP0 State */
-  pdev->ep0_state = USBD_EP0_DATA_IN;
-  pdev->ep_in[0].total_length = len;
-  pdev->ep_in[0].rem_length   = len;
 
-  /* Start the transfer */
-  USB_EP_Tx(CTL_IN_EP, pbuf, len);
-
-  return USBD_OK;
-}
-
-/**
-* @brief  USBD_CtlContinueSendData
-*         continue sending data on the ctl pipe
-* @param  pdev: device instance
-* @param  buff: pointer to data buffer
-* @param  len: length of data to be sent
-* @retval status
-*/
-USBD_StatusTypeDef USBD_CtlContinueSendData(USBD_HandleTypeDef *pdev,
-                                            uint8_t *pbuf, uint16_t len)
-{
-  USB_EP_Tx(CTL_IN_EP, pbuf, len);
-
-  return USBD_OK;
-}
-
-/**
-* @brief  USBD_CtlPrepareRx
-*         receive data on the ctl pipe
-* @param  pdev: device instance
-* @param  buff: pointer to data buffer
-* @param  len: length of data to be received
-* @retval status
-*/
-USBD_StatusTypeDef USBD_CtlPrepareRx(USBD_HandleTypeDef *pdev,
-                                     uint8_t *pbuf, uint16_t len)
-{
-  /* Set EP0 State */
-  pdev->ep0_state = USBD_EP0_DATA_OUT;
-  pdev->ep_out[0].total_length = len;
-  pdev->ep_out[0].rem_length   = len;
-
-  USB_EP_Rx(CTL_OUT_EP, pbuf, len);
-
-  return USBD_OK;
-}
-
-/**
-* @brief  USBD_CtlContinueRx
-*         continue receive data on the ctl pipe
-* @param  pdev: device instance
-* @param  buff: pointer to data buffer
-* @param  len: length of data to be received
-* @retval status
-*/
-USBD_StatusTypeDef USBD_CtlContinueRx(USBD_HandleTypeDef *pdev,
-                                      uint8_t *pbuf, uint16_t len)
-{
-  USB_EP_Rx(CTL_OUT_EP, pbuf, len);
-
-  return USBD_OK;
-}
-
-/**
-* @brief  USBD_CtlReceiveStatus
-*         receive zero lzngth packet on the ctl pipe
-* @param  pdev: device instance
-* @retval status
-*/
-USBD_StatusTypeDef USBD_CtlReceiveStatus(USBD_HandleTypeDef *pdev)
-{
-  /* Set EP0 State */
-  pdev->ep0_state = USBD_EP0_STATUS_OUT;
-  USB_EP_Rx(CTL_OUT_EP, NULL, 0);
-  return USBD_OK;
-}

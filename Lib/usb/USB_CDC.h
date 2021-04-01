@@ -29,8 +29,8 @@
  * DELETE LATER
  */
 
-uint32_t USB_CDC_Rx(uint8_t * data, uint32_t count);
-void USB_CDC_Tx(const uint8_t * data, uint32_t count);
+uint32_t USB_CDC_Read(uint8_t * data, uint32_t count);
+void USB_CDC_Write(const uint8_t * data, uint32_t count);
 
 
 

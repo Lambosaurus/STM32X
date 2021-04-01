@@ -66,14 +66,14 @@ void USB_Deinit(void)
 	USBx_Deinit();
 }
 
-void USB_Tx(const uint8_t * data, uint32_t count)
+void USB_Write(const uint8_t * data, uint32_t count)
 {
-	USB_CDC_Tx(data, count);
+	USB_CDC_Write(data, count);
 }
 
-uint32_t USB_Rx(uint8_t * data, uint32_t size)
+uint32_t USB_Read(uint8_t * data, uint32_t size)
 {
-	return USB_CDC_Rx(data, size);
+	return USB_CDC_Read(data, size);
 }
 
 /*

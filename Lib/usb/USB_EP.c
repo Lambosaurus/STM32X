@@ -62,7 +62,7 @@ void USB_EP_Init(void)
 	{
 		hpcd->IN_ep[i].is_in = 1U;
 		hpcd->IN_ep[i].num = i;
-		hpcd->IN_ep[i].type = EP_TYPE_CTRL;
+		hpcd->IN_ep[i].type = USB_EP_TYPE_NONE;
 		hpcd->IN_ep[i].maxpacket = 0U;
 		hpcd->IN_ep[i].xfer_buff = 0U;
 		hpcd->IN_ep[i].xfer_len = 0U;
@@ -71,7 +71,7 @@ void USB_EP_Init(void)
 	{
 		hpcd->OUT_ep[i].is_in = 0U;
 		hpcd->OUT_ep[i].num = i;
-		hpcd->OUT_ep[i].type = EP_TYPE_CTRL;
+		hpcd->OUT_ep[i].type = USB_EP_TYPE_NONE;
 		hpcd->OUT_ep[i].maxpacket = 0U;
 		hpcd->OUT_ep[i].xfer_buff = 0U;
 		hpcd->OUT_ep[i].xfer_len = 0U;
@@ -94,13 +94,11 @@ void USB_EP_Open(uint8_t endpoint, uint8_t type, uint16_t size)
 	if (endpoint & 0x80U)
 	{
 		ep = &hpcd->IN_ep[endpoint & EP_ADDR_MSK];
-		hUsbDeviceFS.ep_in[endpoint & EP_ADDR_MSK].is_used = 1;
 		hUsbDeviceFS.ep_in[endpoint & EP_ADDR_MSK].maxpacket = size;
 	}
 	else
 	{
 		ep = &hpcd->OUT_ep[endpoint & EP_ADDR_MSK];
-		hUsbDeviceFS.ep_out[endpoint & EP_ADDR_MSK].is_used = 1;
 		hUsbDeviceFS.ep_out[endpoint & EP_ADDR_MSK].maxpacket = size;
 	}
 	ep->maxpacket = size;
@@ -124,21 +122,18 @@ void USB_EP_Open(uint8_t endpoint, uint8_t type, uint16_t size)
 
 void USB_EP_Close(uint8_t endpoint)
 {
-	PCD_EPTypeDef *ep;
-	if (endpoint & 0x80U)
-	{
-		ep = &hpcd->IN_ep[endpoint & EP_ADDR_MSK];
-		hUsbDeviceFS.ep_in[endpoint & EP_ADDR_MSK].is_used = 0;
-	}
-	else
-	{
-		ep = &hpcd->OUT_ep[endpoint & EP_ADDR_MSK];
-		hUsbDeviceFS.ep_out[endpoint & EP_ADDR_MSK].is_used = 0;
-	}
+	PCD_EPTypeDef * ep = USB_EP_GetEP(endpoint);
+	ep->type = USB_EP_TYPE_NONE;
 	USB_EP_Deactivate(ep);
 }
 
-void USB_EP_Rx(uint8_t endpoint, uint8_t *data, uint32_t count)
+bool USB_EP_IsOpen(uint8_t endpoint)
+{
+	PCD_EPTypeDef * ep = USB_EP_GetEP(endpoint);
+	return ep->type != USB_EP_TYPE_NONE;
+}
+
+void USB_EP_Read(uint8_t endpoint, uint8_t *data, uint32_t count)
 {
 	PCD_EPTypeDef * ep = &(hpcd_USB_FS.OUT_ep[endpoint & EP_ADDR_MSK]);
 	ep->xfer_buff = data;
@@ -147,7 +142,7 @@ void USB_EP_Rx(uint8_t endpoint, uint8_t *data, uint32_t count)
 	USB_EP_StartOut(ep);
 }
 
-void USB_EP_Tx(uint8_t endpoint, const uint8_t * data, uint32_t count)
+void USB_EP_Write(uint8_t endpoint, const uint8_t * data, uint32_t count)
 {
 	PCD_EPTypeDef * ep = &(hpcd_USB_FS.IN_ep[endpoint & EP_ADDR_MSK]);
 	ep->xfer_buff = (uint8_t *)data;
@@ -187,7 +182,7 @@ void USB_EP_Destall(uint8_t endpoint)
 		if (ep->is_in)
 		{
 			PCD_CLEAR_TX_DTOG(USB, ep->num);
-			if (ep->type != EP_TYPE_ISOC)
+			if (ep->type != USB_EP_TYPE_ISOC)
 			{
 				PCD_SET_EP_TX_STATUS(USB, ep->num, USB_EP_TX_NAK);
 			}
@@ -273,16 +268,16 @@ void USB_EP_Activate(USB_EPTypeDef *ep)
 
 	switch (ep->type)
 	{
-	case EP_TYPE_CTRL:
+	case USB_EP_TYPE_CTRL:
 		epReg |= USB_EP_CONTROL;
 	  break;
-	case EP_TYPE_BULK:
+	case USB_EP_TYPE_BULK:
 		epReg |= USB_EP_BULK;
 	  break;
-	case EP_TYPE_INTR:
+	case USB_EP_TYPE_INTR:
 		epReg |= USB_EP_INTERRUPT;
 	  break;
-	case EP_TYPE_ISOC:
+	case USB_EP_TYPE_ISOC:
 		epReg |= USB_EP_ISOCHRONOUS;
 	  break;
 	}
@@ -320,7 +315,7 @@ void USB_EP_Activate(USB_EPTypeDef *ep)
 		PCD_SET_EP_TX_ADDRESS(USB, ep->num, ep->pmaadress);
 		PCD_CLEAR_TX_DTOG(USB, ep->num);
 		// Isochronos should leave their TX EP disabled.
-		if (ep->type != EP_TYPE_ISOC)
+		if (ep->type != USB_EP_TYPE_ISOC)
 		{
 			PCD_SET_EP_TX_STATUS(USB, ep->num, USB_EP_TX_NAK);
 		}
@@ -734,8 +729,7 @@ void USB_EP_IRQHandler(void)
 				PCD_CLEAR_TX_EP_CTR(USB, epnum);
 
 				// Manage all non bulk transaction or Bulk Single Buffer Transaction
-				if (   (ep->type != EP_TYPE_BULK)
-						|| ((ep->type == EP_TYPE_BULK) && ((epReg & USB_EP_KIND) == 0U)))
+				if ((ep->type != USB_EP_TYPE_BULK) || (epReg & USB_EP_KIND) == 0U)
 				{
 					uint16_t count = (uint16_t)PCD_GET_EP_TX_CNT(USB, ep->num);
 

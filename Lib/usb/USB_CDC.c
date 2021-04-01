@@ -80,11 +80,11 @@ void USB_CDC_Init(void)
 	gCDC.txBusy = false;
 
 	// Data endpoints
-	USB_EP_Open(CDC_IN_EP, USBD_EP_TYPE_BULK, USB_PACKET_SIZE);
-	USB_EP_Open(CDC_OUT_EP, USBD_EP_TYPE_BULK, USB_PACKET_SIZE);
-	USB_EP_Open(CDC_CMD_EP, USBD_EP_TYPE_BULK, USB_PACKET_SIZE);
+	USB_EP_Open(CDC_IN_EP, USB_EP_TYPE_BULK, USB_PACKET_SIZE);
+	USB_EP_Open(CDC_OUT_EP, USB_EP_TYPE_BULK, USB_PACKET_SIZE);
+	USB_EP_Open(CDC_CMD_EP, USB_EP_TYPE_BULK, USB_PACKET_SIZE);
 
-	USB_EP_Rx(CDC_OUT_EP, gRxBuffer, USB_PACKET_SIZE);
+	USB_EP_Read(CDC_OUT_EP, gRxBuffer, USB_PACKET_SIZE);
 }
 
 void USB_CDC_Deinit(void)
@@ -95,7 +95,7 @@ void USB_CDC_Deinit(void)
 	gRx.head = gRx.tail = 0;
 }
 
-void USB_CDC_Tx(const uint8_t * data, uint32_t count)
+void USB_CDC_Write(const uint8_t * data, uint32_t count)
 {
 	// This will block if the transmitter is not free, or multiple packets are sent out.
 	uint32_t tide = CORE_GetTick();
@@ -115,23 +115,23 @@ void USB_CDC_Tx(const uint8_t * data, uint32_t count)
 			// Transmit a packet
 			uint32_t packet_size = count > USB_PACKET_SIZE ? USB_PACKET_SIZE : count;
 			gCDC.txBusy = true;
-			USB_EP_Tx(CDC_IN_EP, data, count);
+			USB_EP_Write(CDC_IN_EP, data, count);
 			count -= packet_size;
 			data += packet_size;
 		}
 	}
 }
 
-uint32_t USB_CDC_RxReady(void)
+uint32_t USB_CDC_ReadReady(void)
 {
 	// Assume these reads are atomic
 	uint32_t count = CDC_BFR_WRAP(gRx.head - gRx.tail);
 	return count;
 }
 
-uint32_t USB_CDC_Rx(uint8_t * data, uint32_t count)
+uint32_t USB_CDC_Read(uint8_t * data, uint32_t count)
 {
-	uint32_t ready = USB_CDC_RxReady();
+	uint32_t ready = USB_CDC_ReadReady();
 
 	if (count > ready)
 	{
@@ -211,7 +211,7 @@ static void USB_CDC_ReceiveData(uint8_t* data, uint32_t count)
 		gRx.head = newhead;
 	}
 
-	USB_EP_Rx(CDC_OUT_EP, gRxBuffer, USB_PACKET_SIZE);
+	USB_EP_Read(CDC_OUT_EP, gRxBuffer, USB_PACKET_SIZE);
 }
 
 /*
@@ -563,7 +563,6 @@ __ALIGN_BEGIN uint8_t USBD_CDC_OtherSpeedCfgDesc[USB_CDC_CONFIG_DESC_SIZ] __ALIG
   0x00                              /* bInterval */
 };
 
-
 static uint8_t  USBD_CDC_Init(USBD_HandleTypeDef *pdev, uint8_t cfgidx)
 {
 	USB_CDC_Init();
@@ -578,7 +577,6 @@ static uint8_t  USBD_CDC_DeInit(USBD_HandleTypeDef *pdev, uint8_t cfgidx)
 	return 0;
 }
 
-
 static uint8_t  USBD_CDC_Setup(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req)
 {
 	uint8_t ret = USBD_FAIL;
@@ -591,13 +589,13 @@ static uint8_t  USBD_CDC_Setup(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *r
 			if (req->bmRequest & 0x80U)
 			{
 				USB_CDC_Control(req->bRequest, (uint8_t *)gCDC.cmd.data, req->wLength);
-				USBD_CtlSendData(pdev, (uint8_t *)gCDC.cmd.data, req->wLength);
+				USB_CTL_Send((uint8_t *)gCDC.cmd.data, req->wLength);
 			}
 			else
 			{
 				gCDC.cmd.opcode = req->bRequest;
 				gCDC.cmd.size = req->wLength;
-				USBD_CtlPrepareRx(pdev, (uint8_t *)gCDC.cmd.data, req->wLength);
+				USB_CTL_Receive((uint8_t *)gCDC.cmd.data, req->wLength);
 			}
 		}
 		else
@@ -613,13 +611,13 @@ static uint8_t  USBD_CDC_Setup(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *r
 			case USB_REQ_GET_STATUS:
 			{
 				uint16_t status_info = 0;
-				ret = USBD_CtlSendData(pdev, (uint8_t *)(void *)&status_info, 2U);
+				USB_CTL_Send((uint8_t *)(void *)&status_info, 2U);
 				break;
 			}
 			case USB_REQ_GET_INTERFACE:
 			{
 				uint8_t ifalt = 0;
-				ret = USBD_CtlSendData(pdev, &ifalt, 1);
+				USB_CTL_Send(&ifalt, 1);
 				break;
 			}
 			case USB_REQ_SET_INTERFACE:
@@ -644,8 +642,8 @@ static uint8_t  USBD_CDC_DataIn(USBD_HandleTypeDef *pdev, uint8_t epnum)
 
 	if ((pdev->ep_in[epnum].total_length > 0U) && ((pdev->ep_in[epnum].total_length % hpcd->IN_ep[epnum].maxpacket) == 0U))
 	{
-		/* Send ZLP */
-		USB_EP_Tx(epnum, NULL, 0U);
+		// Send ZLP
+		USB_EP_Write(epnum, NULL, 0U);
 	}
 	else
 	{
@@ -698,7 +696,7 @@ uint8_t  *USBD_CDC_GetDeviceQualifierDescriptor(uint16_t *length)
 
 uint8_t USBD_CDC_ReceivePacket(USBD_HandleTypeDef *pdev)
 {
-	USB_EP_Rx(CDC_OUT_EP, gRxBuffer, USB_PACKET_SIZE);
+	USB_EP_Read(CDC_OUT_EP, gRxBuffer, USB_PACKET_SIZE);
     return USBD_OK;
 }
 

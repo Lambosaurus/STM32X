@@ -25,8 +25,8 @@
 void USB_Init(void);
 void USB_Deinit(void);
 
-void USB_Tx(const uint8_t * data, uint32_t count);
-uint32_t USB_Rx(uint8_t * data, uint32_t size);
+void USB_Write(const uint8_t * data, uint32_t count);
+uint32_t USB_Read(uint8_t * data, uint32_t size);
 
 /*
  * EXTERN DECLARATIONS

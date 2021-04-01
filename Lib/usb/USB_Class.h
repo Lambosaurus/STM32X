@@ -17,7 +17,8 @@
  * PUBLIC DEFINITIONS
  */
 
-#define USB_CLASS_INIT()
+#define USB_CLASS_INIT(cfg)			(hUsbDeviceFS.pClass->Init(&hUsbDeviceFS, cfg))
+
 #define USB_CLASS_DEINIT()		\
 	if (hUsbDeviceFS.pClassData)\
 	{\
