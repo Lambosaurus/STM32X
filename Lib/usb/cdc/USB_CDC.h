@@ -36,10 +36,6 @@ void USB_CDC_Deinit(void);
 void USB_CDC_CtlRxReady(void);
 void USB_CDC_Setup(USB_SetupRequest_t * req);
 
-// TODO: rework these.
-void USB_CDC_DataIn(uint8_t epnum);
-void USB_CDC_DataOut(uint8_t epnum);
-
 // Interface to user
 uint32_t USB_CDC_ReadReady(void);
 uint32_t USB_CDC_Read(uint8_t * data, uint32_t count);

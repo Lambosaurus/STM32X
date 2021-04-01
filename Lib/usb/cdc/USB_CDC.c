@@ -70,8 +70,9 @@ typedef struct
  * PRIVATE PROTOTYPES
  */
 
-static void USB_CDC_ReceiveData(uint8_t* data, uint32_t count);
 static void USB_CDC_Control(uint8_t cmd, uint8_t* data, uint16_t length);
+static void USB_CDC_Receive(uint32_t count);
+static void USB_CDC_TransmitDone(uint32_t count);
 
 /*
  * PRIVATE VARIABLES
@@ -185,9 +186,9 @@ void USB_CDC_Init(uint8_t config)
 	gCDC.txBusy = false;
 
 	// Data endpoints
-	USB_EP_Open(CDC_IN_EP, USB_EP_TYPE_BULK, CDC_PACKET_SIZE);
-	USB_EP_Open(CDC_OUT_EP, USB_EP_TYPE_BULK, CDC_PACKET_SIZE);
-	USB_EP_Open(CDC_CMD_EP, USB_EP_TYPE_BULK, CDC_CMD_PACKET_SIZE);
+	USB_EP_Open(CDC_IN_EP, USB_EP_TYPE_BULK, CDC_PACKET_SIZE, USB_CDC_TransmitDone);
+	USB_EP_Open(CDC_OUT_EP, USB_EP_TYPE_BULK, CDC_PACKET_SIZE, USB_CDC_Receive);
+	USB_EP_Open(CDC_CMD_EP, USB_EP_TYPE_BULK, CDC_CMD_PACKET_SIZE, USB_CDC_Receive);
 
 	USB_EP_Read(CDC_OUT_EP, gRxBuffer, CDC_PACKET_SIZE);
 
@@ -325,7 +326,7 @@ static void USB_CDC_Control(uint8_t cmd, uint8_t* data, uint16_t length)
 	}
 }
 
-static void USB_CDC_ReceiveData(uint8_t* data, uint32_t count)
+static void USB_CDC_Receive(uint32_t count)
 {
 	// Minus 1 because head == tail represents the empty condition.
 	uint32_t space = CDC_BFR_WRAP(gRx.tail - gRx.head - 1);
@@ -342,14 +343,14 @@ static void USB_CDC_ReceiveData(uint8_t* data, uint32_t count)
 		if (newhead > head)
 		{
 			// We can write continuously into the buffer
-			memcpy(gRx.buffer + head, data, count);
+			memcpy(gRx.buffer + head, gRxBuffer, count);
 		}
 		else
 		{
 			// We write to end of buffer, then write from the start
 			uint32_t chunk = CDC_BFR_SIZE - head;
-			memcpy(gRx.buffer + head, data, chunk);
-			memcpy(gRx.buffer, data + chunk, count - chunk);
+			memcpy(gRx.buffer + head, gRxBuffer, chunk);
+			memcpy(gRx.buffer, gRxBuffer + chunk, count - chunk);
 		}
 		gRx.head = newhead;
 	}
@@ -357,16 +358,8 @@ static void USB_CDC_ReceiveData(uint8_t* data, uint32_t count)
 	USB_EP_Read(CDC_OUT_EP, gRxBuffer, CDC_PACKET_SIZE);
 }
 
-/*
- * DELETE LATER
- */
-
-void USB_CDC_DataIn(uint8_t epnum)
+static void USB_CDC_TransmitDone(uint32_t count)
 {
 	gCDC.txBusy = false;
 }
 
-void USB_CDC_DataOut(uint8_t epnum)
-{
-	USB_CDC_ReceiveData(gRxBuffer, USB_EP_RxCount(epnum));
-}

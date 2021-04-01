@@ -64,10 +64,11 @@ static uint16_t USB_CTL_GetStrDescriptor(uint8_t * data, const char * str);
 static uint16_t USB_CTL_GetSerialDescriptor(uint8_t * data);
 
 static void USB_CTL_SendStatus(void);
-//static void USB_CTL_Send(uint8_t * data, uint16_t size);
 static void USB_CTL_ReceiveStatus(void);
-//static void USB_CTL_Receive(uint8_t * data, uint16_t size);
 static void USB_CTL_Error(void);
+
+static void USB_CTL_DataOut(uint32_t count);
+static void USB_CTL_DataIn(uint32_t count);
 
 
 /*
@@ -115,8 +116,8 @@ __ALIGNED(4) const uint8_t cUsbDeviceDescriptor[USB_LEN_DEV_DESC] =
 
 void USB_CTL_Init(void)
 {
-	USB_EP_Open(CTL_IN_EP, USB_EP_TYPE_CTRL, CTL_EP_SIZE);
-	USB_EP_Open(CTL_OUT_EP, USB_EP_TYPE_CTRL, CTL_EP_SIZE);
+	USB_EP_Open(CTL_IN_EP, USB_EP_TYPE_CTRL, CTL_EP_SIZE, USB_CTL_DataIn);
+	USB_EP_Open(CTL_OUT_EP, USB_EP_TYPE_CTRL, CTL_EP_SIZE, USB_CTL_DataOut);
 	gCTL.address = 0;
 	gCTL.class_config = 0;
 	gCTL.usb_state = USB_STATE_DEFAULT;
@@ -629,76 +630,56 @@ static void USB_CTL_Error(void)
 }
 
 
-void USB_CTL_DataOut(uint8_t epnum, uint8_t * pdata)
+static void USB_CTL_DataOut(uint32_t count)
 {
-	if (epnum == 0U)
+	switch (gCTL.ctl_state)
 	{
-		switch (gCTL.ctl_state)
-		{
-		case CTL_STATE_DATA_OUT:
+	case CTL_STATE_DATA_OUT:
 #ifdef USB_CLASS_CTL_RXREADY
-			if (gCTL.usb_state == USB_STATE_CONFIGURED)
-			{
-				USB_CLASS_CTL_RXREADY();
-			}
-#endif
-			USB_CTL_SendStatus();
-			break;
-		case CTL_STATE_STATUS_OUT:
-			if (gCTL.ctl_state == USB_STATE_CONFIGURED)
-			{
-				// STATUS PHASE completed, update ep0_state to idle
-				gCTL.ctl_state = CTL_STATE_IDLE;
-				USB_EP_Stall(CTL_OUT_EP);
-			}
-			break;
-		}
-
-		USB_EP_Read(CTL_OUT_EP, gCTL.buffer, CTL_EP_SIZE);
-	}
-	else
-	{
 		if (gCTL.usb_state == USB_STATE_CONFIGURED)
 		{
-			USB_CLASS_DATAOUT(epnum);
+			USB_CLASS_CTL_RXREADY();
 		}
+#endif
+		USB_CTL_SendStatus();
+		break;
+	case CTL_STATE_STATUS_OUT:
+		if (gCTL.ctl_state == USB_STATE_CONFIGURED)
+		{
+			// STATUS PHASE completed, update ep0_state to idle
+			gCTL.ctl_state = CTL_STATE_IDLE;
+			USB_EP_Stall(CTL_OUT_EP);
+		}
+		break;
 	}
+
+	USB_EP_Read(CTL_OUT_EP, gCTL.buffer, CTL_EP_SIZE);
 }
 
-void USB_CTL_DataIn(uint8_t epnum, uint8_t * pdata)
+static void USB_CTL_DataIn(uint32_t count)
 {
-	if (epnum == 0U)
+	switch (gCTL.ctl_state)
 	{
-		switch (gCTL.ctl_state)
-		{
-		case CTL_STATE_DATA_IN:
+	case CTL_STATE_DATA_IN:
 #ifdef USB_CLASS_CTL_TXDONE
-			if (gCTL.usb_state == USB_STATE_CONFIGURED)
-			{
-				USB_CLASS_CTL_TXDONE();
-			}
-#endif
-			USB_EP_Stall(CTL_IN_EP);
-			USB_CTL_ReceiveStatus();
-			break;
-		case CTL_STATE_STATUS_IN:
-		case CTL_STATE_IDLE:
-			USB_EP_Stall(CTL_IN_EP);
-			break;
-		}
-
-		if (gCTL.address != 0)
-		{
-			USB_PCD_SetAddress(gCTL.address);
-			gCTL.address = 0;
-		}
-	}
-	else
-	{
 		if (gCTL.usb_state == USB_STATE_CONFIGURED)
 		{
-			USB_CLASS_DATAIN(epnum);
+			USB_CLASS_CTL_TXDONE();
 		}
+#endif
+		USB_EP_Stall(CTL_IN_EP);
+		USB_CTL_ReceiveStatus();
+		break;
+	case CTL_STATE_STATUS_IN:
+	case CTL_STATE_IDLE:
+		USB_EP_Stall(CTL_IN_EP);
+		break;
+	}
+
+	if (gCTL.address != 0)
+	{
+		USB_PCD_SetAddress(gCTL.address);
+		gCTL.address = 0;
 	}
 }
 

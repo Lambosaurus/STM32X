@@ -29,14 +29,15 @@ typedef struct {
 #ifdef USB_USE_DOUBLEBUFFER
 	uint16_t  pmaaddr0;
 	uint16_t  pmaaddr1;
-	uint8_t   doublebuffer;
 	uint32_t xfer_len_db;
 	bool xfer_fill_db;
+	uint8_t   doublebuffer;
 #endif
 	uint32_t maxpacket;
 	uint8_t * xfer_buff;
 	uint32_t xfer_len;
 	uint32_t xfer_count;
+	USB_EP_Callback_t callback;
 } USB_EP_t;
 
 /*
@@ -108,11 +109,12 @@ void USB_EP_Deinit(void)
 
 }
 
-void USB_EP_Open(uint8_t endpoint, uint8_t type, uint16_t size)
+void USB_EP_Open(uint8_t endpoint, uint8_t type, uint16_t size, USB_EP_Callback_t callback)
 {
 	USB_EP_t * ep = USB_EP_GetEP(endpoint);
 	ep->maxpacket = size;
 	ep->type = type;
+	ep->callback = callback;
 #ifdef USE_EP_DOUBLEBUFFER
 	if (doublebuffer)
 	{
@@ -663,12 +665,12 @@ void USB_EP_IRQHandler(void)
 			{
 				uint16_t count = (uint16_t)PCD_GET_EP_TX_CNT(USB, ep->num);
 				ep->xfer_len = ep->xfer_len > count ? ep->xfer_len - count : 0;
-				if (ep->xfer_len == 0U)
+				if (ep->xfer_len == 0)
 				{
 					if (count < ep->maxpacket)
 					{
 						// Non full packet indicated transfer complete
-						USB_CTL_DataIn(ep->num, ep->xfer_buff);
+						ep->callback(ep->xfer_count);
 					}
 					else
 					{
@@ -728,7 +730,7 @@ void USB_EP_IRQHandler(void)
 
 				if (count < ep->maxpacket || ep->xfer_len == 0)
 				{
-					USB_CTL_DataOut(ep->num, ep->xfer_buff);
+					ep->callback(ep->xfer_count);
 				}
 				else
 				{

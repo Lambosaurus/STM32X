@@ -21,8 +21,6 @@
 #define USB_CLASS_INIT(config)			USB_CDC_Init(config)
 #define USB_CLASS_DEINIT()				USB_CDC_Deinit()
 #define USB_CLASS_SETUP(request) 		USB_CDC_Setup(request)
-#define USB_CLASS_DATAIN(endpoint)		USB_CDC_DataIn(endpoint)
-#define USB_CLASS_DATAOUT(endpoint)		USB_CDC_DataOut(endpoint)
 #define USB_CLASS_CTL_RXREADY()			USB_CDC_CtlRxReady()
 //#define USB_CLASS_CTL_TXDONE
 
