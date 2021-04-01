@@ -24,7 +24,7 @@ static void CORE_InitSysTick(void);
  * PRIVATE VARIABLES
  */
 
-#ifdef USE_SYSTICK_IRQ
+#ifdef CORE_USE_TICK_IRQ
 static VoidFunction_t gTickCallback;
 #endif
 
@@ -70,7 +70,7 @@ uint32_t CORE_GetTick(void)
 	return gTicks;
 }
 
-#ifdef USE_SYSTICK_IRQ
+#ifdef CORE_USE_TICK_IRQ
 void CORE_OnTick(VoidFunction_t callback)
 {
 	gTickCallback = callback;
@@ -172,7 +172,7 @@ void SysTick_Handler(void)
 {
 	gTicks += MS_PER_SYSTICK;
 
-#ifdef USE_SYSTICK_IRQ
+#ifdef CORE_USE_TICK_IRQ
 	if (gTickCallback != NULL)
 	{
 		gTickCallback();

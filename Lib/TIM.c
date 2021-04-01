@@ -25,9 +25,9 @@ static void TIMx_Init(TIM_t * tim);
 static void TIMx_Deinit(TIM_t * tim);
 static void TIM_Reload(TIM_t * tim);
 
-#ifdef USE_TIM_IRQS
+#ifdef TIM_USE_IRQS
 static void TIM_IRQHandler(TIM_t * tim);
-#endif //USE_TIM_IRQS
+#endif //TIM_USE_IRQS
 
 static void TIM_EnableOCx(TIM_t * tim, uint32_t oc, uint32_t mode);
 
@@ -35,55 +35,55 @@ static void TIM_EnableOCx(TIM_t * tim, uint32_t oc, uint32_t mode);
  * PRIVATE VARIABLES
  */
 
-#ifdef USE_TIM1
+#ifdef TIM1_ENABLE
 static TIM_t gTIM_1 = {
 	.Instance = TIM1
 };
 TIM_t * TIM_1 = &gTIM_1;
 #endif
-#ifdef USE_TIM2
+#ifdef TIM2_ENABLE
 static TIM_t gTIM_2 = {
 	.Instance = TIM2
 };
 TIM_t * TIM_2 = &gTIM_2;
 #endif
-#ifdef USE_TIM3
+#ifdef TIM3_ENABLE
 static TIM_t gTIM_3 = {
 	.Instance = TIM3
 };
 TIM_t * TIM_3 = &gTIM_3;
 #endif
-#ifdef USE_TIM6
+#ifdef TIM6_ENABLE
 static TIM_t gTIM_6 = {
 	.Instance = TIM6
 };
 TIM_t * TIM_6 = &gTIM_6;
 #endif
-#ifdef USE_TIM14
+#ifdef TIM14_ENABLE
 static TIM_t gTIM_14 = {
 	.Instance = TIM14
 };
 TIM_t * TIM_14 = &gTIM_14;
 #endif
-#ifdef USE_TIM16
+#ifdef TIM16_ENABLE
 static TIM_t gTIM_16 = {
 	.Instance = TIM16
 };
 TIM_t * TIM_16 = &gTIM_16;
 #endif
-#ifdef USE_TIM17
+#ifdef TIM17_ENABLE
 static TIM_t gTIM_17 = {
 	.Instance = TIM17
 };
 TIM_t * TIM_17 = &gTIM_17;
 #endif
-#ifdef USE_TIM21
+#ifdef TIM21_ENABLE
 static TIM_t gTIM_21 = {
 	.Instance = TIM21
 };
 TIM_t * TIM_21 = &gTIM_21;
 #endif
-#ifdef USE_TIM22
+#ifdef TIM22_ENABLE
 static TIM_t gTIM_22 = {
 	.Instance = TIM22
 };
@@ -119,7 +119,7 @@ void TIM_SetReload(TIM_t * tim, uint32_t reload)
 	tim->Instance->ARR = reload;
 }
 
-#ifdef USE_TIM_IRQS
+#ifdef TIM_USE_IRQS
 void TIM_OnReload(TIM_t * tim, VoidFunction_t callback)
 {
 	__HAL_TIM_ENABLE_IT(tim, TIM_IT_UPDATE);
@@ -134,7 +134,7 @@ void TIM_OnPulse(TIM_t * tim, uint32_t ch, VoidFunction_t callback)
 	__HAL_TIM_ENABLE_IT(tim, TIM_IT_CC1 << ch);
 	tim->PulseCallback[ch] = callback;
 }
-#endif //USE_TIM_IRQS
+#endif //TIM_USE_IRQS
 
 void TIM_EnablePwm(TIM_t * tim, uint32_t ch, GPIO_t * gpio, uint32_t pin, uint32_t af)
 {
@@ -251,7 +251,7 @@ static void TIM_Reload(TIM_t * tim)
 
 static void TIMx_Init(TIM_t * tim)
 {
-#ifdef USE_TIM1
+#ifdef TIM1_ENABLE
 	if (tim == TIM_1)
 	{
 		HAL_NVIC_EnableIRQ(TIM1_BRK_UP_TRG_COM_IRQn);
@@ -260,56 +260,56 @@ static void TIMx_Init(TIM_t * tim)
 	}
 
 #endif
-#ifdef USE_TIM2
+#ifdef TIM2_ENABLE
 	if (tim == TIM_2)
 	{
 		HAL_NVIC_EnableIRQ(TIM2_IRQn);
 		__HAL_RCC_TIM2_CLK_ENABLE();
 	}
 #endif
-#ifdef USE_TIM3
+#ifdef TIM3_ENABLE
 	if (tim == TIM_3)
 	{
 		HAL_NVIC_EnableIRQ(TIM3_IRQn);
 		__HAL_RCC_TIM3_CLK_ENABLE();
 	}
 #endif
-#ifdef USE_TIM6
+#ifdef TIM6_ENABLE
 	if (tim == TIM_6)
 	{
 		HAL_NVIC_EnableIRQ(TIM6_IRQn);
 		__HAL_RCC_TIM6_CLK_ENABLE();
 	}
 #endif
-#ifdef USE_TIM14
+#ifdef TIM14_ENABLE
 	if (tim == TIM_14)
 	{
 		HAL_NVIC_EnableIRQ(TIM14_IRQn);
 		__HAL_RCC_TIM14_CLK_ENABLE();
 	}
 #endif
-#ifdef USE_TIM16
+#ifdef TIM16_ENABLE
 	if (tim == TIM_16)
 	{
 		HAL_NVIC_EnableIRQ(TIM16_IRQn);
 		__HAL_RCC_TIM16_CLK_ENABLE();
 	}
 #endif
-#ifdef USE_TIM17
+#ifdef TIM17_ENABLE
 	if (tim == TIM_17)
 	{
 		HAL_NVIC_EnableIRQ(TIM17_IRQn);
 		__HAL_RCC_TIM17_CLK_ENABLE();
 	}
 #endif
-#ifdef USE_TIM21
+#ifdef TIM21_ENABLE
 	if (tim == TIM_21)
 	{
 		HAL_NVIC_EnableIRQ(TIM21_IRQn);
 		__HAL_RCC_TIM21_CLK_ENABLE();
 	}
 #endif
-#ifdef USE_TIM22
+#ifdef TIM22_ENABLE
 	if (tim == TIM_22)
 	{
 		HAL_NVIC_EnableIRQ(TIM22_IRQn);
@@ -321,7 +321,7 @@ static void TIMx_Init(TIM_t * tim)
 
 static void TIMx_Deinit(TIM_t * tim)
 {
-#ifdef USE_TIM1
+#ifdef TIM1_ENABLE
 	if (tim == TIM_1)
 	{
 		HAL_NVIC_DisableIRQ(TIM1_BRK_UP_TRG_COM_IRQn);
@@ -330,56 +330,56 @@ static void TIMx_Deinit(TIM_t * tim)
 	}
 
 #endif
-#ifdef USE_TIM2
+#ifdef TIM2_ENABLE
 	if (tim == TIM_2)
 	{
 		HAL_NVIC_DisableIRQ(TIM2_IRQn);
 		__HAL_RCC_TIM2_CLK_DISABLE();
 	}
 #endif
-#ifdef USE_TIM3
+#ifdef TIM3_ENABLE
 	if (tim == TIM_3)
 	{
 		HAL_NVIC_DisableIRQ(TIM3_IRQn);
 		__HAL_RCC_TIM3_CLK_DISABLE();
 	}
 #endif
-#ifdef USE_TIM6
+#ifdef TIM6_ENABLE
 	if (tim == TIM_6)
 	{
 		HAL_NVIC_DisableIRQ(TIM6_IRQn);
 		__HAL_RCC_TIM6_CLK_DISABLE();
 	}
 #endif
-#ifdef USE_TIM14
+#ifdef TIM14_ENABLE
 	if (tim == TIM_14)
 	{
 		HAL_NVIC_DisableIRQ(TIM14_IRQn);
 		__HAL_RCC_TIM14_CLK_DISABLE();
 	}
 #endif
-#ifdef USE_TIM16
+#ifdef TIM16_ENABLE
 	if (tim == TIM_16)
 	{
 		HAL_NVIC_DisableIRQ(TIM16_IRQn);
 		__HAL_RCC_TIM16_CLK_DISABLE();
 	}
 #endif
-#ifdef USE_TIM17
+#ifdef TIM17_ENABLE
 	if (tim == TIM_17)
 	{
 		HAL_NVIC_DisableIRQ(TIM17_IRQn);
 		__HAL_RCC_TIM17_CLK_DISABLE();
 	}
 #endif
-#ifdef USE_TIM21
+#ifdef TIM21_ENABLE
 	if (tim == TIM_21)
 	{
 		HAL_NVIC_DisableIRQ(TIM21_IRQn);
 		__HAL_RCC_TIM21_CLK_DISABLE();
 	}
 #endif
-#ifdef USE_TIM22
+#ifdef TIM22_ENABLE
 	if (tim == TIM_22)
 	{
 		HAL_NVIC_DisableIRQ(TIM22_IRQn);
@@ -392,7 +392,7 @@ static void TIMx_Deinit(TIM_t * tim)
  * INTERRUPT ROUTINES
  */
 
-#ifdef USE_TIM_IRQS
+#ifdef TIM_USE_IRQS
 
 static void TIM_IRQHandler(TIM_t * tim)
 {
@@ -424,7 +424,7 @@ static void TIM_IRQHandler(TIM_t * tim)
 	}
 }
 
-#ifdef USE_TIM1
+#ifdef TIM1_ENABLE
 void TIM1_BRK_UP_TRG_COM_IRQHandler(void)
 {
 	TIM_IRQHandler(TIM_1);
@@ -434,54 +434,54 @@ void TIM1_CC_IRQHandler(void)
 	TIM_IRQHandler(TIM_1);
 }
 #endif
-#ifdef USE_TIM2
+#ifdef TIM2_ENABLE
 void TIM2_IRQHandler(void)
 {
 	TIM_IRQHandler(TIM_2);
 }
 #endif
-#ifdef USE_TIM3
+#ifdef TIM3_ENABLE
 void TIM3_IRQHandler(void)
 {
 	TIM_IRQHandler(TIM_3);
 }
 #endif
-#ifdef USE_TIM6
+#ifdef TIM6_ENABLE
 void TIM6_IRQHandler(void)
 {
 	TIM_IRQHandler(TIM_6);
 }
 #endif
-#ifdef USE_TIM14
+#ifdef TIM14_ENABLE
 void TIM14_IRQHandler(void)
 {
 	TIM_IRQHandler(TIM_14);
 }
 #endif
-#ifdef USE_TIM16
+#ifdef TIM16_ENABLE
 void TIM16_IRQHandler(void)
 {
 	TIM_IRQHandler(TIM_16);
 }
 #endif
-#ifdef USE_TIM17
+#ifdef TIM17_ENABLE
 void TIM17_IRQHandler(void)
 {
 	TIM_IRQHandler(TIM_17);
 }
 #endif
-#ifdef USE_TIM21
+#ifdef TIM21_ENABLE
 void TIM21_IRQHandler(void)
 {
 	TIM_IRQHandler(TIM_21);
 }
 #endif
-#ifdef USE_TIM22
+#ifdef TIM22_ENABLE
 void TIM22_IRQHandler(void)
 {
 	TIM_IRQHandler(TIM_22);
 }
 #endif
 
-#endif //USE_TIM_IRQS
+#endif //TIM_USE_IRQS
 

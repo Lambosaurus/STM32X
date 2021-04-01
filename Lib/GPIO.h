@@ -34,10 +34,10 @@ typedef enum {
 // Initialisation
 void GPIO_EnableOutput(GPIO_t * gpio, uint32_t pin, GPIO_PinState state);
 void GPIO_EnableInput(GPIO_t * gpio, uint32_t pin, uint32_t pullup);
-void GPIO_Disable(GPIO_t * gpio, uint32_t pin);
-#ifdef USE_GPIO_IRQS
+void GPIO_Deinit(GPIO_t * gpio, uint32_t pin);
+#ifdef GPIO_USE_IRQS
 void GPIO_EnableIRQ(GPIO_t * gpio, uint32_t pin, uint32_t pullup, GPIO_IT_Dir_t dir, VoidFunction_t callback);
-#endif //USE_GPIO_IRQS
+#endif //GPIO_USE_IRQS
 
 // Outputs
 void GPIO_Write(GPIO_t * gpio, uint32_t pin, GPIO_PinState state);

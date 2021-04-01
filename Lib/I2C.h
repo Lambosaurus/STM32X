@@ -39,9 +39,9 @@ void I2C_Deinit(I2C_t * i2c);
 
 bool I2C_Scan(I2C_t * i2c, uint8_t address);
 
-bool I2C_Tx(I2C_t * i2c, uint8_t address, const uint8_t * data, uint32_t count);
-bool I2C_Rx(I2C_t * i2c, uint8_t address, uint8_t * data, uint32_t count);
-bool I2C_TxRx(I2C_t * i2c, uint8_t address, const uint8_t * txdata, uint32_t txcount, uint8_t * rxdata, uint32_t rxcount);
+bool I2C_Write(I2C_t * i2c, uint8_t address, const uint8_t * data, uint32_t count);
+bool I2C_Read(I2C_t * i2c, uint8_t address, uint8_t * data, uint32_t count);
+bool I2C_Transfer(I2C_t * i2c, uint8_t address, const uint8_t * txdata, uint32_t txcount, uint8_t * rxdata, uint32_t rxcount);
 
 /*
  * EXTERN DECLARATIONS

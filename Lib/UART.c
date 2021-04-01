@@ -1,6 +1,7 @@
 
 #include "UART.h"
 #include "Core.h"
+#include "GPIO.h"
 #include <string.h>
 
 /*
@@ -104,7 +105,7 @@ void UART_Deinit(UART_t * uart)
 	UARTx_Deinit(uart);
 }
 
-void UART_Tx(UART_t * uart, const uint8_t * data, uint32_t count)
+void UART_Write(UART_t * uart, const uint8_t * data, uint32_t count)
 {
 	while (count--)
 	{
@@ -122,12 +123,12 @@ void UART_Tx(UART_t * uart, const uint8_t * data, uint32_t count)
 	}
 }
 
-void UART_TxStr(UART_t * uart, const char * str)
+void UART_WriteStr(UART_t * uart, const char * str)
 {
-	UART_Tx(uart, (const uint8_t *)str, strlen(str));
+	UART_Write(uart, (const uint8_t *)str, strlen(str));
 }
 
-uint32_t UART_RxCount(UART_t * uart)
+uint32_t UART_ReadCount(UART_t * uart)
 {
 	__UART_RX_DISABLE(uart);
 	// We have to disable the IRQs, as the IRQ may bump the tail.
@@ -136,9 +137,9 @@ uint32_t UART_RxCount(UART_t * uart)
 	return count;
 }
 
-uint32_t UART_Rx(UART_t * uart, uint8_t * data, uint32_t count)
+uint32_t UART_Read(UART_t * uart, uint8_t * data, uint32_t count)
 {
-	uint32_t available = UART_RxCount(uart);
+	uint32_t available = UART_ReadCount(uart);
 	if (available < count)
 	{
 		count = available;
@@ -156,7 +157,7 @@ uint32_t UART_Rx(UART_t * uart, uint8_t * data, uint32_t count)
 	return count;
 }
 
-uint8_t UART_RxPop(UART_t * uart)
+uint8_t UART_Pop(UART_t * uart)
 {
 	uint32_t tail = uart->rx.tail;
 	uint8_t b = uart->rx.buffer[tail];
@@ -164,7 +165,7 @@ uint8_t UART_RxPop(UART_t * uart)
 	return b;
 }
 
-void UART_RxFlush(UART_t * uart)
+void UART_ReadFlush(UART_t * uart)
 {
 	__UART_RX_DISABLE(uart);
 	uart->rx.tail = uart->rx.head;
@@ -222,7 +223,7 @@ static void UARTx_Deinit(UART_t * uart)
 	{
 		HAL_NVIC_DisableIRQ(USART1_IRQn);
 		__HAL_RCC_USART1_CLK_DISABLE();
-		HAL_GPIO_DeInit(UART1_GPIO, UART1_PINS);
+		GPIO_Deinit(UART1_GPIO, UART1_PINS);
 	}
 #endif
 #ifdef UART2_GPIO
@@ -230,7 +231,7 @@ static void UARTx_Deinit(UART_t * uart)
 	{
 		HAL_NVIC_DisableIRQ(USART2_IRQn);
 		__HAL_RCC_USART2_CLK_DISABLE();
-		HAL_GPIO_DeInit(UART2_GPIO, UART2_PINS);
+		GPIO_Deinit(UART2_GPIO, UART2_PINS);
 	}
 #endif
 #ifdef UART3_GPIO
@@ -238,7 +239,7 @@ static void UARTx_Deinit(UART_t * uart)
 	{
 		HAL_NVIC_DisableIRQ(USART3_IRQn);
 		__HAL_RCC_USART3_CLK_DISABLE();
-		HAL_GPIO_DeInit(UART3_GPIO, UART3_PINS);
+		GPIO_Deinit(UART3_GPIO, UART3_PINS);
 	}
 #endif
 }

@@ -59,7 +59,7 @@ static inline void I2C_StartTransfer(I2C_t * i2c, uint8_t address, uint8_t size,
 
 static bool I2C_XferBlock(I2C_t * i2c, uint8_t address, uint8_t * data, uint32_t count, uint32_t rw, uint32_t endMode);
 
-#ifdef USE_I2C_FASTMODEPLUS
+#ifdef I2C_USE_FASTMODEPLUS
 static uint32_t I2Cx_GetFMPBit(I2C_t * i2c);
 #endif
 
@@ -114,7 +114,7 @@ void I2C_Init(I2C_t * i2c, I2C_Mode_t mode)
 	//i2c->Instance->OAR2 &= ~I2C_OAR2_OA2EN;
 	//i2c->Instance->OAR2 = I2C_OAR2_OA2EN | ownAddress2 | SMBUS_OA2_NOMASK;
 	
-#ifdef USE_I2C_FASTMODEPLUS
+#ifdef I2C_USE_FASTMODEPLUS
 	if (mode > I2C_Mode_Fast)
 	{
 		uint32_t bit = I2Cx_GetFMPBit(i2c);
@@ -129,7 +129,7 @@ void I2C_Deinit(I2C_t * i2c)
 {
 	__HAL_I2C_DISABLE(i2c);
 
-#ifdef USE_I2C_FASTMODEPLUS
+#ifdef I2C_USE_FASTMODEPLUS
 	if (i2c->mode > I2C_Mode_Fast)
 	{
 		uint32_t bit = I2Cx_GetFMPBit(i2c);
@@ -141,19 +141,19 @@ void I2C_Deinit(I2C_t * i2c)
 	i2c->mode = 0;
 }
 
-bool I2C_Tx(I2C_t * i2c, uint8_t address, const uint8_t * data, uint32_t count)
+bool I2C_Write(I2C_t * i2c, uint8_t address, const uint8_t * data, uint32_t count)
 {
 	return I2C_WaitForIdle(i2c)
 		&& I2C_XferBlock(i2c, address, (uint8_t *)data, count, I2C_WRITE_MODE, I2C_AUTOEND_MODE);
 }
 
-bool I2C_Rx(I2C_t * i2c, uint8_t address, uint8_t * data, uint32_t count)
+bool I2C_Read(I2C_t * i2c, uint8_t address, uint8_t * data, uint32_t count)
 {
 	return I2C_WaitForIdle(i2c)
 		&& I2C_XferBlock(i2c, address, data, count, I2C_READ_MODE, I2C_AUTOEND_MODE);
 }
 
-bool I2C_TxRx(I2C_t * i2c, uint8_t address, const uint8_t * txdata, uint32_t txcount, uint8_t * rxdata, uint32_t rxcount)
+bool I2C_Transfer(I2C_t * i2c, uint8_t address, const uint8_t * txdata, uint32_t txcount, uint8_t * rxdata, uint32_t rxcount)
 {
 	return I2C_WaitForIdle(i2c)
 		&& I2C_XferBlock(i2c, address, (uint8_t *)txdata, txcount, I2C_WRITE_MODE, I2C_SOFTEND_MODE)
@@ -162,7 +162,7 @@ bool I2C_TxRx(I2C_t * i2c, uint8_t address, const uint8_t * txdata, uint32_t txc
 
 bool I2C_Scan(I2C_t * i2c, uint8_t address)
 {
-	return I2C_Tx(i2c, address, NULL, 0);
+	return I2C_Write(i2c, address, NULL, 0);
 }
 
 /*
@@ -359,7 +359,7 @@ static uint32_t I2C_SelectTiming(uint32_t bitrate)
 	uint32_t scl_del;
 	uint32_t sda_del = 0;
 
-#ifdef USE_I2C_FASTMODEPLUS
+#ifdef I2C_USE_FASTMODEPLUS
 	if (bitrate > I2C_Mode_Fast)
 	{
 		scl_del = NS_TO_CYCLES(clk, 50);
@@ -421,26 +421,26 @@ static void I2Cx_Deinit(I2C_t * i2c)
 	if (i2c == I2C_1)
 	{
 		__HAL_RCC_I2C1_CLK_DISABLE();
-		GPIO_Disable(I2C1_GPIO, I2C1_PINS);
+		GPIO_Deinit(I2C1_GPIO, I2C1_PINS);
 	}
 #endif
 #ifdef I2C2_GPIO
 	if (i2c == I2C_2)
 	{
 		__HAL_RCC_I2C2_CLK_DISABLE();
-		GPIO_Disable(I2C2_GPIO, I2C2_PINS);
+		GPIO_Deinit(I2C2_GPIO, I2C2_PINS);
 	}
 #endif
 #ifdef I2C3_GPIO
 	if (i2c == I2C_3)
 	{
 		__HAL_RCC_I2C3_CLK_DISABLE();
-		GPIO_Disable(I2C3_GPIO, I2C3_PINS);
+		GPIO_Deinit(I2C3_GPIO, I2C3_PINS);
 	}
 #endif
 }
 
-#ifdef USE_I2C_FASTMODEPLUS
+#ifdef I2C_USE_FASTMODEPLUS
 static uint32_t I2Cx_GetFMPBit(I2C_t * i2c)
 {
 	uint32_t bit;

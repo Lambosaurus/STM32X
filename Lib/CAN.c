@@ -140,7 +140,7 @@ void CAN_Deinit(void)
 	CANx_Deinit();
 }
 
-bool CAN_Tx(const CANMsg_t * msg)
+bool CAN_Write(const CANMsg_t * msg)
 {
 	uint32_t tsr = CAN->TSR;
 
@@ -157,7 +157,7 @@ bool CAN_Tx(const CANMsg_t * msg)
 }
 
 
-uint8_t CAN_RxCount()
+uint8_t CAN_ReadCount()
 {
 #ifdef CAN_DUAL_FIFO
 	return _CAN_RX_FIFO0_COUNT(CAN) + _CAN_RX_FIFO1_COUNT(CAN);
@@ -165,7 +165,7 @@ uint8_t CAN_RxCount()
 	return _CAN_RX_FIFO0_COUNT(CAN);
 }
 
-bool CAN_Rx(CANMsg_t * msg)
+bool CAN_Read(CANMsg_t * msg)
 {
 	if (_CAN_RX_FIFO0_COUNT(CAN))
 	{
@@ -276,7 +276,7 @@ static void CANx_Deinit(void)
 {
 	//HAL_NVIC_DisableIRQ(CEC_CAN_IRQn);
 	__HAL_RCC_CAN1_CLK_DISABLE();
-	GPIO_Disable(CAN_GPIO, CAN_PINS);
+	GPIO_Deinit(CAN_GPIO, CAN_PINS);
 }
 
 /*
