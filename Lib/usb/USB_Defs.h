@@ -59,9 +59,9 @@
 #define USB_PACKET_SIZE		64
 #endif
 
-#define BTABLE_ADDRESS                         0x0000
-#define PMA_ACCESS                             1
-#define EP_ADDR_MSK                            0x7
+#if (BTABLE_ADDRESS != 0)
+#error "Btable is expected to be 0x0000"
+#endif
 
 /*
  * PUBLIC DEFINITIONS: HELPER MACROS
@@ -74,6 +74,9 @@
 #define MIN(a, b)  				(((a) < (b)) ? (a) : (b))
 #define MAX(a, b)  				(((a) > (b)) ? (a) : (b))
 
+#ifndef __ALIGNED
+#define __ALIGNED(n)			__attribute__((aligned(n)))
+#endif
 
 /*
  * PUBLIC DEFINITIONS: USB DESCRIPTOR DEFS

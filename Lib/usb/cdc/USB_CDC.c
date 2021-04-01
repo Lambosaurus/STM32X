@@ -1,6 +1,7 @@
 
 #include "USB_CDC.h"
 
+#ifdef USB_CLASS_CDC
 #include "..\USB_EP.h"
 #include "..\USB_CTL.h"
 #include "Core.h"
@@ -362,4 +363,6 @@ static void USB_CDC_TransmitDone(uint32_t count)
 {
 	gCDC.txBusy = false;
 }
+
+#endif //USB_CLASS_CDC
 
