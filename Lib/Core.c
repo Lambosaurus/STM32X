@@ -77,6 +77,17 @@ void CORE_OnTick(VoidFunction_t callback)
 }
 #endif
 
+void CORE_EnableUSBClock(void)
+{
+	  RCC_OscInitTypeDef RCC_OscInitStruct;
+	  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48;
+	  RCC_OscInitStruct.HSI48State = RCC_HSI48_ON;
+	  HAL_RCC_OscConfig(&RCC_OscInitStruct);
+	  RCC_PeriphCLKInitTypeDef PeriphClkInit;
+	  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USB;
+	  PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_HSI48;
+	  HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit);
+}
 
 /*
  * PRIVATE FUNCTIONS
