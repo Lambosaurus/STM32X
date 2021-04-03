@@ -30,6 +30,7 @@ void USB_Deinit(void);
 #ifdef USB_CLASS_CDC
 void USB_Write(const uint8_t * data, uint32_t count);
 uint32_t USB_Read(uint8_t * data, uint32_t size);
+void USB_WriteStr(const char * str);
 #endif
 
 /*

@@ -8,6 +8,7 @@
 
 #ifdef USB_CLASS_CDC
 #include "usb/cdc/USB_CDC.h"
+#include <string.h>
 #endif
 
 /*
@@ -61,6 +62,11 @@ void USB_Write(const uint8_t * data, uint32_t count)
 uint32_t USB_Read(uint8_t * data, uint32_t size)
 {
 	return USB_CDC_Read(data, size);
+}
+
+void USB_WriteStr(const char * str)
+{
+	USB_CDC_Write((uint8_t *)str, strlen(str));
 }
 #endif //USB_CLASS_CDC
 
