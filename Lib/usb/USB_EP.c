@@ -241,7 +241,7 @@ static uint16_t USB_PMA_Alloc(uint16_t size)
 
 static void USB_PMA_Write(uint16_t address, uint8_t * data, uint16_t count)
 {
-	uint16_t * __restrict pma = (uint16_t * __restrict)(PMA_BASE + ((uint32_t)address * PMA_ACCESS));
+	volatile uint16_t * pma = (volatile uint16_t *)(PMA_BASE + ((uint32_t)address * PMA_ACCESS));
 	uint32_t words = (count + 1) / 2;
 	while(words--)
 	{
@@ -254,7 +254,7 @@ static void USB_PMA_Write(uint16_t address, uint8_t * data, uint16_t count)
 
 static void USB_PMA_Read(uint16_t address, uint8_t * data, uint16_t count)
 {
-	uint16_t * __restrict pma = (uint16_t * __restrict)(PMA_BASE + ((uint32_t)address * PMA_ACCESS));
+	volatile uint16_t * pma = (volatile uint16_t *)(PMA_BASE + ((uint32_t)address * PMA_ACCESS));
 	uint32_t words = count / 2;
 
 	while (words--)
