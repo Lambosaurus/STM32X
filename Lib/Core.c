@@ -28,7 +28,7 @@ static void CORE_InitSysTick(void);
 static VoidFunction_t gTickCallback;
 #endif
 
-static volatile uint32_t gTicks = 0;
+extern volatile uint32_t gTicks = 0;
 
 /*
  * PUBLIC FUNCTIONS
@@ -63,11 +63,6 @@ void CORE_Delay(uint32_t ms)
 	{
 		CORE_Idle();
 	}
-}
-
-uint32_t CORE_GetTick(void)
-{
-	return gTicks;
 }
 
 #ifdef CORE_USE_TICK_IRQ

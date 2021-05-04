@@ -30,7 +30,7 @@ void CORE_Init(void);
 // Ticks & power control
 void CORE_Idle(void);
 void CORE_Delay(uint32_t ms);
-uint32_t CORE_GetTick(void);
+static inline uint32_t CORE_GetTick(void);
 
 #ifdef USE_SYSTICK_IRQ
 void CORE_OnTick(VoidFunction_t callback);
@@ -43,5 +43,7 @@ void CORE_EnableUSBClock(bool enable);
 /*
  * EXTERN DECLARATIONS
  */
+
+#include "Core.inl"
 
 #endif //CORE_H
