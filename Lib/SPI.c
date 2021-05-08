@@ -141,37 +141,25 @@ static uint32_t SPI_SelectPrescalar(SPI_t * spi, uint32_t target)
 
 static void SPIx_Init(SPI_t * spi)
 {
-	GPIO_InitTypeDef gpio = {0};
-	gpio.Mode = GPIO_MODE_AF_PP;
-	gpio.Pull = GPIO_NOPULL;
-	gpio.Speed = GPIO_SPEED_HIGH;
-	UNUSED(gpio);
-
 #ifdef SPI1_GPIO
 	if (spi == SPI_1)
 	{
 		__HAL_RCC_SPI1_CLK_ENABLE();
-		gpio.Pin = SPI1_PINS;
-		gpio.Alternate = SPI1_AF;
-		HAL_GPIO_Init(SPI1_GPIO, &gpio);
+		GPIO_EnableAlternate(SPI1_GPIO, SPI1_PINS, GPIO_MODE_AF_PP, SPI1_AF);
 	}
 #endif
 #ifdef SPI2_GPIO
 	if (spi == SPI_2)
 	{
 		__HAL_RCC_SPI2_CLK_ENABLE();
-		gpio.Pin = SPI2_PINS;
-		gpio.Alternate = SPI2_AF;
-		HAL_GPIO_Init(SPI2_GPIO, &gpio);
+		GPIO_EnableAlternate(SPI2_GPIO, SPI2_PINS, GPIO_MODE_AF_PP, SPI2_AF);
 	}
 #endif
 #ifdef SPI3_GPIO
 	if (spi == SPI_3)
 	{
 		__HAL_RCC_SPI3_CLK_ENABLE();
-		gpio.Pin = SPI3_PINS;
-		gpio.Alternate = SPI3_AF;
-		HAL_GPIO_Init(SPI3_GPIO, &gpio);
+		GPIO_EnableAlternate(SPI3_GPIO, SPI3_PINS, GPIO_MODE_AF_PP, SPI3_AF);
 	}
 #endif
 }

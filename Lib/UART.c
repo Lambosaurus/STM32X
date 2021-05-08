@@ -178,19 +178,11 @@ void UART_ReadFlush(UART_t * uart)
 
 static void UARTx_Init(UART_t * uart)
 {
-	GPIO_InitTypeDef gpio = {0};
-	gpio.Mode = GPIO_MODE_AF_PP;
-	gpio.Pull = GPIO_NOPULL;
-	gpio.Speed = GPIO_SPEED_MEDIUM;
-	UNUSED(gpio);
-
 #ifdef UART1_GPIO
 	if (uart == UART_1)
 	{
 		__HAL_RCC_USART1_CLK_ENABLE();
-		gpio.Pin = UART1_PINS;
-		gpio.Alternate = UART1_AF;
-		HAL_GPIO_Init(UART1_GPIO, &gpio);
+		GPIO_EnableAlternate(UART1_GPIO, UART1_PINS, GPIO_MODE_AF_PP, UART1_AF);
 		HAL_NVIC_EnableIRQ(USART1_IRQn);
 	}
 #endif
@@ -198,9 +190,7 @@ static void UARTx_Init(UART_t * uart)
 	if (uart == UART_2)
 	{
 		__HAL_RCC_USART2_CLK_ENABLE();
-		gpio.Pin = UART2_PINS;
-		gpio.Alternate = UART2_AF;
-		HAL_GPIO_Init(UART2_GPIO, &gpio);
+		GPIO_EnableAlternate(UART2_GPIO, UART2_PINS, GPIO_MODE_AF_PP, UART2_AF);
 		HAL_NVIC_EnableIRQ(USART2_IRQn);
 	}
 #endif
@@ -208,9 +198,7 @@ static void UARTx_Init(UART_t * uart)
 	if (uart == UART_3)
 	{
 		__HAL_RCC_USART3_CLK_ENABLE();
-		gpio.Pin = UART3_PINS;
-		gpio.Alternate = UART3_AF;
-		HAL_GPIO_Init(UART3_GPIO, &gpio);
+		GPIO_EnableAlternate(UART3_GPIO, UART3_PINS, GPIO_MODE_AF_PP, UART3_AF);
 		HAL_NVIC_EnableIRQ(USART3_IRQn);
 	}
 #endif
