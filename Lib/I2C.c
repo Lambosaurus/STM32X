@@ -380,37 +380,25 @@ static uint32_t I2C_SelectTiming(uint32_t bitrate)
 
 static void I2Cx_Init(I2C_t * i2c)
 {
-	GPIO_InitTypeDef gpio = {0};
-	gpio.Mode = GPIO_MODE_AF_OD;
-	gpio.Pull = GPIO_NOPULL;
-	gpio.Speed = GPIO_SPEED_HIGH;
-	UNUSED(gpio);
-
 #ifdef I2C1_GPIO
 	if (i2c == I2C_1)
 	{
 		__HAL_RCC_I2C1_CLK_ENABLE();
-		gpio.Pin = I2C1_PINS;
-		gpio.Alternate = I2C1_AF;
-		HAL_GPIO_Init(I2C1_GPIO, &gpio);
+		GPIO_EnableAlternate(I2C1_GPIO, I2C1_PINS, GPIO_MODE_AF_OD, I2C1_AF);
 	}
 #endif
 #ifdef I2C2_GPIO
 	if (i2c == I2C_2)
 	{
 		__HAL_RCC_I2C2_CLK_ENABLE();
-		gpio.Pin = I2C2_PINS;
-		gpio.Alternate = I2C2_AF;
-		HAL_GPIO_Init(I2C2_GPIO, &gpio);
+		GPIO_EnableAlternate(I2C2_GPIO, I2C2_PINS, GPIO_MODE_AF_OD, I2C2_AF);
 	}
 #endif
 #ifdef I2C3_GPIO
 	if (i2c == I2C_3)
 	{
 		__HAL_RCC_I2C3_CLK_ENABLE();
-		gpio.Pin = I2C3_PINS;
-		gpio.Alternate = I2C3_AF;
-		HAL_GPIO_Init(I2C3_GPIO, &gpio);
+		GPIO_EnableAlternate(I2C3_GPIO, I2C3_PINS, GPIO_MODE_AF_OD, I2C3_AF);
 	}
 #endif
 }

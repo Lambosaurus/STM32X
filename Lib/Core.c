@@ -1,5 +1,6 @@
 
 #include "Core.h"
+#include "GPIO.h"
 
 /*
  * PRIVATE DEFINITIONS
@@ -28,7 +29,7 @@ static void CORE_InitSysTick(void);
 static VoidFunction_t gTickCallback;
 #endif
 
-extern volatile uint32_t gTicks = 0;
+volatile uint32_t gTicks = 0;
 
 /*
  * PUBLIC FUNCTIONS
@@ -105,19 +106,10 @@ void CORE_InitGPIO(void)
 	__HAL_RCC_GPIOB_CLK_ENABLE();
 	__HAL_RCC_GPIOC_CLK_ENABLE();
 
-	GPIO_InitTypeDef gpio = {0};
-	gpio.Mode = GPIO_MODE_ANALOG;
-	gpio.Pull = GPIO_NOPULL;
-
 	// SWCLK and SWDIO on PA13, PA14
-	gpio.Pin = GPIO_PIN_All & ~(GPIO_PIN_13 | GPIO_PIN_14);
-	HAL_GPIO_Init(GPIOA, &gpio);
-
-	gpio.Pin = GPIO_PIN_All;
-	HAL_GPIO_Init(GPIOB, &gpio);
-
-	gpio.Pin = GPIO_PIN_All;
-	HAL_GPIO_Init(GPIOC, &gpio);
+	GPIO_Deinit(GPIOA, GPIO_PIN_All & ~(GPIO_PIN_13 | GPIO_PIN_14));
+	GPIO_Deinit(GPIOB, GPIO_PIN_All);
+	GPIO_Deinit(GPIOC, GPIO_PIN_All);
 }
 
 void CORE_InitSysClk(void)
