@@ -71,6 +71,18 @@ void GPIO_EnableInput(GPIO_t * gpio, uint32_t pin, uint32_t pullup)
 	HAL_GPIO_Init(gpio, &init);
 }
 
+void GPIO_EnableAlternate(GPIO_t * gpio, uint32_t pin, uint32_t mode, uint32_t af)
+{
+	GPIO_InitTypeDef init = {
+		.Mode = mode,
+		.Pin = pin,
+		.Pull = GPIO_NOPULL,
+		.Speed = GPIO_SPEED_HIGH,
+		.Alternate = af,
+	};
+	HAL_GPIO_Init(gpio, &init);
+}
+
 #ifdef GPIO_USE_IRQS
 void GPIO_EnableIRQ(GPIO_t * gpio, uint32_t pin, uint32_t pullup, GPIO_IT_Dir_t dir, VoidFunction_t callback)
 {
