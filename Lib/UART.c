@@ -37,6 +37,12 @@ static void UARTx_Deinit(UART_t * uart);
  * PRIVATE VARIABLES
  */
 
+#ifdef UARTLP_GPIO
+static UART_t gUART_LP = {
+	.Instance = LPUART1
+};
+UART_t * UART_LP = &gUART_LP;
+#endif
 #ifdef UART1_GPIO
 static UART_t gUART_1 = {
 	.Instance = USART1
@@ -54,6 +60,18 @@ static UART_t gUART_3 = {
 	.Instance = USART3
 };
 UART_t * UART_3 = &gUART_3;
+#endif
+#ifdef UART4_GPIO
+static UART_t gUART_4 = {
+	.Instance = USART4
+};
+UART_t * UART_4 = &gUART_4;
+#endif
+#ifdef UART5_GPIO
+static UART_t gUART_5 = {
+	.Instance = USART5
+};
+UART_t * UART_5 = &gUART_5;
 #endif
 
 /*
@@ -178,6 +196,14 @@ void UART_ReadFlush(UART_t * uart)
 
 static void UARTx_Init(UART_t * uart)
 {
+#ifdef UARTLP_GPIO
+	if (uart == UART_LP)
+	{
+		__HAL_RCC_LPUART1_CLK_ENABLE();
+		GPIO_EnableAlternate(UARTLP_GPIO, UARTLP_PINS, GPIO_MODE_AF_PP, UARTLP_AF);
+		HAL_NVIC_EnableIRQ(LPUART1_IRQn);
+	}
+#endif
 #ifdef UART1_GPIO
 	if (uart == UART_1)
 	{
@@ -202,10 +228,34 @@ static void UARTx_Init(UART_t * uart)
 		HAL_NVIC_EnableIRQ(USART3_IRQn);
 	}
 #endif
+#ifdef UART4_GPIO
+	if (uart == UART_4)
+	{
+		__HAL_RCC_USART4_CLK_ENABLE();
+		GPIO_EnableAlternate(UART4_GPIO, UART4_PINS, GPIO_MODE_AF_PP, UART4_AF);
+		HAL_NVIC_EnableIRQ(USART4_5_IRQn);
+	}
+#endif
+#ifdef UART5_GPIO
+	if (uart == UART_5)
+	{
+		__HAL_RCC_USART5_CLK_ENABLE();
+		GPIO_EnableAlternate(UART5_GPIO, UART5_PINS, GPIO_MODE_AF_PP, UART5_AF);
+		HAL_NVIC_EnableIRQ(USART4_5_IRQn);
+	}
+#endif
 }
 
 static void UARTx_Deinit(UART_t * uart)
 {
+#ifdef UARTLP_GPIO
+	if (uart == UART_LP)
+	{
+		HAL_NVIC_DisableIRQ(LPUART1_IRQn);
+		__HAL_RCC_LPUART1_CLK_DISABLE();
+		GPIO_Deinit(UARTLP_GPIO, UARTLP_PINS);
+	}
+#endif
 #ifdef UART1_GPIO
 	if (uart == UART_1)
 	{
@@ -230,6 +280,23 @@ static void UARTx_Deinit(UART_t * uart)
 		GPIO_Deinit(UART3_GPIO, UART3_PINS);
 	}
 #endif
+#ifdef UART4_GPIO
+	if (uart == UART_4)
+	{
+		// TODO: Handle IRQ contention between UART_4 & UART_5
+		HAL_NVIC_DisableIRQ(USART4_5_IRQn);
+		__HAL_RCC_USART4_CLK_DISABLE();
+		GPIO_Deinit(UART4_GPIO, UART4_PINS);
+	}
+#endif
+#ifdef UART5_GPIO
+	if (uart == UART_5)
+	{
+		HAL_NVIC_DisableIRQ(USART4_5_IRQn);
+		__HAL_RCC_USART5_CLK_DISABLE();
+		GPIO_Deinit(UART5_GPIO, UART5_PINS);
+	}
+#endif
 }
 
 /*
@@ -237,7 +304,7 @@ static void UARTx_Deinit(UART_t * uart)
  */
 
 
-void USART_IRQHandler(UART_t *uart)
+void UART_IRQHandler(UART_t *uart)
 {
 	uint32_t flags = uart->Instance->ISR;
 
@@ -277,22 +344,38 @@ void USART_IRQHandler(UART_t *uart)
 }
 
 
+#ifdef UARTLP_GPIO
+void LPUART1_IRQHandler(void)
+{
+	UART_IRQHandler(UART_LP);
+}
+#endif
 #ifdef UART1_GPIO
 void USART1_IRQHandler(void)
 {
-	USART_IRQHandler(UART_1);
+	UART_IRQHandler(UART_1);
 }
 #endif
 #ifdef UART2_GPIO
 void USART2_IRQHandler(void)
 {
-	USART_IRQHandler(UART_2);
+	UART_IRQHandler(UART_2);
 }
 #endif
 #ifdef UART3_GPIO
 void USART3_IRQHandler(void)
 {
-	USART_IRQHandler(UART_3);
+	UART_IRQHandler(UART_3);
 }
 #endif
-
+#if defined(UART4_GPIO) || defined(UART5_GPIO)
+void USART4_5_IRQHandler(void)
+{
+#ifdef UART4_GPIO
+	UART_IRQHandler(UART_4);
+#endif
+#ifdef UART5_GPIO
+	UART_IRQHandler(UART_5);
+#endif
+}
+#endif
