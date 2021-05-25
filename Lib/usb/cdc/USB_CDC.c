@@ -2,8 +2,8 @@
 #include "USB_CDC.h"
 
 #ifdef USB_CLASS_CDC
-#include "..\USB_EP.h"
-#include "..\USB_CTL.h"
+#include "../USB_EP.h"
+#include "../USB_CTL.h"
 #include "Core.h"
 #include <string.h>
 
