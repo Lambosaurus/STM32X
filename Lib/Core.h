@@ -40,6 +40,8 @@ void CORE_OnTick(VoidFunction_t callback);
 void CORE_EnableUSBClock(bool enable);
 #endif
 
+uint32_t CORE_EnableRTCClock(bool enable);
+
 /*
  * EXTERN DECLARATIONS
  */

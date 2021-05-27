@@ -42,7 +42,7 @@ typedef enum {
  * PUBLIC FUNCTIONS
  */
 
-bool RTC_Init(void);
+void RTC_Init(void);
 void RTC_Deinit(void);
 
 void RTC_Write(DateTime_t * time);

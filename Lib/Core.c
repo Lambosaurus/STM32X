@@ -85,10 +85,58 @@ void CORE_EnableUSBClock(bool enable)
 	else
 	{
 		__HAL_RCC_HSI48_DISABLE();
-		while(__HAL_RCC_GET_FLAG(RCC_FLAG_HSI48RDY));
+		// No need to wait for disable.
 	}
 }
 #endif
+
+uint32_t CORE_EnableRTCClock(bool enable)
+{
+	__HAL_RCC_PWR_CLK_ENABLE();
+#ifdef CORE_USE_LSE
+	if(HAL_IS_BIT_CLR(PWR->CR, PWR_CR_DBP))
+	{
+		// Enable write access to Backup domain
+		SET_BIT(PWR->CR, PWR_CR_DBP);
+		while(HAL_IS_BIT_CLR(PWR->CR, PWR_CR_DBP));
+	}
+	if(enable)
+	{
+#ifdef RCC_LSE_BYPASS
+		__HAL_RCC_LSE_CONFIG(RCC_LSE_BYPASS);
+#else
+		__HAL_RCC_LSE_CONFIG(RCC_LSE_ON);
+#endif
+		while(!__HAL_RCC_GET_FLAG(RCC_FLAG_LSERDY));
+	}
+	else
+	{
+		__HAL_RCC_LSE_CONFIG(RCC_LSE_OFF);
+		// Do not wait for disable
+	}
+	uint32_t freq = RCC_LSE_FREQ;
+#else
+	if (enable)
+	{
+		__HAL_RCC_LSI_ENABLE();
+		while (!__HAL_RCC_GET_FLAG(RCC_FLAG_LSIRDY));
+	}
+	else
+	{
+		__HAL_RCC_LSI_DISABLE();
+		// Do not wait for disable.
+	}
+	uint32_t csr = (RCC->CSR & ~(RCC_CSR_RTCSEL));
+	// RTC Clock selection can be changed only if the Backup Domain is reset */
+	__HAL_RCC_BACKUPRESET_FORCE();
+	__HAL_RCC_BACKUPRESET_RELEASE();
+	RCC->CSR = csr;
+	__HAL_RCC_RTC_CONFIG(RCC_RTCCLKSOURCE_LSI);
+	uint32_t freq = LSI_VALUE;
+#endif
+	__HAL_RCC_PWR_CLK_DISABLE();
+	return freq;
+}
 
 /*
  * PRIVATE FUNCTIONS
