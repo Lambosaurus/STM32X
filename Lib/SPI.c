@@ -1,6 +1,7 @@
 
 #include "SPI.h"
 #include "GPIO.h"
+#include "CLK.h"
 
 /*
  * PRIVATE DEFINITIONS
@@ -124,7 +125,7 @@ uint8_t SPI_TransferByte(SPI_t * spi, uint8_t byte)
 static uint32_t SPI_SelectPrescalar(SPI_t * spi, uint32_t target)
 {
 	// Div clock by 2, because the prescalars start at 2
-	uint32_t clk = HAL_RCC_GetPCLK1Freq() >> 1;
+	uint32_t clk = CLK_GetPCLKFreq() >> 1;
 	uint32_t actual;
 	uint32_t k;
 	for (k = 0; k <= 0x7; k++)

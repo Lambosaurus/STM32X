@@ -2,6 +2,7 @@
 #include "UART.h"
 #include "Core.h"
 #include "GPIO.h"
+#include "CLK.h"
 #include <string.h>
 
 /*
@@ -78,7 +79,7 @@ void UART_Init(UART_t * uart, uint32_t baud)
 	MODIFY_REG(uart->Instance->CR3, (USART_CR3_RTSE | USART_CR3_CTSE | USART_CR3_ONEBIT), cr3);
 
 	// Calculate baud rate.
-	uint32_t pclk = HAL_RCC_GetPCLK1Freq();
+	uint32_t pclk = CLK_GetPCLKFreq();
 	uart->Instance->BRR = UART_DIV_SAMPLING16(pclk, baud);
 
 	CLEAR_BIT(uart->Instance->CR2, (USART_CR2_LINEN | USART_CR2_CLKEN));

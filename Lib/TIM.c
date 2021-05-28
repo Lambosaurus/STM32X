@@ -1,5 +1,6 @@
 
 #include "TIM.h"
+#include "CLK.h"
 
 /*
  * PRIVATE DEFINITIONS
@@ -110,8 +111,8 @@ void TIM_Init(TIM_t * tim, uint32_t freq, uint32_t reload)
 
 void TIM_SetFreq(TIM_t * tim, uint32_t freq)
 {
-	uint32_t sysclk = HAL_RCC_GetPCLK1Freq();
-	tim->Instance->PSC = (sysclk / freq) - 1;
+	uint32_t clk = CLK_GetPCLKFreq();
+	tim->Instance->PSC = (clk / freq) - 1;
 }
 
 void TIM_SetReload(TIM_t * tim, uint32_t reload)

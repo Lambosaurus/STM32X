@@ -5,8 +5,13 @@
 //#define STM32F0
 
 // Core config
-//#define CORE_USE_HSE
 //#define CORE_USE_TICK_IRQ
+
+// CLK config
+//#define CLK_USE_HSE
+//#define CLK_USE_LSE
+//#define CLK_BYPASS_LSE
+//#define CLK_LSE_FREQ		32768
 
 // ADC config
 //#define ADC_VREF	        3300

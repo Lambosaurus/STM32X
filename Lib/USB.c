@@ -2,7 +2,7 @@
 #include "USB.h"
 #ifdef USB_ENABLE
 
-#include "Core.h"
+#include "CLK.h"
 #include "usb/USB_PCD.h"
 #include "usb/USB_CTL.h"
 
@@ -36,7 +36,7 @@ static void USBx_Deinit(void);
 
 void USB_Init(void)
 {
-	CORE_EnableUSBClock(true);
+	CLK_EnableUSBCLK();
 	USBx_Init();
 	USB_PCD_Init();
 	USB_CTL_Init();
@@ -50,7 +50,7 @@ void USB_Deinit(void)
 	USB_CTL_Deinit();
 	USB_PCD_Deinit();
 	USBx_Deinit();
-	CORE_EnableUSBClock(false);
+	CLK_DisableUSBCLK();
 }
 
 #ifdef USB_CLASS_CDC

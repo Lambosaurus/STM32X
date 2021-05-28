@@ -36,10 +36,6 @@ static inline uint32_t CORE_GetTick(void);
 void CORE_OnTick(VoidFunction_t callback);
 #endif
 
-#ifdef USB_ENABLE
-void CORE_EnableUSBClock(bool enable);
-#endif
-
 uint32_t CORE_EnableRTCClock(bool enable);
 
 /*

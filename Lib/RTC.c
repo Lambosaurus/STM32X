@@ -1,6 +1,6 @@
 
 #include "RTC.h"
-#include "Core.h"
+#include "CLK.h"
 
 /*
  * PRIVATE DEFINITIONS
@@ -37,7 +37,8 @@ static uint32_t RTC_FromBCD(uint32_t bcd);
 
 void RTC_Init(void)
 {
-	uint32_t freq = CORE_EnableRTCClock(true);
+	CLK_EnableLSO();
+
 	__HAL_RCC_RTC_ENABLE();
 	_RTC_WRITEPROTECTION_DISABLE();
 	RTC_EnterInit();
@@ -45,7 +46,7 @@ void RTC_Init(void)
 	RTC->CR &= ~(RTC_CR_FMT | RTC_CR_OSEL | RTC_CR_POL);
 	RTC->CR |= RTC_HOURFORMAT_24 | RTC_OUTPUT_DISABLE | RTC_OUTPUT_POLARITY_HIGH;
 
-	uint32_t divisor = (freq / RTC_PREDIV);
+	uint32_t divisor = (CLK_GetLSOFreq() / RTC_PREDIV);
 	RTC->PRER = ((RTC_PREDIV - 1) << 16U) | (divisor - 1);
 
 	// Exit Initialization mode
@@ -89,7 +90,8 @@ void RTC_Deinit(void)
 
 	_RTC_WRITEPROTECTION_ENABLE();
 	__HAL_RCC_RTC_DISABLE();
-	CORE_EnableRTCClock(false);
+
+	CLK_DisableLSO();
 }
 
 void RTC_Write(DateTime_t * time)
