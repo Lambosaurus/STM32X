@@ -13,6 +13,11 @@
  * PRIVATE PROTOTYPES
  */
 
+#ifdef CLK_USE_LSE
+static void CLK_ResetBackupDomain(void)
+#endif
+static void CLK_AccessBackupDomain(void);
+
 /*
  * PRIVATE VARIABLES
  */
@@ -80,76 +85,58 @@ void CLK_DisableUSBCLK(void)
 
 void CLK_EnableLSO(void)
 {
+#ifdef CLK_USE_LSE
+#ifdef CLK_LSE_BYPASS
+	__HAL_RCC_LSE_CONFIG(RCC_LSE_BYPASS);
+#else
+	__HAL_RCC_LSE_CONFIG(RCC_LSE_ON);
+#endif
+	while(!__HAL_RCC_GET_FLAG(RCC_FLAG_LSERDY));
+
+	CLK_AccessBackupDomain();
+	CLK_ResetBackupDomain();
+	__HAL_RCC_RTC_CONFIG(RCC_RTCCLKSOURCE_LSE);
+#else
 	__HAL_RCC_LSI_ENABLE();
 	while (!__HAL_RCC_GET_FLAG(RCC_FLAG_LSIRDY));
-
-	RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
-	PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RTC;
-	PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSI;
-	if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
-	{
-		__BKPT();
-	}
+	CLK_AccessBackupDomain();
+	__HAL_RCC_RTC_CONFIG(RCC_RTCCLKSOURCE_LSI);
+#endif
 }
 
 void CLK_DisableLSO(void)
 {
+#ifdef CLK_USE_LSE
+	__HAL_RCC_LSE_CONFIG(RCC_LSE_OFF);
+#else
 	__HAL_RCC_LSI_DISABLE();
-	// Do not wait for disable.
+#endif
 }
 
 /*
  * PRIVATE FUNCTIONS
  */
 
-/*
-static void CLK_InitLSO(void)
+#ifdef CLK_USE_LSE
+static void CLK_ResetBackupDomain(void)
 {
-	__HAL_RCC_PWR_CLK_ENABLE();
-#ifdef CORE_USE_LSE
-	if(HAL_IS_BIT_CLR(PWR->CR, PWR_CR_DBP))
-	{
-		// Enable write access to Backup domain
-		SET_BIT(PWR->CR, PWR_CR_DBP);
-		while(HAL_IS_BIT_CLR(PWR->CR, PWR_CR_DBP));
-	}
-	if(enable)
-	{
-#ifdef RCC_LSE_BYPASS
-		__HAL_RCC_LSE_CONFIG(RCC_LSE_BYPASS);
-#else
-		__HAL_RCC_LSE_CONFIG(RCC_LSE_ON);
-#endif
-		while(!__HAL_RCC_GET_FLAG(RCC_FLAG_LSERDY));
-	}
-	else
-	{
-		__HAL_RCC_LSE_CONFIG(RCC_LSE_OFF);
-		// Do not wait for disable
-	}
-#else
-	if (enable)
-	{
-		__HAL_RCC_LSI_ENABLE();
-		while (!__HAL_RCC_GET_FLAG(RCC_FLAG_LSIRDY));
-	}
-	else
-	{
-		__HAL_RCC_LSI_DISABLE();
-		// Do not wait for disable.
-	}
-
 	uint32_t csr = (RCC->CSR & ~(RCC_CSR_RTCSEL));
 	// RTC Clock selection can be changed only if the Backup Domain is reset
 	__HAL_RCC_BACKUPRESET_FORCE();
 	__HAL_RCC_BACKUPRESET_RELEASE();
 	RCC->CSR = csr;
-	__HAL_RCC_RTC_CONFIG(RCC_RTCCLKSOURCE_LSI);
-	uint32_t freq = LSI_VALUE;
-#endif
-	__HAL_RCC_PWR_CLK_DISABLE();
 }
-*/
+#endif
+
+static void CLK_AccessBackupDomain(void)
+{
+	if (HAL_IS_BIT_CLR(PWR->CR, PWR_CR_DBP))
+	{
+		// Get access to backup domain
+		SET_BIT(PWR->CR, PWR_CR_DBP);
+		while(HAL_IS_BIT_CLR(PWR->CR, PWR_CR_DBP));
+	}
+}
 
 /*
  * INTERRUPT ROUTINES

@@ -45,7 +45,6 @@ void USB_Init(void)
 
 void USB_Deinit(void)
 {
-	// TODO: Disable USB Clock
 	USB_PCD_Stop();
 	USB_CTL_Deinit();
 	USB_PCD_Deinit();

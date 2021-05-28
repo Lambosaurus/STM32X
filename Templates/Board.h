@@ -10,7 +10,7 @@
 // CLK config
 //#define CLK_USE_HSE
 //#define CLK_USE_LSE
-//#define CLK_BYPASS_LSE
+//#define CLK_LSE_BYPASS
 //#define CLK_LSE_FREQ		32768
 
 // ADC config
