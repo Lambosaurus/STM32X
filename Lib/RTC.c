@@ -55,7 +55,7 @@ void RTC_Init(void)
 	RTC->OR = RTC_OUTPUT_REMAP_NONE | RTC_OUTPUT_TYPE_OPENDRAIN;
 
 	// If CR_BYPSHAD bit = 0, wait for synchro else this check is not needed
-	if ((RTC->CR & RTC_CR_BYPSHAD) == 0U)
+	if (!(RTC->CR & RTC_CR_BYPSHAD))
 	{
 		RTC_WaitForSync();
 	}
@@ -87,16 +87,37 @@ void RTC_Deinit(void)
 	{
 		RTC_WaitForSync();
 	}
-
 	_RTC_WRITEPROTECTION_ENABLE();
-	__HAL_RCC_RTC_DISABLE();
 
+	__HAL_RCC_RTC_DISABLE();
 	CLK_DisableLSO();
 }
 
 void RTC_Write(DateTime_t * time)
 {
+	uint32_t treg = (RTC_ByteToBcd2(time->hour)   << 16)
+				  | (RTC_ByteToBcd2(time->minute) << 8)
+			      | (RTC_ByteToBcd2(time->second));
 
+	// Note, the weekday is being ignored.
+	uint32_t dreg = (RTC_ByteToBcd2(time->year) << 16)
+			      | (RTC_ByteToBcd2(time->month) << 8)
+        		  | (RTC_ByteToBcd2(time->day));
+
+	_RTC_WRITEPROTECTION_DISABLE();
+	RTC_EnterInit();
+	RTC->TR = treg & RTC_TR_RESERVED_MASK;
+	RTC->DR = dreg & RTC_DR_RESERVED_MASK;
+	RTC->CR &= ~RTC_CR_BKP;
+	RTC->CR |= RTC_DAYLIGHTSAVING_NONE | RTC_STOREOPERATION_SET;
+
+	// Exit init mode
+	RTC->ISR &= ~RTC_ISR_INIT;
+	if (!(RTC->CR & RTC_CR_BYPSHAD))
+	{
+		RTC_WaitForSync();
+	}
+	_RTC_WRITEPROTECTION_ENABLE();
 }
 
 void RTC_Read(DateTime_t * time)
