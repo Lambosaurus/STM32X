@@ -3,6 +3,7 @@
 
 #ifdef CAN_GPIO
 #include "GPIO.h"
+#include "CLK.h"
 
 /*
  * PRIVATE DEFINITIONS
@@ -56,7 +57,7 @@ void CAN_Init(uint32_t bitrate)
 
 	CANx_Init();
 
-	uint32_t freq = HAL_RCC_GetPCLK1Freq();
+	uint32_t freq = CLK_GetPCLKFreq();
 
 #ifdef AUTO_CALC_TQ
 	uint32_t nbt = CAN_SelectNominalBitTime(freq, bitrate);

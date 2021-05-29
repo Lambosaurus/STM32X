@@ -1,6 +1,7 @@
 
 #include "Core.h"
 #include "GPIO.h"
+#include "CLK.h"
 
 /*
  * PRIVATE DEFINITIONS
@@ -18,7 +19,6 @@
  */
 
 static void CORE_InitGPIO(void);
-static void CORE_InitSysClk(void);
 static void CORE_InitSysTick(void);
 
 /*
@@ -44,9 +44,12 @@ void CORE_Init(void)
 #endif
 	__HAL_RCC_SYSCFG_CLK_ENABLE();
 	__HAL_RCC_PWR_CLK_ENABLE();
+#ifdef STM32L0
+	__HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
+#endif
 
+	CLK_Init();
 	CORE_InitSysTick();
-	CORE_InitSysClk();
 	CORE_InitGPIO();
 }
 
@@ -73,23 +76,6 @@ void CORE_OnTick(VoidFunction_t callback)
 }
 #endif
 
-#ifdef USB_ENABLE
-void CORE_EnableUSBClock(bool enable)
-{
-	__HAL_RCC_USB_CONFIG(RCC_USBCLKSOURCE_HSI48);
-	if(enable)
-	{
-		__HAL_RCC_HSI48_ENABLE();
-		while(!__HAL_RCC_GET_FLAG(RCC_FLAG_HSI48RDY));
-	}
-	else
-	{
-		__HAL_RCC_HSI48_DISABLE();
-		while(__HAL_RCC_GET_FLAG(RCC_FLAG_HSI48RDY));
-	}
-}
-#endif
-
 /*
  * PRIVATE FUNCTIONS
  */
@@ -111,52 +97,6 @@ void CORE_InitGPIO(void)
 	GPIO_Deinit(GPIOB, GPIO_PIN_All);
 	GPIO_Deinit(GPIOC, GPIO_PIN_All);
 }
-
-void CORE_InitSysClk(void)
-{
-#ifdef STM32L0
-	__HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
-#endif
-
-	RCC_OscInitTypeDef osc = {0};
-#ifdef CORE_USE_HSE
-	osc.OscillatorType 		= RCC_OSCILLATORTYPE_HSE;
-	osc.HSEState 			= RCC_HSE_ON;
-	osc.PLL.PLLState 		= RCC_PLL_ON;
-	osc.PLL.PLLSource 		= RCC_PLLSOURCE_HSE;
-	osc.PLL.PLLMUL 			= RCC_PLL_MUL2;
-#ifdef STM32F0
-	osc.PLL.PREDIV			= RCC_PREDIV_DIV1;
-#else
-	osc.PLL.PLLDIV 			= RCC_PLL_DIV1;
-#endif
-#else
-	osc.OscillatorType 		= RCC_OSCILLATORTYPE_HSI;
-	osc.HSIState 			= RCC_HSI_ON;
-	osc.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
-	osc.PLL.PLLState 		= RCC_PLL_ON;
-	osc.PLL.PLLSource 		= RCC_PLLSOURCE_HSI;
-	osc.PLL.PLLMUL 			= RCC_PLL_MUL4;
-#ifdef STM32F0
-	osc.PLL.PREDIV			= RCC_PREDIV_DIV2;
-#else
-	osc.PLL.PLLDIV 			= RCC_PLL_DIV2;
-#endif
-#endif //CORE_USE_HSE
-	HAL_RCC_OscConfig(&osc);
-
-	RCC_ClkInitTypeDef clk = {0};
-	clk.ClockType 		= RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1;
-	clk.SYSCLKSource 	= RCC_SYSCLKSOURCE_PLLCLK;
-	clk.AHBCLKDivider 	= RCC_SYSCLK_DIV1;
-	clk.APB1CLKDivider 	= RCC_HCLK_DIV1;
-#ifdef STM32L0
-	clk.ClockType 		|= RCC_CLOCKTYPE_PCLK2;
-	clk.APB2CLKDivider  = RCC_HCLK_DIV1;
-#endif
-	HAL_RCC_ClockConfig(&clk, FLASH_LATENCY_1);
-}
-
 
 /*
  * CALLBACK FUNCTIONS

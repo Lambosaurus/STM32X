@@ -2,6 +2,7 @@
 #include "I2C.h"
 #include "Core.h"
 #include "GPIO.h"
+#include "CLK.h"
 
 /*
  * PRIVATE DEFINITIONS
@@ -338,7 +339,7 @@ static inline void I2C_StartTransfer(I2C_t * i2c, uint8_t address, uint8_t size,
 
 static uint32_t I2C_SelectTiming(uint32_t bitrate)
 {
-	uint32_t clk = HAL_RCC_GetPCLK1Freq();
+	uint32_t clk = CLK_GetPCLKFreq();
 
 	uint32_t prescalar = 0;
 	uint32_t bittime = clk / bitrate;
