@@ -5,7 +5,7 @@
 
 /*
  * FUNCTIONAL TESTING
- * STM32L0: N
+ * STM32L0: Y
  * STM32F0: N
  */
 
@@ -21,6 +21,7 @@
  * PUBLIC FUNCTIONS
  */
 
+// Note: CLK_Init should NOT be called from user code.
 void CLK_Init(void);
 
 void CLK_EnableLSO(void);
