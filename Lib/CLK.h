@@ -21,8 +21,8 @@
  * PUBLIC FUNCTIONS
  */
 
-// Note: CLK_Init should NOT be called from user code.
-void CLK_Init(void);
+// HCLK & PCLK included
+void CLK_InitSYSCLK(void);
 
 void CLK_EnableLSO(void);
 void CLK_DisableLSO(void);

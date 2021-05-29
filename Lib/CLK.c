@@ -26,7 +26,7 @@ static void CLK_AccessBackupDomain(void);
  * PUBLIC FUNCTIONS
  */
 
-void CLK_Init(void)
+void CLK_InitSYSCLK(void)
 {
 	RCC_OscInitTypeDef osc = {0};
 #ifdef CLK_USE_HSE

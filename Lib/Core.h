@@ -29,6 +29,7 @@ void CORE_Init(void);
 
 // Ticks & power control
 void CORE_Idle(void);
+void CORE_Stop(void);
 void CORE_Delay(uint32_t ms);
 static inline uint32_t CORE_GetTick(void);
 
