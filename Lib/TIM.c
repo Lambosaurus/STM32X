@@ -127,7 +127,7 @@ void TIM_OnReload(TIM_t * tim, VoidFunction_t callback)
 	tim->ReloadCallback = callback;
 }
 
-void TIM_OnPulse(TIM_t * tim, uint32_t ch, VoidFunction_t callback)
+void TIM_OnPulse(TIM_t * tim, TIM_Channel_t ch, VoidFunction_t callback)
 {
 	// WARN: This will fail horribly if ch is greater than 4.
 	TIM_EnableOCx(tim, ch, TIM_OCMODE_ACTIVE);
@@ -137,7 +137,7 @@ void TIM_OnPulse(TIM_t * tim, uint32_t ch, VoidFunction_t callback)
 }
 #endif //TIM_USE_IRQS
 
-void TIM_EnablePwm(TIM_t * tim, uint32_t ch, GPIO_t * gpio, uint32_t pin, uint32_t af)
+void TIM_EnablePwm(TIM_t * tim, TIM_Channel_t ch, GPIO_t * gpio, uint32_t pin, uint32_t af)
 {
 	// TIM_CCMR1_OC1PE is the output compare preload
 	TIM_EnableOCx(tim, ch, TIM_OCMODE_PWM1 | TIM_CCMR1_OC1PE | TIM_OCFAST_ENABLE);
@@ -145,20 +145,20 @@ void TIM_EnablePwm(TIM_t * tim, uint32_t ch, GPIO_t * gpio, uint32_t pin, uint32
 }
 
 
-void TIM_SetPulse(TIM_t * tim, uint32_t ch, uint32_t pulse)
+void TIM_SetPulse(TIM_t * tim, TIM_Channel_t ch, uint32_t pulse)
 {
 	switch (ch)
 	{
-	case 0:
+	case TIM_CH1:
 		tim->Instance->CCR1 = pulse;
 		break;
-	case 1:
+	case TIM_CH2:
 		tim->Instance->CCR2 = pulse;
 		break;
-	case 2:
+	case TIM_CH3:
 		tim->Instance->CCR3 = pulse;
 		break;
-	case 3:
+	case TIM_CH4:
 		tim->Instance->CCR4 = pulse;
 		break;
 	}

@@ -26,6 +26,12 @@ typedef struct {
 #endif //TIM_USE_IRQS
 } TIM_t;
 
+typedef enum {
+	TIM_CH1 = 0,
+	TIM_CH2 = 1,
+	TIM_CH3 = 2,
+	TIM_CH4 = 3,
+} TIM_Channel_t;
 
 /*
  * PUBLIC FUNCTIONS
@@ -43,14 +49,14 @@ void TIM_Stop(TIM_t * tim);
 static inline uint32_t TIM_Read(TIM_t * tim);
 
 // Channel features
-void TIM_SetPulse(TIM_t * tim, uint32_t ch, uint32_t pulse);
+void TIM_SetPulse(TIM_t * tim, TIM_Channel_t ch, uint32_t pulse);
 
 #ifdef TIM_USE_IRQS
 void TIM_OnReload(TIM_t * tim, VoidFunction_t callback);
-void TIM_OnPulse(TIM_t * tim, uint32_t ch, VoidFunction_t callback);
+void TIM_OnPulse(TIM_t * tim, TIM_Channel_t ch, VoidFunction_t callback);
 #endif //TIM_USE_IRQS
 
-void TIM_EnablePwm(TIM_t * tim, uint32_t ch, GPIO_t * gpio, uint32_t pin, uint32_t af);
+void TIM_EnablePwm(TIM_t * tim, TIM_Channel_t ch, GPIO_t * gpio, uint32_t pin, uint32_t af);
 
 
 /*
