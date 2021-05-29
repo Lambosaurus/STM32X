@@ -24,7 +24,7 @@ Currently only the STM32L0's and STM32F0's are supported. Other series may be ad
 * Idle mode (wait for interrupt)
 * System tick
 
-## RTC
+### RTC
 * LSE/LSI configuration
 * Periodic and alarm callbacks
 
