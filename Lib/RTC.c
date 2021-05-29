@@ -68,11 +68,12 @@ void RTC_Init(void)
 		RTC_WaitForSync();
 	}
 
-	_RTC_WRITEPROTECTION_ENABLE();
-
 #ifdef RTC_USE_IRQS
+  __HAL_RTC_ALARM_EXTI_ENABLE_IT();
+  __HAL_RTC_ALARM_EXTI_ENABLE_RISING_EDGE();
 	HAL_NVIC_EnableIRQ(RTC_IRQn);
 #endif
+	_RTC_WRITEPROTECTION_ENABLE();
 }
 
 void RTC_Deinit(void)
@@ -149,9 +150,60 @@ void RTC_Read(DateTime_t * time)
 }
 
 #ifdef RTC_USE_IRQS
-void RTC_OnAlarm(RTC_Alarm_t alarm, DateTime_t * time, RTC_Mask_t mask, VoidFunction_t callback);
-void RTC_StopAlarm(RTC_Alarm_t alarm);
 
+void RTC_OnAlarm(RTC_Alarm_t alarm, DateTime_t * time, RTC_Mask_t mask, VoidFunction_t callback)
+{
+	uint32_t treg = RTC_ALARMMASK_ALL & ~mask;
+	if (time != NULL)
+	{
+		treg |=	(RTC_ByteToBcd2(time->hour)   << 16)
+			 | (RTC_ByteToBcd2(time->minute) << 8)
+			 | (RTC_ByteToBcd2(time->second));
+	}
+	uint32_t ssreg = 0;
+	_RTC_WRITEPROTECTION_DISABLE();
+	switch(alarm)
+	{
+	case RTC_Alarm_A:
+		gRtc.AlarmACallback = callback;
+		RTC->CR &= ~RTC_CR_ALRAE;
+		_RTC_CLEAR_FLAG(RTC_FLAG_ALRAF);
+		while (!_RTC_GET_FLAG(RTC_FLAG_ALRAWF));
+		RTC->ALRMAR = treg;
+		RTC->ALRMASSR = ssreg;
+		RTC->CR |= RTC_CR_ALRAE | RTC_CR_ALRAIE;
+	    break;
+	case RTC_Alarm_B:
+		gRtc.AlarmBCallback = callback;
+		RTC->CR &= ~RTC_CR_ALRBE;
+	    _RTC_CLEAR_FLAG(RTC_FLAG_ALRBF);
+	    while (!_RTC_GET_FLAG(RTC_FLAG_ALRBWF));
+	    RTC->ALRMBR = treg;
+	    RTC->ALRMBSSR = ssreg;
+	    RTC->CR |= RTC_CR_ALRBE | RTC_CR_ALRBIE;
+		break;
+	}
+  _RTC_WRITEPROTECTION_ENABLE();
+}
+
+void RTC_StopAlarm(RTC_Alarm_t alarm)
+{
+	_RTC_WRITEPROTECTION_DISABLE();
+	switch(alarm)
+	{
+	case RTC_Alarm_A:
+		// Disable alarm & it
+		RTC->CR &= ~(RTC_CR_ALRAE | RTC_CR_ALRAIE);
+		while(!_RTC_GET_FLAG(RTC_FLAG_ALRAWF));
+		break;
+	case RTC_Alarm_B:
+		// Disable alarm & it
+		RTC->CR &= ~(RTC_CR_ALRBE | RTC_CR_ALRBIE);
+		while(!_RTC_GET_FLAG(RTC_FLAG_ALRBWF));
+		break;
+	}
+	_RTC_WRITEPROTECTION_ENABLE();
+}
 
 void RTC_OnPeriod(uint32_t ms, VoidFunction_t callback)
 {
@@ -172,28 +224,23 @@ void RTC_OnPeriod(uint32_t ms, VoidFunction_t callback)
 
 	RTC->WUTR = ticks;
 	MODIFY_REG(RTC->CR, RTC_CR_WUCKSEL, RTC_WAKEUPCLOCK_RTCCLK_DIV16);
+	// Enable the timer & it
+	RTC->CR |= RTC_CR_WUTE | RTC_CR_WUTIE;
 
 	__HAL_RTC_WAKEUPTIMER_EXTI_ENABLE_IT();
 	__HAL_RTC_WAKEUPTIMER_EXTI_ENABLE_RISING_EDGE();
 
-	// Enable the timer & it
-	RTC->CR |= RTC_CR_WUTE | RTC_CR_WUTIE;
-
 	_RTC_WRITEPROTECTION_ENABLE();
 }
-
 
 void RTC_StopPeriod(void)
 {
 	_RTC_WRITEPROTECTION_DISABLE();
 	// Disable WUT enable & Int
 	RTC->CR &= ~(RTC_CR_WUTE | RTC_CR_WUTIE);
-	// Wait till RTC WUTWF flag
 	while (!_RTC_GET_FLAG(RTC_FLAG_WUTWF));
 	_RTC_WRITEPROTECTION_ENABLE();
 }
-
-
 #endif
 
 
@@ -236,10 +283,12 @@ static void RTC_WaitForSync(void)
  * INTERRUPT ROUTINES
  */
 
-
 #ifdef RTC_USE_IRQS
 void RTC_IRQHandler(void)
 {
+	// RTC wakuptimer & Alarms are on different EXTI lines.
+	// These may get a different IRQHandler on different processors (or not be present)
+
 	if (__HAL_RTC_WAKEUPTIMER_EXTI_GET_FLAG())
 	{
 		if (_RTC_GET_FLAG(RTC_FLAG_WUTF))
@@ -251,6 +300,27 @@ void RTC_IRQHandler(void)
 			_RTC_CLEAR_FLAG(RTC_FLAG_WUTF);
 		}
 		__HAL_RTC_WAKEUPTIMER_EXTI_CLEAR_FLAG();
+	}
+
+	if (__HAL_RTC_ALARM_EXTI_GET_FLAG())
+	{
+		if (_RTC_GET_FLAG(RTC_FLAG_ALRAF))
+		{
+			if (gRtc.AlarmACallback)
+			{
+				gRtc.AlarmACallback();
+			}
+			_RTC_CLEAR_FLAG(RTC_FLAG_ALRAF);
+		}
+		if (_RTC_GET_FLAG(RTC_FLAG_ALRBF))
+		{
+			if (gRtc.AlarmBCallback)
+			{
+				gRtc.AlarmBCallback();
+			}
+			_RTC_CLEAR_FLAG(RTC_FLAG_ALRBF);
+		}
+		__HAL_RTC_ALARM_EXTI_CLEAR_FLAG();
 	}
 }
 #endif

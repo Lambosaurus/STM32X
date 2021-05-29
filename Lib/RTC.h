@@ -5,7 +5,7 @@
 
 /*
  * FUNCTIONAL TESTING
- * STM32L0: N
+ * STM32L0: Y
  * STM32F0: N
  */
 
@@ -31,11 +31,13 @@ typedef enum {
 	RTC_Alarm_B
 } RTC_Alarm_t;
 
+// RTC_Mask_Second will generate an event every second
+// RTC_Mask_Day will generate an event every day on the supplied hour, minute & second
 typedef enum {
-	RTC_Mask_Second = (1 << 0),
-	RTC_Mask_Minute = (1 << 1),
-	RTC_Mask_Hour = (1 << 2),
-	RTC_Mask_All = RTC_Mask_Second | RTC_Mask_Minute | RTC_Mask_Hour,
+	RTC_Mask_Second = 0,
+	RTC_Mask_Minute = RTC_ALARMMASK_SECONDS,
+	RTC_Mask_Hour 	= RTC_ALARMMASK_SECONDS | RTC_ALARMMASK_MINUTES,
+	RTC_Mask_Day 	= RTC_ALARMMASK_SECONDS | RTC_ALARMMASK_MINUTES | RTC_ALARMMASK_HOURS,
 } RTC_Mask_t;
 
 /*
@@ -49,6 +51,7 @@ void RTC_Write(DateTime_t * time);
 void RTC_Read(DateTime_t * time);
 
 #ifdef RTC_USE_IRQS
+// time can be NULL to assume h,m,s = 0
 void RTC_OnAlarm(RTC_Alarm_t alarm, DateTime_t * time, RTC_Mask_t mask, VoidFunction_t callback);
 void RTC_StopAlarm(RTC_Alarm_t alarm);
 void RTC_OnPeriod(uint32_t ms, VoidFunction_t callback);
