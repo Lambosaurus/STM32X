@@ -26,6 +26,11 @@ typedef enum {
 	GPIO_IT_BOTH 	= GPIO_MODE_IT_RISING_FALLING,
 } GPIO_IT_Dir_t;
 
+typedef enum {
+	GPIO_PULL_NONE = GPIO_NOPULL,
+	GPIO_PULL_UP   = GPIO_PULLUP,
+	GPIO_PULL_DOWN = GPIO_PULLDOWN,
+} GPIO_Pull_t;
 
 /*
  * PUBLIC FUNCTIONS
@@ -33,11 +38,11 @@ typedef enum {
 
 // Initialisation
 void GPIO_EnableOutput(GPIO_t * gpio, uint32_t pin, GPIO_PinState state);
-void GPIO_EnableInput(GPIO_t * gpio, uint32_t pin, uint32_t pullup);
+void GPIO_EnableInput(GPIO_t * gpio, uint32_t pin, GPIO_Pull_t pull);
 void GPIO_EnableAlternate(GPIO_t * gpio, uint32_t pin, uint32_t mode, uint32_t af);
 void GPIO_Deinit(GPIO_t * gpio, uint32_t pin);
 #ifdef GPIO_USE_IRQS
-void GPIO_EnableIRQ(GPIO_t * gpio, uint32_t pin, uint32_t pullup, GPIO_IT_Dir_t dir, VoidFunction_t callback);
+void GPIO_EnableIRQ(GPIO_t * gpio, uint32_t pin, GPIO_Pull_t pull, GPIO_IT_Dir_t dir, VoidFunction_t callback);
 #endif //GPIO_USE_IRQS
 
 // Outputs
