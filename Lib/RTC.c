@@ -8,10 +8,12 @@
 
 #define RTC_PREDIV	128
 
-#if defined(STM32L0)
 #define _RTC_WRITEPROTECTION_ENABLE() 		(RTC->WPR = 0xFF)
 #define _RTC_WRITEPROTECTION_DISABLE() 	do { RTC->WPR = 0xCA; RTC->WPR = 0x53; } while(0)
-#endif
+
+#define _RTC_GET_FLAG(flag)   	(RTC->ISR & (flag))
+#define _RTC_CLEAR_FLAG(flag)   (RTC->ISR) = (~((flag) | RTC_ISR_INIT) | (RTC->ISR & RTC_ISR_INIT))
+
 
 /*
  * PRIVATE TYPES
@@ -67,10 +69,15 @@ void RTC_Init(void)
 	}
 
 	_RTC_WRITEPROTECTION_ENABLE();
+
+#ifdef RTC_USE_IRQS
+	HAL_NVIC_EnableIRQ(RTC_IRQn);
+#endif
 }
 
 void RTC_Deinit(void)
 {
+	HAL_NVIC_DisableIRQ(RTC_IRQn);
 	_RTC_WRITEPROTECTION_DISABLE();
 	RTC_EnterInit();
 
@@ -145,15 +152,47 @@ void RTC_Read(DateTime_t * time)
 void RTC_OnAlarm(RTC_Alarm_t alarm, DateTime_t * time, RTC_Mask_t mask, VoidFunction_t callback);
 void RTC_StopAlarm(RTC_Alarm_t alarm);
 
+
 void RTC_OnPeriod(uint32_t ms, VoidFunction_t callback)
 {
 	gRtc.PeriodicCallback = callback;
+	uint32_t clk = CLK_GetLSOFreq() / 16;
+	uint32_t ticks = clk * ms / 1000;
+
+	_RTC_WRITEPROTECTION_DISABLE();
+
+	if (RTC->CR & RTC_CR_WUTE)
+	{
+		// Timer already enabled. Disable it.
+		while (_RTC_GET_FLAG(RTC_FLAG_WUTWF));
+		RTC->CR &= ~(RTC_CR_WUTE | RTC_CR_WUTIE);
+		_RTC_CLEAR_FLAG(RTC_FLAG_WUTF);
+		while (!_RTC_GET_FLAG(RTC_FLAG_WUTWF));
+	}
+
+	RTC->WUTR = ticks;
+	MODIFY_REG(RTC->CR, RTC_CR_WUCKSEL, RTC_WAKEUPCLOCK_RTCCLK_DIV16);
+
+	__HAL_RTC_WAKEUPTIMER_EXTI_ENABLE_IT();
+	__HAL_RTC_WAKEUPTIMER_EXTI_ENABLE_RISING_EDGE();
+
+	// Enable the timer & it
+	RTC->CR |= RTC_CR_WUTE | RTC_CR_WUTIE;
+
+	_RTC_WRITEPROTECTION_ENABLE();
 }
+
 
 void RTC_StopPeriod(void)
 {
-
+	_RTC_WRITEPROTECTION_DISABLE();
+	// Disable WUT enable & Int
+	RTC->CR &= ~(RTC_CR_WUTE | RTC_CR_WUTIE);
+	// Wait till RTC WUTWF flag
+	while (!_RTC_GET_FLAG(RTC_FLAG_WUTWF));
+	_RTC_WRITEPROTECTION_ENABLE();
 }
+
 
 #endif
 
@@ -180,20 +219,38 @@ static uint32_t RTC_FromBCD(uint32_t bcd)
 
 static void RTC_EnterInit(void)
 {
-	if (!(RTC->ISR & RTC_ISR_INITF))
+	if (!_RTC_GET_FLAG(RTC_FLAG_INITF))
 	{
 		RTC->ISR = RTC_INIT_MASK;
-		while (!(RTC->ISR & RTC_ISR_INITF));
+		while (!_RTC_GET_FLAG(RTC_FLAG_INITF));
 	}
 }
 
 static void RTC_WaitForSync(void)
 {
-  RTC->ISR &= RTC_RSF_MASK;
-  while (!(RTC->ISR & RTC_ISR_RSF));
+	RTC->ISR &= RTC_RSF_MASK;
+	while (!(RTC->ISR & RTC_ISR_RSF));
 }
 
 /*
  * INTERRUPT ROUTINES
  */
 
+
+#ifdef RTC_USE_IRQS
+void RTC_IRQHandler(void)
+{
+	if (__HAL_RTC_WAKEUPTIMER_EXTI_GET_FLAG())
+	{
+		if (_RTC_GET_FLAG(RTC_FLAG_WUTF))
+		{
+			if (gRtc.PeriodicCallback)
+			{
+				gRtc.PeriodicCallback();
+			}
+			_RTC_CLEAR_FLAG(RTC_FLAG_WUTF);
+		}
+		__HAL_RTC_WAKEUPTIMER_EXTI_CLEAR_FLAG();
+	}
+}
+#endif
