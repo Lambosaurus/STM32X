@@ -31,6 +31,12 @@ static uint32_t RTC_FromBCD(uint32_t bcd);
  * PRIVATE VARIABLES
  */
 
+static struct {
+	VoidFunction_t AlarmACallback;
+	VoidFunction_t AlarmBCallback;
+	VoidFunction_t PeriodicCallback;
+} gRtc;
+
 /*
  * PUBLIC FUNCTIONS
  */
@@ -138,8 +144,17 @@ void RTC_Read(DateTime_t * time)
 #ifdef RTC_USE_IRQS
 void RTC_OnAlarm(RTC_Alarm_t alarm, DateTime_t * time, RTC_Mask_t mask, VoidFunction_t callback);
 void RTC_StopAlarm(RTC_Alarm_t alarm);
-void RTC_OnPeriod(uint32_t ms, VoidFunction_t callback);
-void RTC_StopPeriod(void);
+
+void RTC_OnPeriod(uint32_t ms, VoidFunction_t callback)
+{
+	gRtc.PeriodicCallback = callback;
+}
+
+void RTC_StopPeriod(void)
+{
+
+}
+
 #endif
 
 
