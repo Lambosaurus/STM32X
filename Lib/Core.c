@@ -105,14 +105,20 @@ void CORE_InitSysTick(void)
 
 void CORE_InitGPIO(void)
 {
-	__HAL_RCC_GPIOA_CLK_ENABLE();
-	__HAL_RCC_GPIOB_CLK_ENABLE();
-	__HAL_RCC_GPIOC_CLK_ENABLE();
-
 	// SWCLK and SWDIO on PA13, PA14
+	__HAL_RCC_GPIOA_CLK_ENABLE();
 	GPIO_Deinit(GPIOA, GPIO_PIN_All & ~(GPIO_PIN_13 | GPIO_PIN_14));
+
+	__HAL_RCC_GPIOB_CLK_ENABLE();
 	GPIO_Deinit(GPIOB, GPIO_PIN_All);
+
+	__HAL_RCC_GPIOC_CLK_ENABLE();
 	GPIO_Deinit(GPIOC, GPIO_PIN_All);
+
+#if defined(GPIOD)
+	__HAL_RCC_GPIOD_CLK_ENABLE();
+	GPIO_Deinit(GPIOD, GPIO_PIN_All);
+#endif
 }
 
 /*
