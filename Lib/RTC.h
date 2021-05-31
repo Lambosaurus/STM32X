@@ -13,6 +13,9 @@
  * PUBLIC DEFINITIONS
  */
 
+#define RTC_YEAR_MIN	2000
+#define RTC_YEAR_MAX	(RTC_YEAR_MIN + 99)
+
 /*
  * PUBLIC TYPES
  */
