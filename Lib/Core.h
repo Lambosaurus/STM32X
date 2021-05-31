@@ -33,7 +33,7 @@ void CORE_Stop(void);
 void CORE_Delay(uint32_t ms);
 static inline uint32_t CORE_GetTick(void);
 
-#ifdef USE_SYSTICK_IRQ
+#ifdef CORE_USE_TICK_IRQ
 void CORE_OnTick(VoidFunction_t callback);
 #endif
 

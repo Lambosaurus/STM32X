@@ -65,7 +65,7 @@ void CORE_Stop(void)
 	HAL_SuspendTick();
 
 	// Select the low power regulator
-	MODIFY_REG(PWR->CR, (PWR_CR_PDDS | PWR_CR_LPSDSR), PWR_LOWPOWERREGULATOR_ON)
+	MODIFY_REG(PWR->CR, (PWR_CR_PDDS | PWR_CR_LPSDSR), PWR_LOWPOWERREGULATOR_ON);
 	// WFI, but with the SLEEPDEEP bit set.
 	SET_BIT(SCB->SCR, SCB_SCR_SLEEPDEEP_Msk);
 	__WFI();
