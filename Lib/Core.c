@@ -48,7 +48,7 @@ void CORE_Init(void)
 	__HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
 #endif
 
-	CLK_Init();
+	CLK_InitSYSCLK();
 	CORE_InitSysTick();
 	CORE_InitGPIO();
 }
@@ -57,6 +57,23 @@ void CORE_Idle(void)
 {
 	// As long as systick is on, this will at least return each millisecond.
 	__WFI();
+}
+
+void CORE_Stop(void)
+{
+	// The tick may break the WFI if it occurs at the wrong time.
+	HAL_SuspendTick();
+
+	// Select the low power regulator
+	MODIFY_REG(PWR->CR, (PWR_CR_PDDS | PWR_CR_LPSDSR), PWR_LOWPOWERREGULATOR_ON);
+	// WFI, but with the SLEEPDEEP bit set.
+	SET_BIT(SCB->SCR, SCB_SCR_SLEEPDEEP_Msk);
+	__WFI();
+	CLEAR_BIT(SCB->SCR, SCB_SCR_SLEEPDEEP_Msk);
+
+	// SYSCLK is defaulted to HSI on boot
+	CLK_InitSYSCLK();
+	HAL_ResumeTick();
 }
 
 void CORE_Delay(uint32_t ms)
@@ -82,7 +99,7 @@ void CORE_OnTick(VoidFunction_t callback)
 
 void CORE_InitSysTick(void)
 {
-	HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq() / CORE_SYSTICK_FREQ);
+	HAL_SYSTICK_Config(CLK_GetHCLKFreq() / CORE_SYSTICK_FREQ);
 	HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
 }
 
