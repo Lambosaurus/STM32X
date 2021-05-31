@@ -114,7 +114,7 @@ void RTC_Write(DateTime_t * time)
 			      | (RTC_ByteToBcd2(time->second));
 
 	// Note, the weekday is being ignored.
-	uint32_t dreg = (RTC_ByteToBcd2(time->year) << 16)
+	uint32_t dreg = (RTC_ByteToBcd2(time->year - RTC_YEAR_MIN) << 16)
 			      | (RTC_ByteToBcd2(time->month) << 8)
         		  | (RTC_ByteToBcd2(time->day));
 
@@ -144,7 +144,7 @@ void RTC_Read(DateTime_t * time)
 	time->hour 		= RTC_FromBCD((treg & (RTC_TR_HT | RTC_TR_HU)) >> 16);
 	time->minute 	= RTC_FromBCD((treg & (RTC_TR_MNT | RTC_TR_MNU)) >> 8);
 	time->second 	= RTC_FromBCD((treg & (RTC_TR_ST | RTC_TR_SU)));
-	time->year 		= RTC_FromBCD((dreg & (RTC_DR_YT | RTC_DR_YU)) >> 16U);
+	time->year 		= RTC_FromBCD((dreg & (RTC_DR_YT | RTC_DR_YU)) >> 16U) + RTC_YEAR_MIN;
 	time->month 	= RTC_FromBCD((dreg & (RTC_DR_MT | RTC_DR_MU)) >> 8U);
 	time->day 		= RTC_FromBCD((dreg & (RTC_DR_DT | RTC_DR_DU)));
 }
