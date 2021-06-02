@@ -33,11 +33,13 @@ static uint32_t RTC_FromBCD(uint32_t bcd);
  * PRIVATE VARIABLES
  */
 
+#ifdef RTC_USE_IRQS
 static struct {
 	VoidFunction_t AlarmACallback;
 	VoidFunction_t AlarmBCallback;
 	VoidFunction_t PeriodicCallback;
 } gRtc;
+#endif
 
 /*
  * PUBLIC FUNCTIONS
@@ -109,14 +111,14 @@ void RTC_Deinit(void)
 
 void RTC_Write(DateTime_t * time)
 {
-	uint32_t treg = (RTC_ByteToBcd2(time->hour)   << 16)
-				  | (RTC_ByteToBcd2(time->minute) << 8)
-			      | (RTC_ByteToBcd2(time->second));
+	uint32_t treg = (RTC_ToBCD(time->hour)   << 16)
+				  | (RTC_ToBCD(time->minute) << 8)
+			      | (RTC_ToBCD(time->second));
 
 	// Note, the weekday is being ignored.
-	uint32_t dreg = (RTC_ByteToBcd2(time->year - RTC_YEAR_MIN) << 16)
-			      | (RTC_ByteToBcd2(time->month) << 8)
-        		  | (RTC_ByteToBcd2(time->day));
+	uint32_t dreg = (RTC_ToBCD(time->year - RTC_YEAR_MIN) << 16)
+			      | (RTC_ToBCD(time->month) << 8)
+        		  | (RTC_ToBCD(time->day));
 
 	_RTC_WRITEPROTECTION_DISABLE();
 	RTC_EnterInit();
