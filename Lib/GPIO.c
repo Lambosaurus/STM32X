@@ -153,7 +153,7 @@ static inline void GPIO_ConfigInterrupt( GPIO_t * gpio, int n, GPIO_IT_Dir_t dir
 
 
 #define SIMD_B0 	0xAAAAAAAA
-#define SIMD_B1 	0x00CCCCCC
+#define SIMD_B1 	0x0CCCCCCC
 #define SIMD_B2 	0x00F0F0F0
 #define SIMD_B3 	0x0000FF00
 
