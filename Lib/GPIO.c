@@ -22,12 +22,12 @@
 #ifdef GPIO_USE_IRQS
 static inline void EXTIx_IRQHandler(int n);
 static void EXTIx_EnableIRQn(int n);
+static void GPIO_ConfigInterrupt( GPIO_t * gpio, int n, GPIO_IT_Dir_t dir);
 #endif //GPIO_USE_IRQS
 
-static inline void GPIO_ConfigInterrupt( GPIO_t * gpio, int n, GPIO_IT_Dir_t dir);
-static inline void GPIO_ConfigAlternate( GPIO_t * gpio, uint32_t pins, uint32_t af);
+static void GPIO_ConfigAlternate( GPIO_t * gpio, uint32_t pins, uint32_t af);
 
-static inline uint32_t GPIO_SWARBitDouble(uint32_t s);
+static uint32_t GPIO_SWARBitDouble(uint32_t s);
 
 /*
  * PRIVATE VARIABLES
@@ -96,7 +96,7 @@ void GPIO_Init(GPIO_t * gpio, uint32_t pins, GPIO_Flag_t mode)
  * PRIVATE FUNCTIONS
  */
 
-static inline void GPIO_ConfigAlternate( GPIO_t * gpio, uint32_t pins, uint32_t af)
+static void GPIO_ConfigAlternate( GPIO_t * gpio, uint32_t pins, uint32_t af)
 {
 	uint32_t pos = 0;
 	while (pins)
@@ -112,7 +112,7 @@ static inline void GPIO_ConfigAlternate( GPIO_t * gpio, uint32_t pins, uint32_t 
 }
 
 #ifdef GPIO_USE_IRQS
-static inline void GPIO_ConfigInterrupt( GPIO_t * gpio, int n, GPIO_IT_Dir_t dir)
+static void GPIO_ConfigInterrupt( GPIO_t * gpio, int n, GPIO_IT_Dir_t dir)
 {
 	__HAL_RCC_SYSCFG_CLK_ENABLE();
 	uint32_t gpio_index = GPIO_GET_INDEX(gpio);
@@ -126,7 +126,7 @@ static inline void GPIO_ConfigInterrupt( GPIO_t * gpio, int n, GPIO_IT_Dir_t dir
 }
 #endif
 
-static inline uint32_t GPIO_SWARBitDouble(uint32_t s)
+static uint32_t GPIO_SWARBitDouble(uint32_t s)
 {
 	s = (s & ~0xFF00FF00) | ((s & 0xFF00FF00) << 8);
 	s = (s & ~0xF0F0F0F0) | ((s & 0xF0F0F0F0) << 4);
