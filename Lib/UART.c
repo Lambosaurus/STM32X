@@ -201,7 +201,7 @@ static void UARTx_Init(UART_t * uart)
 	if (uart == UART_LP)
 	{
 		__HAL_RCC_LPUART1_CLK_ENABLE();
-		GPIO_EnableAlternate(UARTLP_GPIO, UARTLP_PINS, GPIO_MODE_AF_PP, UARTLP_AF);
+		GPIO_EnableAlternate(UARTLP_GPIO, UARTLP_PINS, 0, UARTLP_AF);
 		HAL_NVIC_EnableIRQ(LPUART1_IRQn);
 	}
 #endif
@@ -209,7 +209,7 @@ static void UARTx_Init(UART_t * uart)
 	if (uart == UART_1)
 	{
 		__HAL_RCC_USART1_CLK_ENABLE();
-		GPIO_EnableAlternate(UART1_GPIO, UART1_PINS, GPIO_MODE_AF_PP, UART1_AF);
+		GPIO_EnableAlternate(UART1_GPIO, UART1_PINS, 0, UART1_AF);
 		HAL_NVIC_EnableIRQ(USART1_IRQn);
 	}
 #endif
@@ -217,7 +217,7 @@ static void UARTx_Init(UART_t * uart)
 	if (uart == UART_2)
 	{
 		__HAL_RCC_USART2_CLK_ENABLE();
-		GPIO_EnableAlternate(UART2_GPIO, UART2_PINS, GPIO_MODE_AF_PP, UART2_AF);
+		GPIO_EnableAlternate(UART2_GPIO, UART2_PINS, 0, UART2_AF);
 		HAL_NVIC_EnableIRQ(USART2_IRQn);
 	}
 #endif
@@ -225,7 +225,7 @@ static void UARTx_Init(UART_t * uart)
 	if (uart == UART_3)
 	{
 		__HAL_RCC_USART3_CLK_ENABLE();
-		GPIO_EnableAlternate(UART3_GPIO, UART3_PINS, GPIO_MODE_AF_PP, UART3_AF);
+		GPIO_EnableAlternate(UART3_GPIO, UART3_PINS, 0, UART3_AF);
 		HAL_NVIC_EnableIRQ(USART3_IRQn);
 	}
 #endif
@@ -233,7 +233,7 @@ static void UARTx_Init(UART_t * uart)
 	if (uart == UART_4)
 	{
 		__HAL_RCC_USART4_CLK_ENABLE();
-		GPIO_EnableAlternate(UART4_GPIO, UART4_PINS, GPIO_MODE_AF_PP, UART4_AF);
+		GPIO_EnableAlternate(UART4_GPIO, UART4_PINS, 0, UART4_AF);
 		HAL_NVIC_EnableIRQ(USART4_5_IRQn);
 	}
 #endif
@@ -241,7 +241,7 @@ static void UARTx_Init(UART_t * uart)
 	if (uart == UART_5)
 	{
 		__HAL_RCC_USART5_CLK_ENABLE();
-		GPIO_EnableAlternate(UART5_GPIO, UART5_PINS, GPIO_MODE_AF_PP, UART5_AF);
+		GPIO_EnableAlternate(UART5_GPIO, UART5_PINS, 0, UART5_AF);
 		HAL_NVIC_EnableIRQ(USART4_5_IRQn);
 	}
 #endif
