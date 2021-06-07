@@ -22,7 +22,12 @@
 #ifdef GPIO_USE_IRQS
 static inline void EXTIx_IRQHandler(int n);
 static void EXTIx_EnableIRQn(int n);
+static void GPIO_ConfigInterrupt( GPIO_t * gpio, int n, GPIO_IT_Dir_t dir);
 #endif //GPIO_USE_IRQS
+
+static void GPIO_ConfigAlternate( GPIO_t * gpio, uint32_t pins, uint32_t af);
+
+static uint32_t GPIO_SWARBitDouble(uint32_t s);
 
 /*
  * PRIVATE VARIABLES
@@ -36,9 +41,9 @@ VoidFunction_t gCallback[16] = { 0 };
  * PUBLIC FUNCTIONS
  */
 
-void GPIO_Write(GPIO_t * gpio, uint32_t pin, GPIO_PinState state)
+void GPIO_Write(GPIO_t * gpio, uint32_t pin, GPIO_State_t state)
 {
-	if (state != GPIO_PIN_RESET)
+	if (state)
 	{
 		GPIO_Set(gpio, pin);
 	}
@@ -48,39 +53,10 @@ void GPIO_Write(GPIO_t * gpio, uint32_t pin, GPIO_PinState state)
 	}
 }
 
-void GPIO_EnableOutput(GPIO_t * gpio, uint32_t pin, GPIO_PinState state)
+void GPIO_EnableAlternate(GPIO_t * gpio, uint32_t pin, GPIO_Flag_t flags, uint32_t af)
 {
-	GPIO_InitTypeDef init = {
-	  .Mode = GPIO_MODE_OUTPUT_PP,
-	  .Pin = pin,
-	  .Pull = GPIO_NOPULL,
-	  .Speed = GPIO_SPEED_LOW,
-	};
-	HAL_GPIO_Init(gpio, &init);
-	GPIO_Write(gpio, pin, state);
-}
-
-void GPIO_EnableInput(GPIO_t * gpio, uint32_t pin, GPIO_Pull_t pull)
-{
-	GPIO_InitTypeDef init = {
-	  .Mode = GPIO_MODE_INPUT,
-	  .Pin = pin,
-	  .Pull = pull,
-	  .Speed = GPIO_SPEED_LOW,
-	};
-	HAL_GPIO_Init(gpio, &init);
-}
-
-void GPIO_EnableAlternate(GPIO_t * gpio, uint32_t pin, uint32_t mode, uint32_t af)
-{
-	GPIO_InitTypeDef init = {
-		.Mode = mode,
-		.Pin = pin,
-		.Pull = GPIO_NOPULL,
-		.Speed = GPIO_SPEED_HIGH,
-		.Alternate = af,
-	};
-	HAL_GPIO_Init(gpio, &init);
+	GPIO_ConfigAlternate(gpio, pin, af);
+	GPIO_Init(gpio, pin, GPIO_Mode_Alternate | GPIO_Speed_High | flags);
 }
 
 #ifdef GPIO_USE_IRQS
@@ -91,31 +67,74 @@ void GPIO_EnableIRQ(GPIO_t * gpio, uint32_t pin, GPIO_Pull_t pull, GPIO_IT_Dir_t
 
 	gCallback[n] = callback;
 
-	GPIO_InitTypeDef init = {
-	  .Mode = dir,
-	  .Pin = pin,
-	  .Pull = pull,
-	  .Speed = GPIO_SPEED_HIGH,
-	};
-	HAL_GPIO_Init(gpio, &init);
+	GPIO_Init(gpio, pin, GPIO_Mode_Input | pull);
+	GPIO_ConfigInterrupt(gpio, pin, dir);
+
 	EXTIx_EnableIRQn(n);
 }
 #endif //GPIO_USE_IRQS
 
-void GPIO_Deinit(GPIO_t * gpio, uint32_t pin)
+void GPIO_Init(GPIO_t * gpio, uint32_t pins, GPIO_Flag_t mode)
 {
-	GPIO_InitTypeDef init = {
-	  .Mode = GPIO_MODE_ANALOG,
-	  .Pin = pin,
-	  .Pull = GPIO_NOPULL,
-	  .Speed = GPIO_SPEED_LOW,
-	};
-	HAL_GPIO_Init(gpio, &init);
+	uint32_t pinmask = GPIO_SWARBitDouble(pins);
+
+	GPIO_Mode_t dir = mode & GPIO_Mode_MASK;
+
+	if (dir == GPIO_Mode_Alternate || dir == GPIO_Mode_Output)
+	{
+		uint32_t speed = (mode & GPIO_Speed_MASK) >> GPIOCFG_SPEED_POS;
+		MODIFY_REG( gpio->OSPEEDR, pinmask * GPIO_OSPEEDER_OSPEED0, pinmask * speed );
+		MODIFY_REG( gpio->OTYPER, pins, (mode & GPIO_Flag_OpenDrain) ? pins : 0 );
+	}
+
+	MODIFY_REG( gpio->MODER, pinmask * GPIO_MODER_MODE0, pinmask * dir);
+	uint32_t pull = (mode & GPIO_Pull_MASK) >> GPIOCFG_PULL_POS;
+	MODIFY_REG( gpio->PUPDR, pinmask * GPIO_PUPDR_PUPD0, pinmask * pull);
 }
 
 /*
  * PRIVATE FUNCTIONS
  */
+
+static void GPIO_ConfigAlternate( GPIO_t * gpio, uint32_t pins, uint32_t af)
+{
+	uint32_t pos = 0;
+	while (pins)
+	{
+		if (pins & 0x1)
+		{
+			uint32_t alt_offset = (pos & 0x7) * 4;
+			MODIFY_REG(gpio->AFR[pos >> 3], (0xF << alt_offset), (af << alt_offset));
+		}
+		pins >>= 1;
+		pos++;
+	}
+}
+
+#ifdef GPIO_USE_IRQS
+static void GPIO_ConfigInterrupt( GPIO_t * gpio, int n, GPIO_IT_Dir_t dir)
+{
+	__HAL_RCC_SYSCFG_CLK_ENABLE();
+	uint32_t gpio_index = GPIO_GET_INDEX(gpio);
+	uint32_t offset = (4 * n & 0x3);
+	MODIFY_REG(SYSCFG->EXTICR[n >> 2], 0xF << offset, gpio_index << offset);
+
+	uint32_t pin = 1 << n;
+	SET_BIT(EXTI->IMR, pin);
+	MODIFY_REG(EXTI->RTSR, pin, (dir & GPIO_IT_Rising) ? pin : 0);
+	MODIFY_REG(EXTI->FTSR, pin, (dir & GPIO_IT_Falling) ? pin : 0);
+}
+#endif
+
+static uint32_t GPIO_SWARBitDouble(uint32_t s)
+{
+	s = (s & ~0xFF00FF00) | ((s & 0xFF00FF00) << 8);
+	s = (s & ~0xF0F0F0F0) | ((s & 0xF0F0F0F0) << 4);
+	s = (s & ~0xCCCCCCCC) | ((s & 0xCCCCCCCC) << 2);
+	s = (s & ~0xAAAAAAAA) | ((s & 0xAAAAAAAA) << 1);
+	return s;
+}
+
 
 #ifdef GPIO_USE_IRQS
 static inline void EXTIx_IRQHandler(int n)

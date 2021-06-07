@@ -262,7 +262,7 @@ static void CAN_WriteMailbox(CAN_TxMailBox_TypeDef * mailbox, const CANMsg_t * m
 static void CANx_Init(void)
 {
 	__HAL_RCC_CAN1_CLK_ENABLE();
-	GPIO_EnableAlternate(CAN_GPIO, CAN_PINS, GPIO_MODE_AF_PP, CAN_AF);
+	GPIO_EnableAlternate(CAN_GPIO, CAN_PINS, 0, CAN_AF);
 	//HAL_NVIC_EnableIRQ(CEC_CAN_IRQn);
 }
 
