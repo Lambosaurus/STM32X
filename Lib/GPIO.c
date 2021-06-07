@@ -15,34 +15,6 @@
  * PRIVATE TYPES
  */
 
-//#define GPIOCFG_PULL_POS		4
-#define GPIOCFG_SPEED_POS		8
-#define GPIOCFG_FLAG_POS		12
-
-typedef enum {
-	GPIOMode_Input		= 0x00,
-	GPIOMode_Output 	= 0x01,
-	GPIOMode_Alternate 	= 0x02,
-	GPIOMode_Analog    	= 0x03,
-	GPIOMode_MASK		= 0x03,
-
-	GPIOPull_None 		= GPIO_PULL_NONE,
-	GPIOPull_Up 		= GPIO_PULL_UP,
-	GPIOPull_Down 		= GPIO_PULL_DOWN,
-	GPIOPull_MASK  		= GPIO_PULL_UP | GPIO_PULL_DOWN,
-
-	// Only required when Output or Alternate
-	GPIOSpeed_Slow     	= 0x00 << GPIOCFG_SPEED_POS,
-	GPIOSpeed_Medium	= 0x01 << GPIOCFG_SPEED_POS,
-	GPIOSpeed_Fast		= 0x02 << GPIOCFG_SPEED_POS,
-	GPIOSpeed_High		= 0x03 << GPIOCFG_SPEED_POS,
-	GPIOSpeed_MASK		= 0x03 << GPIOCFG_SPEED_POS,
-
-	// Only relevant when Output or Alternate
-	GPIOFlag_OpenDrain  = 0x01 << GPIOCFG_FLAG_POS,
-} GPIOCfg_t;
-
-
 /*
  * PRIVATE PROTOTYPES
  */
@@ -52,9 +24,10 @@ static inline void EXTIx_IRQHandler(int n);
 static void EXTIx_EnableIRQn(int n);
 #endif //GPIO_USE_IRQS
 
-static void GPIO_Init(GPIO_t * gpio, uint32_t pins, GPIOCfg_t mode);
 static inline void GPIO_ConfigInterrupt( GPIO_t * gpio, int n, GPIO_IT_Dir_t dir);
 static inline void GPIO_ConfigAlternate( GPIO_t * gpio, uint32_t pins, uint32_t af);
+
+static inline uint32_t GPIO_SWARBitDouble(uint32_t s);
 
 /*
  * PRIVATE VARIABLES
@@ -68,9 +41,9 @@ VoidFunction_t gCallback[16] = { 0 };
  * PUBLIC FUNCTIONS
  */
 
-void GPIO_Write(GPIO_t * gpio, uint32_t pin, GPIO_PinState state)
+void GPIO_Write(GPIO_t * gpio, uint32_t pin, GPIO_State_t state)
 {
-	if (state != GPIO_PIN_RESET)
+	if (state)
 	{
 		GPIO_Set(gpio, pin);
 	}
@@ -80,21 +53,10 @@ void GPIO_Write(GPIO_t * gpio, uint32_t pin, GPIO_PinState state)
 	}
 }
 
-void GPIO_EnableOutput(GPIO_t * gpio, uint32_t pin, GPIO_PinState state)
-{
-	GPIO_Write(gpio, pin, state);
-	GPIO_Init(gpio, pin, GPIOMode_Output);
-}
-
-void GPIO_EnableInput(GPIO_t * gpio, uint32_t pin, GPIO_Pull_t pull)
-{
-	GPIO_Init(gpio, pin, GPIOMode_Input | pull);
-}
-
-void GPIO_EnableAlternate(GPIO_t * gpio, uint32_t pin, bool opendrain, uint32_t af)
+void GPIO_EnableAlternate(GPIO_t * gpio, uint32_t pin, GPIO_Flag_t flags, uint32_t af)
 {
 	GPIO_ConfigAlternate(gpio, pin, af);
-	GPIO_Init(gpio, pin, GPIOMode_Alternate | GPIOSpeed_High | (opendrain ? GPIOFlag_OpenDrain : 0));
+	GPIO_Init(gpio, pin, GPIO_Mode_Alternate | GPIO_Speed_High | flags);
 }
 
 #ifdef GPIO_USE_IRQS
@@ -105,22 +67,34 @@ void GPIO_EnableIRQ(GPIO_t * gpio, uint32_t pin, GPIO_Pull_t pull, GPIO_IT_Dir_t
 
 	gCallback[n] = callback;
 
-	GPIO_Init(gpio, pin, GPIOMode_Input | pull);
+	GPIO_Init(gpio, pin, GPIO_Mode_Input | pull);
 	GPIO_ConfigInterrupt(gpio, pin, dir);
 
 	EXTIx_EnableIRQn(n);
 }
 #endif //GPIO_USE_IRQS
 
-void GPIO_Deinit(GPIO_t * gpio, uint32_t pin)
+void GPIO_Init(GPIO_t * gpio, uint32_t pins, GPIO_Flag_t mode)
 {
-	GPIO_Init(gpio, pin, GPIOMode_Analog);
+	uint32_t pinmask = GPIO_SWARBitDouble(pins);
+
+	GPIO_Mode_t dir = mode & GPIO_Mode_MASK;
+
+	if (dir == GPIO_Mode_Alternate || dir == GPIO_Mode_Output)
+	{
+		uint32_t speed = (mode & GPIO_Speed_MASK) >> GPIOCFG_SPEED_POS;
+		MODIFY_REG( gpio->OSPEEDR, pinmask * GPIO_OSPEEDER_OSPEED0, pinmask * speed );
+		MODIFY_REG( gpio->OTYPER, pins, (mode & GPIO_Flag_OpenDrain) ? pins : 0 );
+	}
+
+	MODIFY_REG( gpio->MODER, pinmask * GPIO_MODER_MODE0, pinmask * dir);
+	uint32_t pull = (mode & GPIO_Pull_MASK) >> GPIOCFG_PULL_POS;
+	MODIFY_REG( gpio->PUPDR, pinmask * GPIO_PUPDR_PUPD0, pinmask * pull);
 }
 
 /*
  * PRIVATE FUNCTIONS
  */
-
 
 static inline void GPIO_ConfigAlternate( GPIO_t * gpio, uint32_t pins, uint32_t af)
 {
@@ -137,6 +111,7 @@ static inline void GPIO_ConfigAlternate( GPIO_t * gpio, uint32_t pins, uint32_t 
 	}
 }
 
+#ifdef GPIO_USE_IRQS
 static inline void GPIO_ConfigInterrupt( GPIO_t * gpio, int n, GPIO_IT_Dir_t dir)
 {
 	__HAL_RCC_SYSCFG_CLK_ENABLE();
@@ -146,42 +121,18 @@ static inline void GPIO_ConfigInterrupt( GPIO_t * gpio, int n, GPIO_IT_Dir_t dir
 
 	uint32_t pin = 1 << n;
 	SET_BIT(EXTI->IMR, pin);
-	MODIFY_REG(EXTI->RTSR, pin, (dir & GPIO_IT_RISING) ? pin : 0);
-	MODIFY_REG(EXTI->FTSR, pin, (dir & GPIO_IT_FALLING) ? pin : 0);
+	MODIFY_REG(EXTI->RTSR, pin, (dir & GPIO_IT_Rising) ? pin : 0);
+	MODIFY_REG(EXTI->FTSR, pin, (dir & GPIO_IT_Falling) ? pin : 0);
 }
+#endif
 
-
-
-#define SIMD_B0 	0xAAAAAAAA
-#define SIMD_B1 	0x0CCCCCCC
-#define SIMD_B2 	0x00F0F0F0
-#define SIMD_B3 	0x0000FF00
-
-static inline uint32_t GPIO_BitDouble(uint32_t s)
+static inline uint32_t GPIO_SWARBitDouble(uint32_t s)
 {
-	s = (s & ~SIMD_B3) | ((s & SIMD_B3) << 8);
-	s = (s & ~SIMD_B2) | ((s & SIMD_B2) << 4);
-	s = (s & ~SIMD_B1) | ((s & SIMD_B1) << 2);
-	s = (s & ~SIMD_B0) | ((s & SIMD_B0) << 1);
+	s = (s & ~0xFF00FF00) | ((s & 0xFF00FF00) << 8);
+	s = (s & ~0xF0F0F0F0) | ((s & 0xF0F0F0F0) << 4);
+	s = (s & ~0xCCCCCCCC) | ((s & 0xCCCCCCCC) << 2);
+	s = (s & ~0xAAAAAAAA) | ((s & 0xAAAAAAAA) << 1);
 	return s;
-}
-
-static void GPIO_Init(GPIO_t * gpio, uint32_t pins, GPIOCfg_t mode)
-{
-	uint32_t pinmask = GPIO_BitDouble(pins);
-
-	GPIOCfg_t dir = mode & GPIOMode_MASK;
-
-	if (dir == GPIOMode_Alternate || dir == GPIOMode_Output)
-	{
-		uint32_t speed = (mode & GPIOSpeed_MASK) >> GPIOCFG_SPEED_POS;
-		MODIFY_REG( gpio->OSPEEDR, pinmask * GPIO_OSPEEDER_OSPEED0, pinmask * speed );
-		MODIFY_REG( gpio->OTYPER, pins, (mode & GPIOFlag_OpenDrain) ? pins : 0 );
-	}
-
-	MODIFY_REG( gpio->MODER, pinmask * GPIO_MODER_MODE0, pinmask * dir);
-	uint32_t pull = (mode & GPIOPull_MASK) >> GPIOCFG_PULL_POS;
-	MODIFY_REG( gpio->PUPDR, pinmask * GPIO_PUPDR_PUPD0, pinmask * pull);
 }
 
 
