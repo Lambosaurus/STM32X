@@ -50,7 +50,7 @@ SPI_t * SPI_3 = &gSPI_3;
  * PUBLIC FUNCTIONS
  */
 
-void SPI_Init(SPI_t * spi, uint32_t bitrate, SPIMode_t mode)
+void SPI_Init(SPI_t * spi, uint32_t bitrate, SPI_Mode_t mode)
 {
 	SPIx_Init(spi);
 
