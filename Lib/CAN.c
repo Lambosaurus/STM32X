@@ -3,6 +3,7 @@
 
 #ifdef CAN_GPIO
 #include "GPIO.h"
+#include "CLK.h"
 
 /*
  * PRIVATE DEFINITIONS
@@ -56,7 +57,7 @@ void CAN_Init(uint32_t bitrate)
 
 	CANx_Init();
 
-	uint32_t freq = HAL_RCC_GetPCLK1Freq();
+	uint32_t freq = CLK_GetPCLKFreq();
 
 #ifdef AUTO_CALC_TQ
 	uint32_t nbt = CAN_SelectNominalBitTime(freq, bitrate);
@@ -261,7 +262,7 @@ static void CAN_WriteMailbox(CAN_TxMailBox_TypeDef * mailbox, const CANMsg_t * m
 static void CANx_Init(void)
 {
 	__HAL_RCC_CAN1_CLK_ENABLE();
-	GPIO_EnableAlternate(CAN_GPIO, CAN_PINS, GPIO_MODE_AF_PP, CAN_AF);
+	GPIO_EnableAlternate(CAN_GPIO, CAN_PINS, 0, CAN_AF);
 	//HAL_NVIC_EnableIRQ(CEC_CAN_IRQn);
 }
 

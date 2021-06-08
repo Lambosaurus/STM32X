@@ -2,6 +2,7 @@
 #include "I2C.h"
 #include "Core.h"
 #include "GPIO.h"
+#include "CLK.h"
 
 /*
  * PRIVATE DEFINITIONS
@@ -338,7 +339,7 @@ static inline void I2C_StartTransfer(I2C_t * i2c, uint8_t address, uint8_t size,
 
 static uint32_t I2C_SelectTiming(uint32_t bitrate)
 {
-	uint32_t clk = HAL_RCC_GetPCLK1Freq();
+	uint32_t clk = CLK_GetPCLKFreq();
 
 	uint32_t prescalar = 0;
 	uint32_t bittime = clk / bitrate;
@@ -384,21 +385,21 @@ static void I2Cx_Init(I2C_t * i2c)
 	if (i2c == I2C_1)
 	{
 		__HAL_RCC_I2C1_CLK_ENABLE();
-		GPIO_EnableAlternate(I2C1_GPIO, I2C1_PINS, GPIO_MODE_AF_OD, I2C1_AF);
+		GPIO_EnableAlternate(I2C1_GPIO, I2C1_PINS, GPIO_Flag_OpenDrain, I2C1_AF);
 	}
 #endif
 #ifdef I2C2_GPIO
 	if (i2c == I2C_2)
 	{
 		__HAL_RCC_I2C2_CLK_ENABLE();
-		GPIO_EnableAlternate(I2C2_GPIO, I2C2_PINS, GPIO_MODE_AF_OD, I2C2_AF);
+		GPIO_EnableAlternate(I2C2_GPIO, I2C2_PINS, GPIO_Flag_OpenDrain, I2C2_AF);
 	}
 #endif
 #ifdef I2C3_GPIO
 	if (i2c == I2C_3)
 	{
 		__HAL_RCC_I2C3_CLK_ENABLE();
-		GPIO_EnableAlternate(I2C3_GPIO, I2C3_PINS, GPIO_MODE_AF_OD, I2C3_AF);
+		GPIO_EnableAlternate(I2C3_GPIO, I2C3_PINS, GPIO_Flag_OpenDrain, I2C3_AF);
 	}
 #endif
 }

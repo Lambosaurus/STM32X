@@ -23,11 +23,11 @@ typedef struct {
 } SPI_t;
 
 typedef enum {
-	SPI_MODE0 = SPI_POLARITY_LOW | SPI_PHASE_1EDGE,
-	SPI_MODE1 = SPI_POLARITY_LOW | SPI_PHASE_2EDGE,
-	SPI_MODE2 = SPI_POLARITY_HIGH | SPI_PHASE_1EDGE,
-	SPI_MODE3 = SPI_POLARITY_HIGH | SPI_PHASE_2EDGE,
-} SPIMode_t;
+	SPI_Mode_0 = SPI_POLARITY_LOW | SPI_PHASE_1EDGE,
+	SPI_Mode_1 = SPI_POLARITY_LOW | SPI_PHASE_2EDGE,
+	SPI_Mode_2 = SPI_POLARITY_HIGH | SPI_PHASE_1EDGE,
+	SPI_Mode_3 = SPI_POLARITY_HIGH | SPI_PHASE_2EDGE,
+} SPI_Mode_t;
 
 
 /*
@@ -35,7 +35,7 @@ typedef enum {
  */
 
 // Initialisation
-void SPI_Init(SPI_t * spi, uint32_t bitrate, SPIMode_t mode);
+void SPI_Init(SPI_t * spi, uint32_t bitrate, SPI_Mode_t mode);
 void SPI_Deinit(SPI_t * spi);
 
 // Transaction functions

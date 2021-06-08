@@ -26,11 +26,11 @@ typedef struct
 	uint8_t buffer[UART_BFR_SIZE];
 	uint32_t head;
 	uint32_t tail;
-} UARTBuffer_t;
+} UART_Buffer_t;
 
 typedef struct {
-	UARTBuffer_t tx;
-	UARTBuffer_t rx;
+	UART_Buffer_t tx;
+	UART_Buffer_t rx;
 	USART_TypeDef * Instance;
 } UART_t;
 

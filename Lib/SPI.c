@@ -1,6 +1,7 @@
 
 #include "SPI.h"
 #include "GPIO.h"
+#include "CLK.h"
 
 /*
  * PRIVATE DEFINITIONS
@@ -49,7 +50,7 @@ SPI_t * SPI_3 = &gSPI_3;
  * PUBLIC FUNCTIONS
  */
 
-void SPI_Init(SPI_t * spi, uint32_t bitrate, SPIMode_t mode)
+void SPI_Init(SPI_t * spi, uint32_t bitrate, SPI_Mode_t mode)
 {
 	SPIx_Init(spi);
 
@@ -124,7 +125,7 @@ uint8_t SPI_TransferByte(SPI_t * spi, uint8_t byte)
 static uint32_t SPI_SelectPrescalar(SPI_t * spi, uint32_t target)
 {
 	// Div clock by 2, because the prescalars start at 2
-	uint32_t clk = HAL_RCC_GetPCLK1Freq() >> 1;
+	uint32_t clk = CLK_GetPCLKFreq() >> 1;
 	uint32_t actual;
 	uint32_t k;
 	for (k = 0; k <= 0x7; k++)
@@ -145,21 +146,21 @@ static void SPIx_Init(SPI_t * spi)
 	if (spi == SPI_1)
 	{
 		__HAL_RCC_SPI1_CLK_ENABLE();
-		GPIO_EnableAlternate(SPI1_GPIO, SPI1_PINS, GPIO_MODE_AF_PP, SPI1_AF);
+		GPIO_EnableAlternate(SPI1_GPIO, SPI1_PINS, 0, SPI1_AF);
 	}
 #endif
 #ifdef SPI2_GPIO
 	if (spi == SPI_2)
 	{
 		__HAL_RCC_SPI2_CLK_ENABLE();
-		GPIO_EnableAlternate(SPI2_GPIO, SPI2_PINS, GPIO_MODE_AF_PP, SPI2_AF);
+		GPIO_EnableAlternate(SPI2_GPIO, SPI2_PINS, 0, SPI2_AF);
 	}
 #endif
 #ifdef SPI3_GPIO
 	if (spi == SPI_3)
 	{
 		__HAL_RCC_SPI3_CLK_ENABLE();
-		GPIO_EnableAlternate(SPI3_GPIO, SPI3_PINS, GPIO_MODE_AF_PP, SPI3_AF);
+		GPIO_EnableAlternate(SPI3_GPIO, SPI3_PINS, 0, SPI3_AF);
 	}
 #endif
 }
