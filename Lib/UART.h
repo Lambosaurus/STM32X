@@ -52,7 +52,7 @@ void UART_FlushWrite(UART_t * uart);
 uint32_t UART_ReadCount(UART_t * uart);
 uint32_t UART_Read(UART_t * uart, uint8_t * data, uint32_t count);
 uint8_t UART_Pop(UART_t * uart);
-void UART_FlushRead(UART_t * uart);
+void UART_ReadFlush(UART_t * uart);
 
 
 /*
