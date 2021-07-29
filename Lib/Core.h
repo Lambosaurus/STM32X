@@ -31,6 +31,7 @@ void CORE_Init(void);
 void CORE_Idle(void);
 void CORE_Stop(void);
 void CORE_Delay(uint32_t ms);
+void CORE_DelayUs(uint32_t us);
 static inline uint32_t CORE_GetTick(void);
 
 #ifdef CORE_USE_TICK_IRQ
