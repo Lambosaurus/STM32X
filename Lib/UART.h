@@ -46,7 +46,7 @@ void UART_Deinit(UART_t * uart);
 // Transmit
 void UART_Write(UART_t * uart, const uint8_t * data, uint32_t count);
 void UART_WriteStr(UART_t * uart, const char * str);
-void UART_FlushWrite(UART_t * uart);
+void UART_WriteFlush(UART_t * uart);
 
 // Recieve
 uint32_t UART_ReadCount(UART_t * uart);

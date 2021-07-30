@@ -202,6 +202,16 @@ void UART_ReadFlush(UART_t * uart)
 	__UART_RX_ENABLE(uart);
 }
 
+void UART_WriteFlush(UART_t * uart)
+{
+	while (uart->tx.head != uart->tx.tail)
+	{
+		CORE_Idle();
+	}
+	// Todo, remove this delay (needed to flush last 2 charachters.)
+	CORE_Delay(1);
+}
+
 /*
  * PRIVATE FUNCTIONS
  */
