@@ -98,7 +98,18 @@ void UART_Init(UART_t * uart, uint32_t baud)
 
 	// Calculate baud rate.
 	uint32_t pclk = CLK_GetPCLKFreq();
-	uart->Instance->BRR = UART_DIV_SAMPLING16(pclk, baud);
+
+#ifdef UARTLP_GPIO
+	if (UART_INSTANCE_LOWPOWER(uart))
+	{
+		uart->Instance->BRR = UART_DIV_LPUART(pclk, baud);
+	}
+	else
+#endif
+	{
+		uart->Instance->BRR = UART_DIV_SAMPLING16(pclk, baud);
+	}
+
 
 	CLEAR_BIT(uart->Instance->CR2, (USART_CR2_LINEN | USART_CR2_CLKEN));
 	CLEAR_BIT(uart->Instance->CR3, (USART_CR3_SCEN | USART_CR3_HDSEL | USART_CR3_IREN));
@@ -189,6 +200,16 @@ void UART_ReadFlush(UART_t * uart)
 	__UART_RX_DISABLE(uart);
 	uart->rx.tail = uart->rx.head;
 	__UART_RX_ENABLE(uart);
+}
+
+void UART_WriteFlush(UART_t * uart)
+{
+	while (uart->tx.head != uart->tx.tail)
+	{
+		CORE_Idle();
+	}
+	// Todo, remove this delay (needed to flush last 2 charachters.)
+	CORE_Delay(1);
 }
 
 /*
