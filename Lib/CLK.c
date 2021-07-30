@@ -14,7 +14,7 @@
  */
 
 #ifdef CLK_USE_LSE
-static void CLK_ResetBackupDomain(void)
+static void CLK_ResetBackupDomain(void);
 #endif
 static void CLK_AccessBackupDomain(void);
 
@@ -86,14 +86,14 @@ void CLK_DisableUSBCLK(void)
 void CLK_EnableLSO(void)
 {
 #ifdef CLK_USE_LSE
+	//__HAL_RCC_LSEDRIVE_CONFIG(RCC_LSEDRIVE_HIGH);
+	CLK_AccessBackupDomain();
 #ifdef CLK_LSE_BYPASS
 	__HAL_RCC_LSE_CONFIG(RCC_LSE_BYPASS);
 #else
 	__HAL_RCC_LSE_CONFIG(RCC_LSE_ON);
 #endif
 	while(!__HAL_RCC_GET_FLAG(RCC_FLAG_LSERDY));
-
-	CLK_AccessBackupDomain();
 	CLK_ResetBackupDomain();
 	__HAL_RCC_RTC_CONFIG(RCC_RTCCLKSOURCE_LSE);
 #else
