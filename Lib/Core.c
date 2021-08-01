@@ -70,6 +70,7 @@ void CORE_Stop(void)
 	SET_BIT(SCB->SCR, SCB_SCR_SLEEPDEEP_Msk);
 	__WFI();
 	CLEAR_BIT(SCB->SCR, SCB_SCR_SLEEPDEEP_Msk);
+	MODIFY_REG(PWR->CR, (PWR_CR_PDDS | PWR_CR_LPSDSR), PWR_MAINREGULATOR_ON);
 
 	// SYSCLK is defaulted to HSI on boot
 	CLK_InitSYSCLK();
@@ -84,6 +85,14 @@ void CORE_Delay(uint32_t ms)
 	{
 		CORE_Idle();
 	}
+}
+
+void __attribute__((optimize("-Os"))) CORE_DelayUs(uint32_t us)
+{
+	// -Os will generate a straight forward output.
+	// 11225 is our tuned factor.
+	volatile uint32_t i = (us * (CLK_GetHCLKFreq() >> 10)) / 11225;
+	while(i--);
 }
 
 #ifdef CORE_USE_TICK_IRQ
