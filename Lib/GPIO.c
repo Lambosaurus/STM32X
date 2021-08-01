@@ -68,7 +68,7 @@ void GPIO_EnableIRQ(GPIO_t * gpio, uint32_t pin, GPIO_Pull_t pull, GPIO_IT_Dir_t
 	gCallback[n] = callback;
 
 	GPIO_Init(gpio, pin, GPIO_Mode_Input | pull);
-	GPIO_ConfigInterrupt(gpio, pin, dir);
+	GPIO_ConfigInterrupt(gpio, n, dir);
 
 	EXTIx_EnableIRQn(n);
 }
