@@ -20,6 +20,7 @@
 #define __UART_RX_DISABLE(uart) (uart->Instance->CR1 &= ~USART_CR1_RXNEIE)
 #define __UART_TX_ENABLE(uart) 	(uart->Instance->CR1 |= USART_CR1_TXEIE)
 #define __UART_TX_DISABLE(uart) (uart->Instance->CR1 &= ~USART_CR1_TXEIE)
+#define __UART_TX_BUSY(uart)	(!(uart->Instance->ISR & USART_ISR_TC))
 
 #define __UART_CLEAR_FLAGS(uart, flags) (uart->Instance->ICR |= flags)
 
@@ -204,12 +205,21 @@ void UART_ReadFlush(UART_t * uart)
 
 void UART_WriteFlush(UART_t * uart)
 {
-	while (uart->tx.head != uart->tx.tail)
+	while (UART_WriteCount(uart))
 	{
 		CORE_Idle();
 	}
-	// Todo, remove this delay (needed to flush last 2 charachters.)
-	CORE_Delay(1);
+}
+
+uint32_t UART_WriteCount(UART_t * uart)
+{
+	__UART_TX_DISABLE(uart);
+	uint32_t count = UART_BFR_WRAP(uart->tx.head - uart->tx.tail);
+	// Include the outgoing character
+	if (__UART_TX_BUSY(uart)) { count++; }
+	// Restore the transmitter if we still have pending data
+	if (count) { __UART_TX_ENABLE(uart); }
+	return count;
 }
 
 /*
