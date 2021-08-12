@@ -21,6 +21,8 @@
  * PUBLIC DEFINITIONS
  */
 
+#define LENGTH(x)		(sizeof(x) / sizeof(*(x)))
+
 /*
  * PUBLIC TYPES
  */
