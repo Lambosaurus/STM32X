@@ -80,7 +80,7 @@ UART_t * UART_5 = &gUART_5;
  */
 
 
-void UART_Init(UART_t * uart, uint32_t baud)
+void UART_Init(UART_t * uart, uint32_t baud, UART_Mode_t mode)
 {
 	uart->tx.head = uart->tx.tail = 0;
 	uart->rx.head = uart->rx.tail = 0;
@@ -91,10 +91,18 @@ void UART_Init(UART_t * uart, uint32_t baud)
 	__HAL_UART_DISABLE(uart);
 	// Configure to standard settings: 8N1, no flow control.
 	uint32_t cr1 = (uint32_t)UART_WORDLENGTH_8B | UART_PARITY_NONE | UART_MODE_TX_RX | UART_OVERSAMPLING_16;
-	MODIFY_REG(uart->Instance->CR1, USART_CR1_M | USART_CR1_PCE | USART_CR1_PS | USART_CR1_TE | USART_CR1_RE | USART_CR1_OVER8, cr1);
-	MODIFY_REG(uart->Instance->CR2, USART_CR2_STOP, UART_STOPBITS_1);
+	const uint32_t cr1msk = USART_CR1_M | USART_CR1_PCE | USART_CR1_PS | USART_CR1_TE | USART_CR1_RE | USART_CR1_OVER8;
+	MODIFY_REG(uart->Instance->CR1, cr1msk,	cr1);
+
+	uint32_t cr2 = UART_STOPBITS_1;
+	if (mode & UART_Mode_Inverted) 	{ cr2 |= USART_CR2_RXINV | USART_CR2_TXINV; }
+	if (mode & UART_Mode_Swap) 		{ cr2 |= USART_CR2_SWAP; }
+	const uint32_t cr2msk = USART_CR2_STOP | USART_CR2_RXINV | USART_CR2_TXINV | USART_CR2_SWAP | USART_CR2_LINEN | USART_CR2_CLKEN;
+	MODIFY_REG(uart->Instance->CR2, cr2msk, cr2);
+
 	uint32_t cr3 = (uint32_t)UART_HWCONTROL_NONE | UART_ONE_BIT_SAMPLE_DISABLE;
-	MODIFY_REG(uart->Instance->CR3, (USART_CR3_RTSE | USART_CR3_CTSE | USART_CR3_ONEBIT), cr3);
+	const uint32_t cr3msk = USART_CR3_RTSE | USART_CR3_CTSE | USART_CR3_ONEBIT | USART_CR3_SCEN | USART_CR3_HDSEL | USART_CR3_IREN;
+	MODIFY_REG(uart->Instance->CR3, cr3msk, cr3);
 
 	// Calculate baud rate.
 	uint32_t pclk = CLK_GetPCLKFreq();
@@ -109,10 +117,6 @@ void UART_Init(UART_t * uart, uint32_t baud)
 	{
 		uart->Instance->BRR = UART_DIV_SAMPLING16(pclk, baud);
 	}
-
-
-	CLEAR_BIT(uart->Instance->CR2, (USART_CR2_LINEN | USART_CR2_CLKEN));
-	CLEAR_BIT(uart->Instance->CR3, (USART_CR3_SCEN | USART_CR3_HDSEL | USART_CR3_IREN));
 	__HAL_UART_ENABLE(uart);
 
 	// Enable RX IRQ.

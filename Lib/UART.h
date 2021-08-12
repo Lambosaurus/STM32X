@@ -34,13 +34,18 @@ typedef struct {
 	USART_TypeDef * Instance;
 } UART_t;
 
+typedef enum {
+	UART_Mode_Default 	= 0,
+	UART_Mode_Inverted 	= (1 << 0),
+	UART_Mode_Swap		= (1 << 1),
+} UART_Mode_t;
 
 /*
  * PUBLIC FUNCTIONS
  */
 
 // Initialisation
-void UART_Init(UART_t * uart, uint32_t baud);
+void UART_Init(UART_t * uart, uint32_t baud, UART_Mode_t mode);
 void UART_Deinit(UART_t * uart);
 
 // Transmit
