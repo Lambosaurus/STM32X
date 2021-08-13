@@ -60,14 +60,13 @@ void GPIO_EnableAlternate(GPIO_t * gpio, uint32_t pin, GPIO_Flag_t flags, uint32
 }
 
 #ifdef GPIO_USE_IRQS
-void GPIO_EnableIRQ(GPIO_t * gpio, uint32_t pin, GPIO_Pull_t pull, GPIO_IT_Dir_t dir, VoidFunction_t callback)
+void GPIO_OnChange(GPIO_t * gpio, uint32_t pin, GPIO_IT_Dir_t dir, VoidFunction_t callback)
 {
 	int n = 0;
 	while ((pin & (1 << n)) == 0) { n++; }
 
 	gCallback[n] = callback;
 
-	GPIO_Init(gpio, pin, GPIO_Mode_Input | pull);
 	GPIO_ConfigInterrupt(gpio, n, dir);
 
 	EXTIx_EnableIRQn(n);
@@ -114,15 +113,25 @@ static void GPIO_ConfigAlternate( GPIO_t * gpio, uint32_t pins, uint32_t af)
 #ifdef GPIO_USE_IRQS
 static void GPIO_ConfigInterrupt( GPIO_t * gpio, int n, GPIO_IT_Dir_t dir)
 {
-	__HAL_RCC_SYSCFG_CLK_ENABLE();
-	uint32_t gpio_index = GPIO_GET_INDEX(gpio);
-	uint32_t offset = (4 * n & 0x3);
-	MODIFY_REG(SYSCFG->EXTICR[n >> 2], 0xF << offset, gpio_index << offset);
-
 	uint32_t pin = 1 << n;
-	SET_BIT(EXTI->IMR, pin);
-	MODIFY_REG(EXTI->RTSR, pin, (dir & GPIO_IT_Rising) ? pin : 0);
-	MODIFY_REG(EXTI->FTSR, pin, (dir & GPIO_IT_Falling) ? pin : 0);
+	if (dir == GPIO_IT_None)
+	{
+		// Disable the EXTI channel.
+		CLEAR_BIT(EXTI->IMR, pin);
+	}
+	else
+	{
+		// Assign the EXTI channel to the given GPIO.
+		__HAL_RCC_SYSCFG_CLK_ENABLE();
+		uint32_t gpio_index = GPIO_GET_INDEX(gpio);
+		uint32_t offset = (4 * n & 0x3);
+		MODIFY_REG(SYSCFG->EXTICR[n >> 2], 0xF << offset, gpio_index << offset);
+
+		// Configure the EXTI channel
+		SET_BIT(EXTI->IMR, pin);
+		MODIFY_REG(EXTI->RTSR, pin, (dir & GPIO_IT_Rising) ? pin : 0);
+		MODIFY_REG(EXTI->FTSR, pin, (dir & GPIO_IT_Falling) ? pin : 0);
+	}
 }
 #endif
 
