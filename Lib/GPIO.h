@@ -25,6 +25,7 @@
 typedef GPIO_TypeDef GPIO_t;
 
 typedef enum {
+	GPIO_IT_None			= 0x00,
 	GPIO_IT_Rising 			= 0x01,
 	GPIO_IT_Falling 		= 0x02,
 	GPIO_IT_Both 			= GPIO_IT_Rising | GPIO_IT_Falling,
@@ -74,7 +75,9 @@ void GPIO_EnableAlternate(GPIO_t * gpio, uint32_t pin, GPIO_Flag_t flags, uint32
 static inline void GPIO_Deinit(GPIO_t * gpio, uint32_t pin);
 
 #ifdef GPIO_USE_IRQS
-void GPIO_EnableIRQ(GPIO_t * gpio, uint32_t pin, GPIO_Pull_t pull, GPIO_IT_Dir_t dir, VoidFunction_t callback);
+// Note: 	The IRQ will not be deinitialised on GPIO_Deinit.
+// 			To safely reuse the IO, call GPIO_OnChange(gpio, pin, GPIO_IT_None, NULL);
+void GPIO_OnChange(GPIO_t * gpio, uint32_t pin, GPIO_IT_Dir_t dir, VoidFunction_t callback);
 #endif //GPIO_USE_IRQS
 
 // Outputs
