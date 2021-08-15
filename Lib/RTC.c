@@ -263,7 +263,7 @@ static uint32_t RTC_ToBCD(uint32_t bin)
 
 static uint32_t RTC_FromBCD(uint32_t bcd)
 {
-	return ((bcd >> 4) * 10) | (bcd & 0xF);
+	return ((bcd >> 4) * 10) + (bcd & 0xF);
 }
 
 static void RTC_EnterInit(void)
