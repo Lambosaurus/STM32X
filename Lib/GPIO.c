@@ -124,7 +124,7 @@ static void GPIO_ConfigInterrupt( GPIO_t * gpio, int n, GPIO_IT_Dir_t dir)
 		// Assign the EXTI channel to the given GPIO.
 		__HAL_RCC_SYSCFG_CLK_ENABLE();
 		uint32_t gpio_index = GPIO_GET_INDEX(gpio);
-		uint32_t offset = (4 * n & 0x3);
+		uint32_t offset = (n & 0x3) * 4;
 		MODIFY_REG(SYSCFG->EXTICR[n >> 2], 0xF << offset, gpio_index << offset);
 
 		// Configure the EXTI channel
