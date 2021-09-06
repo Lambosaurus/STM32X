@@ -8,17 +8,17 @@
  */
 
 // Init calls
-void GPIO_EnableInput(GPIO_t * gpio, uint32_t pin, GPIO_Pull_t pull)
+static inline void GPIO_EnableInput(GPIO_t * gpio, uint32_t pin, GPIO_Pull_t pull)
 {
 	GPIO_Init(gpio, pin, GPIO_Mode_Input | pull);
 }
 
-void GPIO_Deinit(GPIO_t * gpio, uint32_t pin)
+static inline void GPIO_Deinit(GPIO_t * gpio, uint32_t pin)
 {
 	GPIO_Init(gpio, pin, GPIO_Mode_Analog);
 }
 
-void GPIO_EnableOutput(GPIO_t * gpio, uint32_t pin, GPIO_State_t state)
+static inline void GPIO_EnableOutput(GPIO_t * gpio, uint32_t pin, GPIO_State_t state)
 {
 	GPIO_Write(gpio, pin, state);
 	GPIO_Init(gpio, pin, GPIO_Mode_Output);
