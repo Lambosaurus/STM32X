@@ -2,6 +2,7 @@
 #include "Core.h"
 #include "GPIO.h"
 #include "CLK.h"
+#include "US.h"
 
 /*
  * PRIVATE DEFINITIONS
@@ -51,6 +52,9 @@ void CORE_Init(void)
 	CLK_InitSYSCLK();
 	CORE_InitSysTick();
 	CORE_InitGPIO();
+#ifdef	US_ENABLE
+	US_Init();
+#endif
 }
 
 void CORE_Idle(void)
