@@ -48,7 +48,7 @@ void CLK_InitSYSCLK(void)
 	osc.PLL.PLLSource 		= RCC_PLLSOURCE_HSI;
 	osc.PLL.PLLMUL 			= RCC_PLL_MUL4;
 #ifdef STM32F0
-	osc.PLL.PREDIV			= RCC_PREDIV_DIV2;
+	osc.PLL.PREDIV			= RCC_PREDIV_DIV1;
 #else
 	osc.PLL.PLLDIV 			= RCC_PLL_DIV2;
 #endif
