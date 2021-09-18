@@ -62,8 +62,6 @@ void RTC_Init(void)
 	// Exit Initialization mode
 	RTC->ISR &= ((uint32_t)~RTC_ISR_INIT);
 
-	RTC->OR = RTC_OUTPUT_REMAP_NONE | RTC_OUTPUT_TYPE_OPENDRAIN;
-
 	// If CR_BYPSHAD bit = 0, wait for synchro else this check is not needed
 	if (!(RTC->CR & RTC_CR_BYPSHAD))
 	{
@@ -86,16 +84,20 @@ void RTC_Deinit(void)
 
 	RTC->TR = 0x00000000U;
 	RTC->DR = ((uint32_t)(RTC_DR_WDU_0 | RTC_DR_MU_0 | RTC_DR_DU_0));
+
+#ifdef RTC_WAKEUPTIMER_ENABLE
 	RTC->CR &= RTC_CR_WUCKSEL;
-
 	while (!(RTC->ISR & RTC_ISR_WUTWF));
-
+#endif
 	RTC->CR = 0x00000000U;
+#ifdef RTC_WAKEUPTIMER_ENABLE
 	RTC->WUTR = RTC_WUTR_WUT;
+#endif
 	RTC->PRER = ((uint32_t)(RTC_PRER_PREDIV_A | 0x000000FFU));
 	RTC->ALRMAR = 0x00000000U;
+#ifdef RTC_ALARMB_ENABLE
 	RTC->ALRMBR = 0x00000000U;
-
+#endif
 	// Reset ISR register and exit initialization mode
 	RTC->ISR = 0x00000000U;
 
@@ -175,6 +177,7 @@ void RTC_OnAlarm(RTC_Alarm_t alarm, DateTime_t * time, RTC_Mask_t mask, VoidFunc
 		RTC->ALRMASSR = ssreg;
 		RTC->CR |= RTC_CR_ALRAE | RTC_CR_ALRAIE;
 	    break;
+#ifdef RTC_ALARMB_ENABLE
 	case RTC_Alarm_B:
 		gRtc.AlarmBCallback = callback;
 		RTC->CR &= ~RTC_CR_ALRBE;
@@ -184,6 +187,7 @@ void RTC_OnAlarm(RTC_Alarm_t alarm, DateTime_t * time, RTC_Mask_t mask, VoidFunc
 	    RTC->ALRMBSSR = ssreg;
 	    RTC->CR |= RTC_CR_ALRBE | RTC_CR_ALRBIE;
 		break;
+#endif //RTC_ALARMB_ENABLE
 	}
   _RTC_WRITEPROTECTION_ENABLE();
 }
@@ -198,15 +202,18 @@ void RTC_StopAlarm(RTC_Alarm_t alarm)
 		RTC->CR &= ~(RTC_CR_ALRAE | RTC_CR_ALRAIE);
 		while(!_RTC_GET_FLAG(RTC_FLAG_ALRAWF));
 		break;
+#ifdef RTC_ALARMB_ENABLE
 	case RTC_Alarm_B:
 		// Disable alarm & it
 		RTC->CR &= ~(RTC_CR_ALRBE | RTC_CR_ALRBIE);
 		while(!_RTC_GET_FLAG(RTC_FLAG_ALRBWF));
 		break;
 	}
+#endif //RTC_ALARMB_ENABLE
 	_RTC_WRITEPROTECTION_ENABLE();
 }
 
+#ifdef RTC_WAKEUPTIMER_ENABLE
 void RTC_OnPeriod(uint32_t ms, VoidFunction_t callback)
 {
 	gRtc.PeriodicCallback = callback;
@@ -243,7 +250,9 @@ void RTC_StopPeriod(void)
 	while (!_RTC_GET_FLAG(RTC_FLAG_WUTWF));
 	_RTC_WRITEPROTECTION_ENABLE();
 }
-#endif
+#endif //RTC_WAKEUPTIMER_ENABLE
+
+#endif //RTC_USE_IRQS
 
 
 /*
@@ -314,6 +323,7 @@ void RTC_IRQHandler(void)
 			}
 			_RTC_CLEAR_FLAG(RTC_FLAG_ALRAF);
 		}
+#ifdef STM32L0
 		if (_RTC_GET_FLAG(RTC_FLAG_ALRBF))
 		{
 			if (gRtc.AlarmBCallback)
@@ -322,6 +332,7 @@ void RTC_IRQHandler(void)
 			}
 			_RTC_CLEAR_FLAG(RTC_FLAG_ALRBF);
 		}
+#endif
 		__HAL_RTC_ALARM_EXTI_CLEAR_FLAG();
 	}
 }

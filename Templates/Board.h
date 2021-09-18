@@ -13,6 +13,10 @@
 //#define CLK_LSE_BYPASS
 //#define CLK_LSE_FREQ		32768
 
+// US config
+//#define US_TIM			TIM_22
+//#define US_RES			1
+
 // ADC config
 //#define ADC_VREF	        3300
 
