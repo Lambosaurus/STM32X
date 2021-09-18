@@ -8,6 +8,13 @@
  * PRIVATE DEFINITIONS
  */
 
+#ifdef STM32L0
+#define _PWR_REGULATOR_MASK		 (PWR_CR_PDDS | PWR_CR_LPSDSR)
+#endif
+#ifdef STM32F0
+#define _PWR_REGULATOR_MASK		 PWR_CR_LPDS
+#endif
+
 #define CORE_SYSTICK_FREQ	1000
 #define MS_PER_SYSTICK		(1000 / CORE_SYSTICK_FREQ)
 
@@ -63,18 +70,19 @@ void CORE_Idle(void)
 	__WFI();
 }
 
+
 void CORE_Stop(void)
 {
 	// The tick may break the WFI if it occurs at the wrong time.
 	HAL_SuspendTick();
 
 	// Select the low power regulator
-	MODIFY_REG(PWR->CR, (PWR_CR_PDDS | PWR_CR_LPSDSR), PWR_LOWPOWERREGULATOR_ON);
+	MODIFY_REG(PWR->CR, _PWR_REGULATOR_MASK, PWR_LOWPOWERREGULATOR_ON);
 	// WFI, but with the SLEEPDEEP bit set.
 	SET_BIT(SCB->SCR, SCB_SCR_SLEEPDEEP_Msk);
 	__WFI();
 	CLEAR_BIT(SCB->SCR, SCB_SCR_SLEEPDEEP_Msk);
-	MODIFY_REG(PWR->CR, (PWR_CR_PDDS | PWR_CR_LPSDSR), PWR_MAINREGULATOR_ON);
+	MODIFY_REG(PWR->CR, _PWR_REGULATOR_MASK, PWR_MAINREGULATOR_ON);
 
 	// SYSCLK is defaulted to HSI on boot
 	CLK_InitSYSCLK();
