@@ -3,7 +3,7 @@ This module enables reading and writing to the chips FLASH. This can be used for
 
 This can only be erased in pages, so take care to understand how this will affect your application.
 
-## Usage
+# Usage
 
 Take care when writing to flash for the following reasons:
 * Your application is executing out of flash. Overwriting this will end poorly.
@@ -24,8 +24,8 @@ FLASH_Erase(address);
 uint32_t data[] = { 0x00000001, 0x00000002, 0x00000003, 0x00000004 };
 FLASH_Write(address, data, sizeof(data));
 ```
-Take care with writes, They do not have to cover an entire page, but they must **NOT** cross page boundaries. In this way: data can be written to flash piecemeal.
+When writing to flash you do not have to cover an entire page, but they must **NOT** cross page boundaries. In this way: data can be written to flash piecemeal.
 
-## Board
+# Board
 
 The module is dependant on no definitions within `board.h`

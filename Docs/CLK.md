@@ -5,7 +5,7 @@ The users primarially interaction with this module will be configuring the clock
 
 This module is in need of optimisation - and to allow SYSCLKs other than 32MHz
 
-## Usage
+# Usage
 
 Usage of the module functions are **NOT** expected of the user in normal circumstances. It is primarially for internal use of other libraries. `CLK_Init()` will be called within the CORE module, and should not be called by the user.
 
@@ -21,7 +21,7 @@ uint32_t pclk = CLK_GetPCLKFreq();
 uint32_t lso = CLK_GetLSOFreq();
 ```
 
-## Board
+# Board
 
 The module is dependant on definitions within `Board.h`
 The following template sections are both optional depending on your clocks.

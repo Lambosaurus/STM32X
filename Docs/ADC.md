@@ -3,7 +3,7 @@ This module enables usage of the processors ADC converter.
 
 This module is not very flexible, and will be subject to review in the future.
 
-## Usage
+# Usage
 
 `ADC_Read()` can be used to do an immediate blocking read of a specified ADC channel.
 
@@ -39,7 +39,7 @@ int32_t degrees = ADC_ReadDieTemp();
 uint32_t vref = ADC_ReadVRef();
 ```
 
-## Board
+# Board
 
 The module is dependant on  definitions within `Board.h`
 The following template can be used.

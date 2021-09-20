@@ -5,7 +5,7 @@ This can be used for non-volatile data storage.
 
 EEPROM will not be available on all STM32 variants. The last flash page can be used as an alternative. See FLASH.md for more info.
 
-## Usage
+# Usage
 
 First note that while flexible, EEPROM has write cycle limitations, in the order of 100,000 write cycles. If you continously write to EEPROM, eventually it will fail.
 
@@ -26,6 +26,6 @@ EEPROM_Read(0, data, sizeof(data));
 
 Take care not to exceed the EEPROM size. Refer to your datasheet.
 
-## Board
+# Board
 
 The module is dependant on no definitions within `board.h`

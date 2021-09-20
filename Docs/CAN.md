@@ -4,7 +4,7 @@ The bus is always run with 29 bit addresses.
 
 Note that the use of an external oscillator is reccommended for bus reliability.
 
-## Usage
+# Usage
 
 The CAN bitrate will be automatically converted into time quanta.
 Filters can be enabled to recieve the requested messages.
@@ -41,7 +41,7 @@ CAN_EnableFilter(0, 0x00F00000, 0x00100000);
 CAN_EnableFilter(1, 0x00F00000, 0x00200000);
 ```
 
-## Board
+# Board
 
 The module is dependant on  definitions within `Board.h`
 The following template can be used. Commented out settings are optional.

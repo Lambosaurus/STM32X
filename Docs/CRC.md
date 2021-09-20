@@ -2,7 +2,7 @@
 This module provides access to the CRC unit.
 This can compute a 32 bit CRC in only 4 bus cycles
 
-## Usage
+# Usage
 
 No initialisation of this module is required.
 
@@ -18,6 +18,6 @@ uint32_t page2[] = { 0x00000005, 0x00000006, 0x00000007, 0x00000008 };
 crc = CRC32(crc, page2, sizeof(page2));
 ```
 
-## Board
+# Board
 
 The module is dependant on no definitions within `board.h`
