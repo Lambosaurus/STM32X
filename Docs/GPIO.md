@@ -17,7 +17,7 @@ GPIO_EnableOutput(GPIOA, GPIO_PIN_0, true);
 
 while (1)
 {
-    GPIO_Write(GPIOA, GPIO_PIN_0, true)
+    GPIO_Write(GPIOA, GPIO_PIN_0, true);
     CORE_Delay(500);
     GPIO_Write(GPIOA, GPIO_PIN_0, false);
     CORE_Delay(500);
@@ -27,12 +27,12 @@ while (1)
 Note that inline functions for set/reset are available.
 
 ```c
-GPIO_Set(GPIOA, GPIO_PIN_0)
+GPIO_Set(GPIOA, GPIO_PIN_0);
 GPIO_Reset(GPIOA, GPIO_PIN_0);
 
 // Above an below are equivalent.
 
-GPIO_Write(GPIOA, GPIO_PIN_0, true)
+GPIO_Write(GPIOA, GPIO_PIN_0, true);
 GPIO_Write(GPIOA, GPIO_PIN_0, false);
 ```
 
