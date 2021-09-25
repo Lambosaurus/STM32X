@@ -3,18 +3,21 @@ This provides a standardised microsecond timer.
 
 The intent of this is so that other modules can rely on a standard interface for microseconds, as this is a common requirement. This does not reflect a physical peripheral.
 
-The capabilities of this module are dependant on whether you are willing to dedicate a timer to it. See [TIM](TIM.md) for more info on timers.
+The capabilities of this module are dependant on whether you are willing to dedicate a timer to it.
 
 # Usage
 
 `US_Init()` should not be called by the user. It will be initialised within `CORE_Init()`, see [CORE](CORE.md) for more info.
 
-## Without a timer
+## Minimal mode
 
+When no timer is provided, only `US_Delay()` is available. This is provided using a calibrated loop, and so it not highly accurate. It will typically run 4us longer than requested on a Cortex M0+ core @ 32MHz. This is still suitable for many uses.
 
-## With a timer
+## Timer mode
 
-When a timer is used, this module can be used for microsecond time keeping
+When a timer is used, this module can be used for accurate time keeping.
+
+The timer is defined as `US_TIM` within `Board.h` See [TIM](TIM.md) for more info on timers.
 
 ```c
 uint32_t start = US_Read();
@@ -26,6 +29,9 @@ uint32_t end = US_Read();
 uint32_t elapsed = US_Subtract(start, end);
 ```
 
+`US_Delay()` will be based on the timer, and have the same accuracy.
+
+Note that as the timer is expected to be 16 bit, this limits the maximum intervals that can be measured. This interval can be extended by decreasing the microsecond resolution. With `US_RES` defined as `1` an interval of `65535` us can be measured. Increasing this step size multiplies this as the cost of accuracy.
 
 # Board
 
