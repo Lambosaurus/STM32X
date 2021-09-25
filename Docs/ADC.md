@@ -7,7 +7,7 @@ This module is not very flexible, and will be subject to review in the future.
 
 `ADC_Read()` can be used to do an immediate blocking read of a specified ADC channel.
 
-Refer to the datasheet for how the ADC channels map to the pins. Note that these pins must be left in analog mode. See GPIO.md for more info.
+Refer to the datasheet for how the ADC channels map to the pins. Note that these pins must be left in analog mode. See [GPIO](GPIO.md) for more info.
 
 ```C
 ADC_Init();

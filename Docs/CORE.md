@@ -7,9 +7,10 @@ This module provides control of the processors power states, and sets up the sys
 
 ## Init:
 `CORE_Init()` performs a variety of housekeeping tasks
-* Clock initialisation
+* Clock initialisation. See [CLK](CLK.md) for more info.
 * Systick initialised
-* All GPIO defaulted to analog mode
+* All GPIO defaulted to analog mode. See [GPIO](GPIO.md) for more info.
+* If enabled, the microseconds module will be initialised. See [US](US.md) for more info.
 
 The main function should follow the following general template
 
@@ -39,7 +40,7 @@ void main(void)
 `CORE_Stop()` is similar to CORE_Idle, but with the following adjustments:
 * Systick is disabled. Note that this means CORE_GetTick() will not reflect the passed time.
 * SYSCLK is disabled. This means that most clocked peripherals will stop functioning. See the datasheet on STOP mode for more information.
-* Stop mode should ideally be used in conjuction with RTC module and its alarms. See RTC.md for more information.
+* Stop mode should ideally be used in conjuction with RTC module and its alarms. See [RTC](RTC.md) for more information.
 
 ## System tick:
 

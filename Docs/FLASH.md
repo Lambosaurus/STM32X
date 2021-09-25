@@ -1,7 +1,7 @@
 # FLASH
 This module enables reading and writing to the chips FLASH. This can be used for reprogramming the processor, or storing data.
 
-This can only be erased in pages, so take care to understand how this will affect your application.
+This can only be erased in pages, so take care to understand how this will affect your application. If you are looking to store settings, first check if you could instead use the [EEPROM](EEPROM.md) module.
 
 # Usage
 

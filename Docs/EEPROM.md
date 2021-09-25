@@ -3,7 +3,7 @@ This module enables reading and writing to the chips EEPROM.
 
 This can be used for non-volatile data storage.
 
-EEPROM will not be available on all STM32 variants. The last flash page can be used as an alternative. See FLASH.md for more info.
+EEPROM will not be available on all STM32 variants. The last flash page can be used as an alternative. See [FLASH](FLASH.md) for more info.
 
 # Usage
 

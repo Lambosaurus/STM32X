@@ -7,7 +7,7 @@ This module is in need of optimisation - and to allow SYSCLKs other than 32MHz
 
 # Usage
 
-Usage of the module functions are **NOT** expected of the user in normal circumstances. It is primarially for internal use of other libraries. `CLK_Init()` will be called within the CORE module, and should not be called by the user.
+Usage of the module functions are **NOT** expected of the user in normal circumstances. It is primarially for internal use of other libraries. `CLK_Init()` will be called within the [CORE](CORE.md) module, and should not be called by the user.
 
 The clock frequencies can be queried via the following functions.
 ```C

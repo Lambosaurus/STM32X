@@ -7,7 +7,7 @@ This can compute a 32 bit CRC in only 4 bus cycles
 No initialisation of this module is required.
 
 Note that the size is specified in bytes, not words.
-The default polynomial of 0x4C11DB7 is used.
+The default polynomial of `0x4C11DB7` is used.
 
 ```C
 uint32_t page1[] = { 0x00000001, 0x00000002, 0x00000003, 0x00000004 };

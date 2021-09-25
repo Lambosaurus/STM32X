@@ -3,8 +3,9 @@ This module enables usage of the integrated analog comparators.
 
 # Usage
 
+## Basic:
 When initialised, the comparator inputs must be specified.
-Refer to the datasheet for how the comparator IO map to the pins. Note that these pins must be left in analog mode. See GPIO.md for more info.
+Refer to the datasheet for how the comparator IO map to the pins. Note that these pins must be left in analog mode. See [GPIO](GPIO.md) for more info.
 
 ```C
 COMP_Init(COMP_1, COMP_Pos_IO1 | COMP_Neg_IO1);
@@ -15,6 +16,7 @@ if (COMP_Read(COMP_1))
 }
 ```
 
+## Interrupts:
 The normal use case involves interrupts.
 
 ```C
