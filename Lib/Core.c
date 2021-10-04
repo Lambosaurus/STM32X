@@ -99,6 +99,11 @@ void CORE_Delay(uint32_t ms)
 	}
 }
 
+void CORE_Reset(void)
+{
+	NVIC_SystemReset();
+}
+
 void __attribute__((optimize("-Os"))) CORE_DelayUs(uint32_t us)
 {
 	// -Os will generate a straight forward output.

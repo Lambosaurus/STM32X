@@ -72,6 +72,9 @@ while(1)
 }
 ```
 
+## Reset
+`CORE_Reset()` triggers a NVIC_SystemReset(). This completely restarts the processor and all peripherals. The sole exception is the [RTC](RTC.md).
+
 # Board
 
 The module is dependant on  definitions within `Board.h`
