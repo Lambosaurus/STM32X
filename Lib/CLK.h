@@ -13,6 +13,10 @@
  * PUBLIC DEFINITIONS
  */
 
+#ifndef CLK_SYSCLK_FREQ
+#define CLK_SYSCLK_FREQ			32000000
+#endif
+
 /*
  * PUBLIC TYPES
  */

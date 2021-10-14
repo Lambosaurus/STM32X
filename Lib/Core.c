@@ -47,6 +47,10 @@ void CORE_Init(void)
 {
 #if defined(STM32L0)
 	__HAL_FLASH_PREREAD_BUFFER_ENABLE();
+
+	HAL_PWREx_EnableUltraLowPower();
+	HAL_PWREx_EnableFastWakeUp();
+
 #elif defined(STM32F0)
 	__HAL_FLASH_PREFETCH_BUFFER_ENABLE();
 #endif
