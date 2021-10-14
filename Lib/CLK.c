@@ -16,20 +16,31 @@
 
 #if defined(CLK_USE_MSI)
 #define CLK_SYSCLK_SRC			RCC_SYSCLKSOURCE_MSI
+#define CLK_MSI_RANGE			RCC_MSIRANGE_6
+#if (CLK_SYSCLK_FREQ != 4194304)
+#error "CLK_SYSCLK_FREQ must be 4194304 when CLK_USE_MSI is defined."
+#endif
+
 #elif defined(CLK_USE_HSE)
+
 #define CLK_PLL_SRC_FREQ		CLK_HSE_FREQ
 #define CLK_PLL_SRC				RCC_PLLSOURCE_HSE
-#define CLK_SYSCLK_SRC			CLK_Src_HSE
+#define CLK_SYSCLK_SRC			RCC_SYSCLKSOURCE_HSE
+
 #else
+
 #define CLK_USE_HSI				// This is the default case
 #define CLK_PLL_SRC_FREQ		CLK_HSI_FREQ
 #define CLK_PLL_SRC				RCC_PLLSOURCE_HSI
 #define CLK_SYSCLK_SRC			RCC_SYSCLKSOURCE_HSI
+
 #endif
 
+
 // Is PLL required?
-#if ( CLK_SYSCLK_FREQ != CLK_PLLSRC_FREQ )
+#if ((CLK_SYSCLK_FREQ != CLK_PLLSRC_FREQ) && !(CLK_SYSCLK_SRC == RCC_SYSCLKSOURCE_MSI))
 #define CLK_USE_PLL
+
 #define CLK_PLL_MUL				4
 #define CLK_PLL_DIV				((CLK_PLL_SRC_FREQ * CLK_PLL_MUL) / CLK_SYSCLK_FREQ)
 #if (((CLK_PLL_SRC_FREQ * CLK_PLL_MUL) / CLK_PLL_DIV) != CLK_SYSCLK_FREQ)
@@ -117,8 +128,8 @@ void CLK_InitSYSCLK(void)
 #ifdef CLK_USE_MSI
 	__HAL_RCC_MSI_ENABLE();
 	while(__HAL_RCC_GET_FLAG(RCC_FLAG_MSIRDY) == 0U);
-	__HAL_RCC_MSI_RANGE_CONFIG(RCC_OscInitStruct->MSIClockRange);
-	__HAL_RCC_MSI_CALIBRATIONVALUE_ADJUST(RCC_OscInitStruct->MSICalibrationValue);
+	__HAL_RCC_MSI_RANGE_CONFIG(CLK_MSI_RANGE);
+	__HAL_RCC_MSI_CALIBRATIONVALUE_ADJUST(RCC_MSICALIBRATION_DEFAULT);
 #endif
 
 #ifdef CLK_USE_PLL
@@ -129,35 +140,6 @@ void CLK_InitSYSCLK(void)
 	__HAL_RCC_PLL_ENABLE();
 	while(__HAL_RCC_GET_FLAG(RCC_FLAG_PLLRDY) == 0U);
 #endif
-
-	  /*
-	RCC_OscInitTypeDef osc = {0};
-#ifdef CLK_USE_HSE
-	osc.OscillatorType 		= RCC_OSCILLATORTYPE_HSE;
-	osc.HSEState 			= RCC_HSE_ON;
-	osc.PLL.PLLState 		= RCC_PLL_ON;
-	osc.PLL.PLLSource 		= RCC_PLLSOURCE_HSE;
-	osc.PLL.PLLMUL 			= RCC_PLL_MUL2;
-#ifdef STM32F0
-	osc.PLL.PREDIV			= RCC_PREDIV_DIV1;
-#else
-	osc.PLL.PLLDIV 			= RCC_PLL_DIV1;
-#endif
-#else
-	osc.OscillatorType 		= RCC_OSCILLATORTYPE_HSI;
-	osc.HSIState 			= RCC_HSI_ON;
-	osc.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
-	osc.PLL.PLLState 		= RCC_PLL_OFF;
-	osc.PLL.PLLSource 		= RCC_PLLSOURCE_HSI;
-	osc.PLL.PLLMUL 			= RCC_PLL_MUL4;
-#ifdef STM32F0
-	osc.PLL.PREDIV			= RCC_PREDIV_DIV1;
-#else
-	osc.PLL.PLLDIV 			= RCC_PLL_DIV2;
-#endif
-#endif //CLK_USE_HSE
-	HAL_RCC_OscConfig(&osc);
-	*/
 
 	/*
 	 * CONFIGURE CLOCKS
@@ -245,6 +227,22 @@ void CLK_DisableLSO(void)
 	__HAL_RCC_LSE_CONFIG(RCC_LSE_OFF);
 #else
 	__HAL_RCC_LSI_DISABLE();
+#endif
+}
+
+void CLK_EnableADCCLK(void)
+{
+	// ADC CLK is driven off the HSI.
+#ifndef CLK_USE_HSI
+	__HAL_RCC_HSI_CONFIG(RCC_HSI_ON);
+	while(__HAL_RCC_GET_FLAG(RCC_FLAG_HSIRDY) == 0U);
+#endif
+}
+
+void CLK_DisableADCCLK(void)
+{
+#ifndef CLK_USE_HSI
+	__HAL_RCC_HSI_CONFIG(RCC_HSI_OFF);
 #endif
 }
 

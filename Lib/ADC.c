@@ -1,5 +1,6 @@
 
 #include "ADC.h"
+#include "CLK.h"
 
 /*
  * PRIVATE DEFINITIONS
@@ -64,6 +65,7 @@ static ADC_HandleTypeDef gAdc;
 
 void ADC_Init(void)
 {
+	CLK_EnableADCCLK();
 	__HAL_RCC_ADC1_CLK_ENABLE();
 
 	gAdc.Instance = ADC1;
@@ -111,6 +113,7 @@ void ADC_Deinit(void)
 {
 	HAL_ADC_DeInit(&gAdc);
 	__HAL_RCC_ADC1_CLK_DISABLE();
+	CLK_DisableADCCLK();
 }
 
 uint32_t AIN_AinToDivider(uint32_t ain, uint32_t rlow, uint32_t rhigh)
