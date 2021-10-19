@@ -104,14 +104,6 @@ void CORE_Reset(void)
 	NVIC_SystemReset();
 }
 
-void __attribute__((optimize("-Os"))) CORE_DelayUs(uint32_t us)
-{
-	// -Os will generate a straight forward output.
-	// 11225 is our tuned factor.
-	volatile uint32_t i = (us * (CLK_GetHCLKFreq() >> 10)) / 11225;
-	while(i--);
-}
-
 #ifdef CORE_USE_TICK_IRQ
 void CORE_OnTick(VoidFunction_t callback)
 {
