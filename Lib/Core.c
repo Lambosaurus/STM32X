@@ -8,6 +8,8 @@
  * PRIVATE DEFINITIONS
  */
 
+#define _CORE_GET_RST_FLAGS()	(RCC->CSR)
+
 #ifdef STM32L0
 #define _PWR_REGULATOR_MASK		 (PWR_CR_PDDS | PWR_CR_LPSDSR)
 
@@ -121,6 +123,41 @@ void CORE_OnTick(VoidFunction_t callback)
 	gTickCallback = callback;
 }
 #endif
+
+CORE_ResetSource_t CORE_GetResetSource(void)
+{
+	uint32_t csr = _CORE_GET_RST_FLAGS();
+	CORE_ResetSource_t src;
+    if (csr & RCC_CSR_LPWRRSTF)
+    {
+    	src = CORE_ResetSource_Standby;
+    }
+    else if (csr & (RCC_CSR_WWDGRSTF | RCC_CSR_IWDGRSTF))
+    {
+    	// Join both watchdog sources together.
+        src = CORE_ResetSource_Watchdog;
+    }
+    else if (csr & (RCC_CSR_SFTRSTF | RCC_CSR_OBLRSTF))
+    {
+    	// Joining Option byte load rst and software rst for now.
+    	src = CORE_ResetSource_Software;
+    }
+    else if (csr & RCC_CSR_PORRSTF)
+    {
+    	src = CORE_ResetSource_PowerOn;
+    }
+    else if (csr & RCC_CSR_PINRSTF)
+    {
+    	src = CORE_ResetSource_Pin;
+    }
+    else
+    {
+        src = CORE_ResetSource_UNKNOWN;
+    }
+    // Flags will persist unless cleared
+    __HAL_RCC_CLEAR_RESET_FLAGS();
+    return src;
+}
 
 /*
  * PRIVATE FUNCTIONS

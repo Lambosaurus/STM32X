@@ -75,6 +75,8 @@ while(1)
 ## Reset
 `CORE_Reset()` triggers a NVIC_SystemReset(). This completely restarts the processor and all peripherals. The sole exception is the [RTC](RTC.md).
 
+The source of the last reset can also be fetched using `CORE_GetResetSource()`. If used, this should be called once on boot directly after `CORE_Init()`. Subsequent calls may be invalid.
+
 # Board
 
 The module is dependant on  definitions within `Board.h`
