@@ -34,7 +34,7 @@ A low speed oscillator is required for the use of the [RTC](RTC.md).
 The presense of an external low speed oscillator (LSE) can be specifed using the following.
 
 ```C
-// LSE configuration
+// CLK LSE configuration
 #define CLK_USE_LSE
 #define CLK_LSE_FREQ    32768
 
@@ -50,7 +50,7 @@ A high speed oscillator is required for almost all peripherals and the generatio
 The presense of an external high speed oscillator (HSE) can be specified using the following.
 
 ```C
-// HSE configuration
+// CLK HSE configuration
 #define CLK_USE_HSE
 #define CLK_HSE_FREQ    8000000
 ```
@@ -64,7 +64,19 @@ The PLL will be automatically configued to achieve the required system clock fre
 The PLL multiplication and division factors will be automatically computed - but may need user assistance for some combinations. Specifiy the multiplier only if required.
 
 ```C
-// PLL configuration
+// CLK PLL configuration
 #define CLK_SYSCLK_FREQ   32000000
 //#define CLK_PLL_MUL     4
 ```
+
+## Medium speed oscillator:
+
+A internal medium speed oscillator (MSI) may be used as a source for the system clock **instead of** the high speed oscillators and PLL. This significantly reduces power consumption, but is very limiting.
+
+```C
+// CLK MSI configuration
+#define CLK_USE_MSI
+#define CLK_SYSCLK_FREQ   4194304
+```
+
+The MSI may be configured to other speeds, but are not availale in STM32X yet.
