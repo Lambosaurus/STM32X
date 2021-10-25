@@ -15,6 +15,7 @@
 
 
 #if defined(CLK_USE_MSI)
+
 #define CLK_SYSCLK_SRC			RCC_SYSCLKSOURCE_MSI
 #define CLK_MSI_RANGE			RCC_MSIRANGE_6
 #if (CLK_SYSCLK_FREQ != 4194304)
@@ -27,62 +28,22 @@
 #define CLK_PLL_SRC				RCC_PLLSOURCE_HSE
 #define CLK_SYSCLK_SRC			RCC_SYSCLKSOURCE_HSE
 
-#else
+#else // CLK_USE_HSI
 
-#define CLK_USE_HSI				// This is the default case
+#define CLK_USE_HSI
 #define CLK_PLL_SRC_FREQ		CLK_HSI_FREQ
 #define CLK_PLL_SRC				RCC_PLLSOURCE_HSI
 #define CLK_SYSCLK_SRC			RCC_SYSCLKSOURCE_HSI
 
 #endif
 
-
 // Is PLL required?
 #if ((CLK_SYSCLK_FREQ != CLK_PLLSRC_FREQ) && !(CLK_SYSCLK_SRC == RCC_SYSCLKSOURCE_MSI))
-#define CLK_USE_PLL
 
-#define CLK_PLL_MUL				4
-#define CLK_PLL_DIV				((CLK_PLL_SRC_FREQ * CLK_PLL_MUL) / CLK_SYSCLK_FREQ)
-#if (((CLK_PLL_SRC_FREQ * CLK_PLL_MUL) / CLK_PLL_DIV) != CLK_SYSCLK_FREQ)
-#error "CLK_SYSCLK_FREQ too difficult to achieve"
-#endif
+#define CLK_USE_PLL
+#include "CLK_PLL.inl"
 #undef 	CLK_SYSCLK_SRC
 #define CLK_SYSCLK_SRC			RCC_SYSCLKSOURCE_PLLCLK
-
-// Select the PLL MUL/DIV (There must be a smarter way)
-#if (CLK_PLL_MUL == 2)
-#define CLK_PLL_MUL_CFG			RCC_PLL_MUL2
-#elif (CLK_PLL_MUL == 3)
-#define CLK_PLL_MUL_CFG			RCC_PLL_MUL3
-#elif (CLK_PLL_MUL == 4)
-#define CLK_PLL_MUL_CFG			RCC_PLL_MUL4
-#elif (CLK_PLL_MUL == 6)
-#define CLK_PLL_MUL_CFG			RCC_PLL_MUL6
-#elif (CLK_PLL_MUL == 8)
-#define CLK_PLL_MUL_CFG			RCC_PLL_MUL8
-#elif (CLK_PLL_MUL == 12)
-#define CLK_PLL_MUL_CFG			RCC_PLL_MUL12
-#elif (CLK_PLL_MUL == 16)
-#define CLK_PLL_MUL_CFG			RCC_PLL_MUL16
-#elif (CLK_PLL_MUL == 32)
-#define CLK_PLL_MUL_CFG			RCC_PLL_MUL32
-#elif (CLK_PLL_MUL == 48)
-#define CLK_PLL_MUL_CFG			RCC_PLL_MUL48
-#else
-#error "Unavailable PLL multiplier"
-#endif
-
-#if (CLK_PLL_DIV == 1)
-#define CLK_PLL_DIV_CFG			RCC_PLL_DIV1
-#elif (CLK_PLL_DIV == 2)
-#define CLK_PLL_DIV_CFG			RCC_PLL_DIV2
-#elif (CLK_PLL_DIV == 3)
-#define CLK_PLL_DIV_CFG			RCC_PLL_DIV3
-#elif (CLK_PLL_DIV == 4)
-#define CLK_PLL_DIV_CFG			RCC_PLL_DIV4
-#else
-#error "Unavailable PLL divider"
-#endif
 
 #endif
 
@@ -181,7 +142,6 @@ void CLK_InitSYSCLK(void)
 #ifndef CLK_USE_MSI
 	__HAL_RCC_MSI_DISABLE();
 #endif
-
 }
 
 
