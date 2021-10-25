@@ -9,12 +9,12 @@
 
 static inline uint32_t CLK_GetHCLKFreq(void)
 {
-	return 32000000;
+	return CLK_SYSCLK_FREQ;
 }
 
 static inline uint32_t CLK_GetPCLKFreq(void)
 {
-	return 32000000;
+	return CLK_SYSCLK_FREQ;
 }
 
 static inline uint32_t CLK_GetLSOFreq(void)

@@ -5,6 +5,48 @@
  * PRIVATE DEFINITIONS
  */
 
+
+// Define HSI frequency
+#if defined(STM32L0)
+#define CLK_HSI_FREQ			16000000
+#elif defined(STM32F0)
+#define CLK_HSI_FREQ			8000000
+#endif
+
+
+#if defined(CLK_USE_MSI)
+
+#define CLK_SYSCLK_SRC			RCC_SYSCLKSOURCE_MSI
+#define CLK_MSI_RANGE			RCC_MSIRANGE_6
+#if (CLK_SYSCLK_FREQ != 4194304)
+#error "CLK_SYSCLK_FREQ must be 4194304 when CLK_USE_MSI is defined."
+#endif
+
+#elif defined(CLK_USE_HSE)
+
+#define CLK_PLL_SRC_FREQ		CLK_HSE_FREQ
+#define CLK_PLL_SRC				RCC_PLLSOURCE_HSE
+#define CLK_SYSCLK_SRC			RCC_SYSCLKSOURCE_HSE
+
+#else // CLK_USE_HSI
+
+#define CLK_USE_HSI
+#define CLK_PLL_SRC_FREQ		CLK_HSI_FREQ
+#define CLK_PLL_SRC				RCC_PLLSOURCE_HSI
+#define CLK_SYSCLK_SRC			RCC_SYSCLKSOURCE_HSI
+
+#endif
+
+// Is PLL required?
+#if ((CLK_SYSCLK_FREQ != CLK_PLLSRC_FREQ) && !(CLK_SYSCLK_SRC == RCC_SYSCLKSOURCE_MSI))
+
+#define CLK_USE_PLL
+#include "CLK_PLL.inl"
+#undef 	CLK_SYSCLK_SRC
+#define CLK_SYSCLK_SRC			RCC_SYSCLKSOURCE_PLLCLK
+
+#endif
+
 /*
  * PRIVATE TYPES
  */
@@ -28,43 +70,78 @@ static void CLK_AccessBackupDomain(void);
 
 void CLK_InitSYSCLK(void)
 {
-	RCC_OscInitTypeDef osc = {0};
-#ifdef CLK_USE_HSE
-	osc.OscillatorType 		= RCC_OSCILLATORTYPE_HSE;
-	osc.HSEState 			= RCC_HSE_ON;
-	osc.PLL.PLLState 		= RCC_PLL_ON;
-	osc.PLL.PLLSource 		= RCC_PLLSOURCE_HSE;
-	osc.PLL.PLLMUL 			= RCC_PLL_MUL2;
-#ifdef STM32F0
-	osc.PLL.PREDIV			= RCC_PREDIV_DIV1;
-#else
-	osc.PLL.PLLDIV 			= RCC_PLL_DIV1;
-#endif
-#else
-	osc.OscillatorType 		= RCC_OSCILLATORTYPE_HSI;
-	osc.HSIState 			= RCC_HSI_ON;
-	osc.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
-	osc.PLL.PLLState 		= RCC_PLL_ON;
-	osc.PLL.PLLSource 		= RCC_PLLSOURCE_HSI;
-	osc.PLL.PLLMUL 			= RCC_PLL_MUL4;
-#ifdef STM32F0
-	osc.PLL.PREDIV			= RCC_PREDIV_DIV1;
-#else
-	osc.PLL.PLLDIV 			= RCC_PLL_DIV2;
-#endif
-#endif //CLK_USE_HSE
-	HAL_RCC_OscConfig(&osc);
+	__HAL_FLASH_SET_LATENCY(FLASH_LATENCY_1);
 
-	RCC_ClkInitTypeDef clk = {0};
-	clk.ClockType 		= RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1;
-	clk.SYSCLKSource 	= RCC_SYSCLKSOURCE_PLLCLK;
-	clk.AHBCLKDivider 	= RCC_SYSCLK_DIV1;
-	clk.APB1CLKDivider 	= RCC_HCLK_DIV1;
-#ifdef STM32L0
-	clk.ClockType 		|= RCC_CLOCKTYPE_PCLK2;
-	clk.APB2CLKDivider  = RCC_HCLK_DIV1;
+	/*
+	 * ENABLE OSCILLATORS
+	 * Enable any required oscillators
+	 */
+
+#ifdef CLK_USE_HSE
+	__HAL_RCC_HSE_CONFIG(RCC_HSE_ON);
+	while(__HAL_RCC_GET_FLAG(RCC_FLAG_HSERDY) == 0U);
 #endif
-	HAL_RCC_ClockConfig(&clk, FLASH_LATENCY_1);
+#ifdef CLK_USE_HSI
+	__HAL_RCC_HSI_CALIBRATIONVALUE_ADJUST(RCC_HSICALIBRATION_DEFAULT);
+	__HAL_RCC_HSI_CONFIG(RCC_HSI_ON);
+	while(__HAL_RCC_GET_FLAG(RCC_FLAG_HSIRDY) == 0U);
+#endif
+#ifdef CLK_USE_MSI
+	__HAL_RCC_MSI_ENABLE();
+	while(__HAL_RCC_GET_FLAG(RCC_FLAG_MSIRDY) == 0U);
+	__HAL_RCC_MSI_RANGE_CONFIG(CLK_MSI_RANGE);
+	__HAL_RCC_MSI_CALIBRATIONVALUE_ADJUST(RCC_MSICALIBRATION_DEFAULT);
+#endif
+
+#ifdef CLK_USE_PLL
+	// PLL must be disables for configuration.
+	__HAL_RCC_PLL_DISABLE();
+	while(__HAL_RCC_GET_FLAG(RCC_FLAG_PLLRDY) != 0U);
+	__HAL_RCC_PLL_CONFIG(CLK_PLL_SRC, CLK_PLL_MUL_CFG, CLK_PLL_DIV_CFG);
+	__HAL_RCC_PLL_ENABLE();
+	while(__HAL_RCC_GET_FLAG(RCC_FLAG_PLLRDY) == 0U);
+#endif
+
+	/*
+	 * CONFIGURE CLOCKS
+	 * Select the sources and dividers for internal clocks
+	 */
+
+	// Configure AHBCLK divider
+	MODIFY_REG(RCC->CFGR, RCC_CFGR_HPRE, RCC_SYSCLK_DIV1);
+
+	// Apply SYSCLK source
+	__HAL_RCC_SYSCLK_CONFIG(CLK_SYSCLK_SRC);
+#if (CLK_SYSCLK_SRC == RCC_SYSCLKSOURCE_MSI)
+	while (__HAL_RCC_GET_SYSCLK_SOURCE() != RCC_SYSCLKSOURCE_STATUS_MSI);
+#elif (CLK_SYSCLK_SRC == RCC_SYSCLKSOURCE_STATUS_HSI)
+	while (__HAL_RCC_GET_SYSCLK_SOURCE() != RCC_SYSCLKSOURCE_STATUS_HSI);
+#elif (CLK_SYSCLK_SRC == RCC_SYSCLKSOURCE_STATUS_HSE)
+	while (__HAL_RCC_GET_SYSCLK_SOURCE() != RCC_SYSCLKSOURCE_STATUS_HSE);
+#elif (CLK_SYSCLK_SRC == RCC_SYSCLKSOURCE_PLLCLK)
+	while (__HAL_RCC_GET_SYSCLK_SOURCE() != RCC_SYSCLKSOURCE_STATUS_PLLCLK);
+#endif
+
+	// Configure PCLK dividers (peripheral clock)
+	MODIFY_REG(RCC->CFGR, RCC_CFGR_PPRE1, RCC_HCLK_DIV1);
+
+#ifdef STM32L0
+	// STM32L0's have a second PCLK. The shift by 3 is defined like this in the HAL.
+	MODIFY_REG(RCC->CFGR, RCC_CFGR_PPRE2, RCC_HCLK_DIV1 << 3);
+#endif
+
+	/*
+	 * DISABLE OSCILLATORS
+	 * Unused oscillators should be turned off.
+	 * Note they are disabled AFTER sysclk source is redirected
+	 */
+
+#ifndef CLK_USE_HSI
+	__HAL_RCC_HSI_CONFIG(RCC_HSI_OFF);
+#endif
+#ifndef CLK_USE_MSI
+	__HAL_RCC_MSI_DISABLE();
+#endif
 }
 
 
@@ -110,6 +187,22 @@ void CLK_DisableLSO(void)
 	__HAL_RCC_LSE_CONFIG(RCC_LSE_OFF);
 #else
 	__HAL_RCC_LSI_DISABLE();
+#endif
+}
+
+void CLK_EnableADCCLK(void)
+{
+	// ADC CLK is driven off the HSI.
+#ifndef CLK_USE_HSI
+	__HAL_RCC_HSI_CONFIG(RCC_HSI_ON);
+	while(__HAL_RCC_GET_FLAG(RCC_FLAG_HSIRDY) == 0U);
+#endif
+}
+
+void CLK_DisableADCCLK(void)
+{
+#ifndef CLK_USE_HSI
+	__HAL_RCC_HSI_CONFIG(RCC_HSI_OFF);
 #endif
 }
 

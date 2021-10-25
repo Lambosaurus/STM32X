@@ -13,6 +13,10 @@
  * PUBLIC DEFINITIONS
  */
 
+#ifndef CLK_SYSCLK_FREQ
+#define CLK_SYSCLK_FREQ			32000000
+#endif
+
 /*
  * PUBLIC TYPES
  */
@@ -26,6 +30,9 @@ void CLK_InitSYSCLK(void);
 
 void CLK_EnableLSO(void);
 void CLK_DisableLSO(void);
+
+void CLK_EnableADCCLK(void);
+void CLK_DisableADCCLK(void);
 
 #ifdef USB_ENABLE
 void CLK_EnableUSBCLK(void);
