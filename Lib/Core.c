@@ -65,7 +65,10 @@ void CORE_Init(void)
 	__HAL_RCC_SYSCFG_CLK_ENABLE();
 	__HAL_RCC_PWR_CLK_ENABLE();
 #ifdef STM32L0
+#ifndef USB_ENABLE
+	// This seems to disrupt USB. Future investigation needed.
 	SET_BIT(PWR->CR, PWR_CR_ULP | PWR_CR_FWU); // Enable Ultra low power mode & Fast wakeup
+#endif
 	__HAL_PWR_VOLTAGESCALING_CONFIG(CORE_VOLTAGE_RANGE);
 #endif
 
