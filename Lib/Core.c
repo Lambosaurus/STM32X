@@ -8,8 +8,19 @@
  * PRIVATE DEFINITIONS
  */
 
+#define _CORE_GET_RST_FLAGS()	(RCC->CSR)
+
 #ifdef STM32L0
 #define _PWR_REGULATOR_MASK		 (PWR_CR_PDDS | PWR_CR_LPSDSR)
+
+#if   (CLK_SYSCLK_FREQ <=  4194304)
+#define CORE_VOLTAGE_RANGE		PWR_REGULATOR_VOLTAGE_SCALE3 // 1V2 core
+#elif (CLK_SYSCLK_FREQ <= 16000000)
+#define CORE_VOLTAGE_RANGE		PWR_REGULATOR_VOLTAGE_SCALE2 // 1V5 core
+#else
+#define CORE_VOLTAGE_RANGE		PWR_REGULATOR_VOLTAGE_SCALE1 // 1V8 core
+#endif
+
 #endif
 #ifdef STM32F0
 #define _PWR_REGULATOR_MASK		 PWR_CR_LPDS
@@ -47,13 +58,18 @@ void CORE_Init(void)
 {
 #if defined(STM32L0)
 	__HAL_FLASH_PREREAD_BUFFER_ENABLE();
+
 #elif defined(STM32F0)
 	__HAL_FLASH_PREFETCH_BUFFER_ENABLE();
 #endif
 	__HAL_RCC_SYSCFG_CLK_ENABLE();
 	__HAL_RCC_PWR_CLK_ENABLE();
 #ifdef STM32L0
-	__HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
+#ifndef USB_ENABLE
+	// This seems to disrupt USB. Future investigation needed.
+	SET_BIT(PWR->CR, PWR_CR_ULP | PWR_CR_FWU); // Enable Ultra low power mode & Fast wakeup
+#endif
+	__HAL_PWR_VOLTAGESCALING_CONFIG(CORE_VOLTAGE_RANGE);
 #endif
 
 	CLK_InitSYSCLK();
@@ -99,12 +115,9 @@ void CORE_Delay(uint32_t ms)
 	}
 }
 
-void __attribute__((optimize("-Os"))) CORE_DelayUs(uint32_t us)
+void CORE_Reset(void)
 {
-	// -Os will generate a straight forward output.
-	// 11225 is our tuned factor.
-	volatile uint32_t i = (us * (CLK_GetHCLKFreq() >> 10)) / 11225;
-	while(i--);
+	NVIC_SystemReset();
 }
 
 #ifdef CORE_USE_TICK_IRQ
@@ -113,6 +126,41 @@ void CORE_OnTick(VoidFunction_t callback)
 	gTickCallback = callback;
 }
 #endif
+
+CORE_ResetSource_t CORE_GetResetSource(void)
+{
+	uint32_t csr = _CORE_GET_RST_FLAGS();
+	CORE_ResetSource_t src;
+    if (csr & RCC_CSR_LPWRRSTF)
+    {
+    	src = CORE_ResetSource_Standby;
+    }
+    else if (csr & (RCC_CSR_WWDGRSTF | RCC_CSR_IWDGRSTF))
+    {
+    	// Join both watchdog sources together.
+        src = CORE_ResetSource_Watchdog;
+    }
+    else if (csr & (RCC_CSR_SFTRSTF | RCC_CSR_OBLRSTF))
+    {
+    	// Joining Option byte load rst and software rst for now.
+    	src = CORE_ResetSource_Software;
+    }
+    else if (csr & RCC_CSR_PORRSTF)
+    {
+    	src = CORE_ResetSource_PowerOn;
+    }
+    else if (csr & RCC_CSR_PINRSTF)
+    {
+    	src = CORE_ResetSource_Pin;
+    }
+    else
+    {
+        src = CORE_ResetSource_UNKNOWN;
+    }
+    // Flags will persist unless cleared
+    __HAL_RCC_CLEAR_RESET_FLAGS();
+    return src;
+}
 
 /*
  * PRIVATE FUNCTIONS
@@ -126,9 +174,13 @@ void CORE_InitSysTick(void)
 
 void CORE_InitGPIO(void)
 {
-	// SWCLK and SWDIO on PA13, PA14
 	__HAL_RCC_GPIOA_CLK_ENABLE();
+#ifdef DEBUG
+	// SWCLK and SWDIO on PA13, PA14
 	GPIO_Deinit(GPIOA, GPIO_PIN_All & ~(GPIO_PIN_13 | GPIO_PIN_14));
+#else
+	GPIO_Deinit(GPIOA, GPIO_PIN_All);
+#endif
 
 	__HAL_RCC_GPIOB_CLK_ENABLE();
 	GPIO_Deinit(GPIOB, GPIO_PIN_All);
