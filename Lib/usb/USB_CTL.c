@@ -12,6 +12,13 @@
  * PRIVATE DEFINITIONS
  */
 
+#ifndef USB_CLASS_CLASSID
+// Most classes are Interface defined, and so these should all be zero.
+#define USB_CLASS_CLASSID				0x00
+#define USB_CLASS_SUBCLASSID			0x00
+#define USB_CLASS_PROTOCOLID			0x00
+#endif
+
 #define CTL_IN_EP		0x80
 #define CTL_OUT_EP		0x00
 
