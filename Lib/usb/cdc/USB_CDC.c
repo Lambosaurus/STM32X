@@ -361,7 +361,15 @@ static void USB_CDC_Receive(uint32_t count)
 
 static void USB_CDC_TransmitDone(uint32_t count)
 {
-	gCDC.txBusy = false;
+	if (count > 0 && (count % CDC_PACKET_SIZE) == 0)
+	{
+		// Write a ZLP to complete the tx.
+		USB_EP_WriteZLP(CDC_IN_EP);
+	}
+	else
+	{
+		gCDC.txBusy = false;
+	}
 }
 
 #endif //USB_CLASS_CDC
