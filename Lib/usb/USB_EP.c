@@ -167,6 +167,13 @@ void USB_EP_Write(uint8_t endpoint, const uint8_t * data, uint32_t count)
 	USB_EP_StartIn(ep);
 }
 
+void USB_EP_WriteZLP(uint8_t endpoint)
+{
+	uint8_t epnum = endpoint & EP_ADDR_MSK;
+	PCD_SET_EP_TX_CNT(USB, epnum, 0);
+	PCD_SET_EP_TX_STATUS(USB, epnum, USB_EP_TX_VALID);
+}
+
 void USB_EP_Stall(uint8_t endpoint)
 {
 	USB_EP_t * ep = USB_EP_GetEP(endpoint);
@@ -662,18 +669,8 @@ void USB_EP_IRQHandler(void)
 				ep->xfer_len = ep->xfer_len > count ? ep->xfer_len - count : 0;
 				if (ep->xfer_len == 0)
 				{
-					if (count < ep->maxpacket)
-					{
-						// Non full packet indicated transfer complete
-						ep->callback(ep->xfer_count);
-					}
-					else
-					{
-						// Send a ZLP
-						PCD_SET_EP_TX_CNT(USB, epnum, 0);
-						PCD_SET_EP_TX_STATUS(USB, epnum, USB_EP_TX_VALID);
-					}
-
+					// Transfer is complete
+					ep->callback(ep->xfer_count);
 				}
 				else
 				{

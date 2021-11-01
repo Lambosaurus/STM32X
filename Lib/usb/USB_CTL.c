@@ -12,6 +12,13 @@
  * PRIVATE DEFINITIONS
  */
 
+#ifndef USB_CLASS_CLASSID
+// Most classes are Interface defined, and so these should all be zero.
+#define USB_CLASS_CLASSID				0x00
+#define USB_CLASS_SUBCLASSID			0x00
+#define USB_CLASS_PROTOCOLID			0x00
+#endif
+
 #define CTL_IN_EP		0x80
 #define CTL_OUT_EP		0x00
 
@@ -49,7 +56,6 @@ typedef enum {
 static void USB_CTL_EndpointRequest(USB_SetupRequest_t  *req);
 static void USB_CTL_DeviceRequest(USB_SetupRequest_t *req);
 static void USB_CTL_InterfaceRequest(USB_SetupRequest_t  *req);
-static void USB_CTL_StandardClassRequest(USB_SetupRequest_t  *req);
 
 static void USB_CTL_SetAddress(USB_SetupRequest_t * req);
 static void USB_CTL_SetFeature(USB_SetupRequest_t *req);
@@ -204,13 +210,6 @@ static void USB_CTL_EndpointRequest(USB_SetupRequest_t  *req)
 		USB_CLASS_SETUP(req);
 		return;
 	case USB_REQ_TYPE_STANDARD:
-		if ((req->bmRequest & 0x60U) == 0x20U)
-		{
-			// Indicates this standard request is directed at the class
-			USB_CTL_StandardClassRequest(req);
-			return;
-		}
-
 		switch (req->bRequest)
 		{
 		case USB_REQ_SET_FEATURE:
@@ -279,6 +278,7 @@ static void USB_CTL_EndpointRequest(USB_SetupRequest_t  *req)
 	USB_CTL_Error();
 }
 
+/*
 static void USB_CTL_StandardClassRequest(USB_SetupRequest_t  *req)
 {
 	if (gCTL.usb_state == USB_STATE_CONFIGURED)
@@ -305,6 +305,7 @@ static void USB_CTL_StandardClassRequest(USB_SetupRequest_t  *req)
 	}
 	USB_CTL_Error();
 }
+*/
 
 static void USB_CTL_DeviceRequest(USB_SetupRequest_t *req)
 {

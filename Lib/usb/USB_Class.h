@@ -22,7 +22,7 @@
 #define USB_CLASS_CTL_RXREADY()			USB_CDC_CtlRxReady()
 //#define USB_CLASS_CTL_TXDONE
 
-#define USB_ENDPOINTS					4
+#define USB_ENDPOINTS					3
 
 #else
 #error "No USB Class defined"

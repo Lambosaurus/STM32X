@@ -137,6 +137,82 @@
 #define  USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION        0x07
 #define  USB_DESC_TYPE_BOS                              0x0F
 
+
+/*
+ * PUBLIC DEFINITIONS: USB DESCRIPTOR BLOCKS
+ */
+
+/*
+ * Descriptor block for describing endpoints
+ *
+ * bLength: Endpoint descriptor size
+ * bDescriptorType: Endpoint
+ * bEndpointAddress
+ * bmAttributes: (0x02 for bulk)
+ * wMaxPacketSize:
+ * bInterval: (0 for for Bulk transfer)
+ */
+
+#define USB_DESCR_BLOCK_ENDPOINT(bEndpointAddress, bmAttributes, wMaxPacketSize, bInterval)  \
+	0x07,						\
+	USB_DESC_TYPE_ENDPOINT,		\
+	bEndpointAddress,			\
+	bmAttributes,				\
+	LOBYTE(wMaxPacketSize),		\
+	HIBYTE(wMaxPacketSize),		\
+	bInterval
+
+
+/*
+ * Descriptor block for describing interfaces
+ *
+ * bLength: Interface descriptor size
+ * bDescriptorType: Interface
+ * bInterfaceNumber: Number of Interface
+ * bAlternateSetting: Alternate setting
+ * bNumEndpoints:
+ * bInterfaceClass:
+ * bInterfaceSubClass:
+ * bInterfaceProtocol:
+ * iInterface: (0 for no string)
+ */
+
+#define USB_DESCR_BLOCK_INTERFACE(bInterfaceNumber, bNumEndpoints, bInterfaceClass, bInterfaceSubClass, bInterfaceProtocol)	\
+	0x09,						\
+	USB_DESC_TYPE_INTERFACE,	\
+	bInterfaceNumber,			\
+	0x00,						\
+	bNumEndpoints,				\
+	bInterfaceClass,			\
+	bInterfaceSubClass,			\
+	bInterfaceProtocol,			\
+	0x00
+
+/*
+ * Descriptor block for describing configurations
+ *
+ * bLength: Configuration descriptor size
+ * bDescriptorType: Configuration
+ * wTotalLength: Total number of bytes in the configuration
+ * bNumInterfaces:
+ * bConfigurationValue:
+ * iConfiguration: (0x00 for no string)
+ * bmAttributes: 0xC0 for self powered
+ * bMaxPower:
+ */
+
+#define USB_DESCR_BLOCK_CONFIGURATION(wTotalLength, bNumInterfaces, bConfigurationValue)		\
+	0x09,						\
+	USB_DESC_TYPE_CONFIGURATION,\
+	LOBYTE(wTotalLength),		\
+	HIBYTE(wTotalLength),		\
+	bNumInterfaces,				\
+	bConfigurationValue,		\
+	0x00,						\
+	0xC0,						\
+	USB_MAX_POWER
+
+
 /*
  * 	PUBLIC TYPES
  */
