@@ -6,12 +6,72 @@
  * PRIVATE DEFINITIONS
  */
 
-#define MODE_SENSE6_LEN                    8U
-#define MODE_SENSE10_LEN                   8U
-#define LENGTH_INQUIRY_PAGE00              7U
-#define LENGTH_FORMAT_CAPACITIES           20U
+// Response sizes
+#define INQUIRY_PAGE00_LEN              			0x07
+#define MODE_SENSE10_LEN                   			0x08
+#define MODE_SENSE6_LEN                    			0x08
+#define REQUEST_SENSE_LEN                      		0x12
+#define READ_FORMAT_CAPACITY_LEN               		0x0C
+#define READ_CAPACITY10_LEN                    		0x08
 
-#define SCSI_LUN							0
+
+// SCSI Commands
+#define SCSI_FORMAT_UNIT                            0x04
+#define SCSI_INQUIRY                                0x12
+#define SCSI_MODE_SELECT6                           0x15
+#define SCSI_MODE_SELECT10                          0x55
+#define SCSI_MODE_SENSE6                            0x1A
+#define SCSI_MODE_SENSE10                           0x5A
+#define SCSI_ALLOW_MEDIUM_REMOVAL                   0x1E
+#define SCSI_READ6                                  0x08
+#define SCSI_READ10                                 0x28
+#define SCSI_READ12                                 0xA8
+#define SCSI_READ16                                 0x88
+
+#define SCSI_READ_CAPACITY10                        0x25
+#define SCSI_READ_CAPACITY16                        0x9E
+
+#define SCSI_REQUEST_SENSE                          0x03
+#define SCSI_START_STOP_UNIT                        0x1B
+#define SCSI_TEST_UNIT_READY                        0x00
+#define SCSI_WRITE6                                 0x0A
+#define SCSI_WRITE10                                0x2A
+#define SCSI_WRITE12                                0xAA
+#define SCSI_WRITE16                                0x8A
+
+#define SCSI_VERIFY10                               0x2F
+#define SCSI_VERIFY12                               0xAF
+#define SCSI_VERIFY16                               0x8F
+
+#define SCSI_SEND_DIAGNOSTIC                        0x1D
+#define SCSI_READ_FORMAT_CAPACITIES                 0x23
+
+// SCSI errors
+#define SCSI_SKEY_NO_SENSE                                    0
+#define SCSI_SKEY_RECOVERED_ERROR                             1
+#define SCSI_SKEY_NOT_READY                                   2
+#define SCSI_SKEY_MEDIUM_ERROR                                3
+#define SCSI_SKEY_HARDWARE_ERROR                              4
+#define SCSI_SKEY_ILLEGAL_REQUEST                             5
+#define SCSI_SKEY_UNIT_ATTENTION                              6
+#define SCSI_SKEY_DATA_PROTECT                                7
+#define SCSI_SKEY_BLANK_CHECK                                 8
+#define SCSI_SKEY_VENDOR_SPECIFIC                             9
+#define SCSI_SKEY_COPY_ABORTED                                10
+#define SCSI_SKEY_ABORTED_COMMAND                             11
+#define SCSI_SKEY_VOLUME_OVERFLOW                             13
+#define SCSI_SKEY_MISCOMPARE                                  14
+
+#define SCSI_ASQ_INVALID_CDB                                 0x20
+#define SCSI_ASQ_INVALID_FIELD_IN_COMMAND                    0x24
+#define SCSI_ASQ_PARAMETER_LIST_LENGTH_ERROR                 0x1A
+#define SCSI_ASQ_INVALID_FIELD_IN_PARAMETER_LIST             0x26
+#define SCSI_ASQ_ADDRESS_OUT_OF_RANGE                        0x21
+#define SCSI_ASQ_MEDIUM_NOT_PRESENT                          0x3A
+#define SCSI_ASQ_MEDIUM_HAVE_CHANGED                         0x28
+#define SCSI_ASQ_WRITE_PROTECTED                             0x27
+#define SCSI_ASQ_UNRECOVERED_READ_ERROR                      0x11
+#define SCSI_ASQ_WRITE_FAULT                                 0x03
 
 /*
  * PRIVATE TYPES
@@ -21,17 +81,19 @@
  * PRIVATE PROTOTYPES
  */
 
-static SCSI_State_t SCSI_TestUnitReady(SCSI_t * scsi, uint8_t *params);
-static SCSI_State_t SCSI_Inquiry(SCSI_t * scsi, uint8_t *params);
-static SCSI_State_t SCSI_ReadFormatCapacity(SCSI_t * scsi, uint8_t *params);
-static SCSI_State_t SCSI_ReadCapacity10(SCSI_t * scsi, uint8_t *params);
-static SCSI_State_t SCSI_RequestSense(SCSI_t * scsi, uint8_t *params);
-static SCSI_State_t SCSI_StartStopUnit(SCSI_t * scsi, uint8_t *params);
-static SCSI_State_t SCSI_ModeSense6(SCSI_t * scsi, uint8_t *params);
-static SCSI_State_t SCSI_ModeSense10(SCSI_t * scsi, uint8_t *params);
-static SCSI_State_t SCSI_Write10(SCSI_t * scsi, uint8_t *params);
-static SCSI_State_t SCSI_Read10(SCSI_t * scsi, uint8_t *params);
-static SCSI_State_t SCSI_Verify10(SCSI_t * scsi, uint8_t *params);
+static SCSI_State_t SCSI_SenseCode(SCSI_t * scsi, uint8_t sKey, uint8_t ASC);
+
+static SCSI_State_t SCSI_TestUnitReady(SCSI_t * scsi, SCSI_CBW_t * cbw);
+static SCSI_State_t SCSI_Inquiry(SCSI_t * scsi, SCSI_CBW_t * cbw);
+static SCSI_State_t SCSI_ReadFormatCapacity(SCSI_t * scsi, SCSI_CBW_t * cbw);
+static SCSI_State_t SCSI_ReadCapacity10(SCSI_t * scsi, SCSI_CBW_t * cbw);
+static SCSI_State_t SCSI_RequestSense(SCSI_t * scsi, SCSI_CBW_t * cbw);
+static SCSI_State_t SCSI_StartStopUnit(SCSI_t * scsi, SCSI_CBW_t * cbw);
+static SCSI_State_t SCSI_ModeSense6(SCSI_t * scsi, SCSI_CBW_t * cbw);
+static SCSI_State_t SCSI_ModeSense10(SCSI_t * scsi, SCSI_CBW_t * cbw);
+static SCSI_State_t SCSI_Write10(SCSI_t * scsi, SCSI_CBW_t * cbw);
+static SCSI_State_t SCSI_Read10(SCSI_t * scsi, SCSI_CBW_t * cbw);
+static SCSI_State_t SCSI_Verify10(SCSI_t * scsi, SCSI_CBW_t * cbw);
 static SCSI_State_t SCSI_CheckAddressRange(SCSI_t * scsi, uint32_t blk_offset, uint32_t blk_nbr);
 
 static SCSI_State_t SCSI_ProcessRead(SCSI_t * scsi);
@@ -46,7 +108,7 @@ const uint8_t  cSCSI_InquiryPage00[] =
 	0x00,
 	0x00,
 	0x00,
-	(LENGTH_INQUIRY_PAGE00 - 4U),
+	(INQUIRY_PAGE00_LEN - 4),
 	0x00,
 	0x80,
 	0x83
@@ -83,34 +145,34 @@ SCSI_State_t SCSI_Init(SCSI_t * scsi, USB_MSC_Storage_t * storage)
 	return SCSI_State_Ok;
 }
 
-SCSI_State_t SCSI_ProcessCmd(SCSI_t * scsi, uint8_t * cmd)
+SCSI_State_t SCSI_ProcessCmd(SCSI_t * scsi, SCSI_CBW_t * cbw)
 {
-	switch (cmd[0])
+	switch (cbw->CB[0])
 	{
 	case SCSI_TEST_UNIT_READY:
-		return SCSI_TestUnitReady(scsi, cmd);
+		return SCSI_TestUnitReady(scsi, cbw);
 	case SCSI_REQUEST_SENSE:
-		return SCSI_RequestSense(scsi, cmd);
+		return SCSI_RequestSense(scsi, cbw);
 	case SCSI_INQUIRY:
-		return SCSI_Inquiry(scsi, cmd);
+		return SCSI_Inquiry(scsi, cbw);
 	case SCSI_START_STOP_UNIT:
-		return SCSI_StartStopUnit(scsi, cmd);
+		return SCSI_StartStopUnit(scsi, cbw);
 	case SCSI_ALLOW_MEDIUM_REMOVAL:
-		return SCSI_StartStopUnit(scsi, cmd);
+		return SCSI_StartStopUnit(scsi, cbw);
 	case SCSI_MODE_SENSE6:
-		return SCSI_ModeSense6(scsi, cmd);
+		return SCSI_ModeSense6(scsi, cbw);
 	case SCSI_MODE_SENSE10:
-		return SCSI_ModeSense10(scsi, cmd);
+		return SCSI_ModeSense10(scsi, cbw);
 	case SCSI_READ_FORMAT_CAPACITIES:
-		return SCSI_ReadFormatCapacity(scsi, cmd);
+		return SCSI_ReadFormatCapacity(scsi, cbw);
 	case SCSI_READ_CAPACITY10:
-		return SCSI_ReadCapacity10(scsi, cmd);
+		return SCSI_ReadCapacity10(scsi, cbw);
 	case SCSI_READ10:
-		return SCSI_Read10(scsi, cmd);
+		return SCSI_Read10(scsi, cbw);
 	case SCSI_WRITE10:
-		return SCSI_Write10(scsi, cmd);
+		return SCSI_Write10(scsi, cbw);
 	case SCSI_VERIFY10:
-		return SCSI_Verify10(scsi, cmd);
+		return SCSI_Verify10(scsi, cbw);
 	default:
 		return SCSI_SenseCode(scsi, SCSI_SKEY_ILLEGAL_REQUEST, SCSI_ASQ_INVALID_CDB);
 	}
@@ -139,16 +201,12 @@ SCSI_State_t SCSI_ResumeCmd(SCSI_t * scsi, SCSI_State_t state)
  * PRIVATE FUNCTIONS
  */
 
-static SCSI_State_t SCSI_TestUnitReady(SCSI_t * scsi, uint8_t *params)
+static SCSI_State_t SCSI_TestUnitReady(SCSI_t * scsi, SCSI_CBW_t * cbw)
 {
-	USBD_MSC_BOT_HandleTypeDef  *hmsc = (USBD_MSC_BOT_HandleTypeDef *)scsi->pClassData;
-
-	/* case 9 : Hi > D0 */
-	if (hmsc->cbw.dDataLength != 0U)
+	if (cbw->dDataLength != 0)
 	{
 		return SCSI_SenseCode(scsi, SCSI_SKEY_ILLEGAL_REQUEST, SCSI_ASQ_INVALID_CDB);
 	}
-
 	if (scsi->storage == NULL)
 	{
 		return SCSI_SenseCode(scsi, SCSI_SKEY_NOT_READY, SCSI_ASQ_MEDIUM_NOT_PRESENT);
@@ -156,33 +214,33 @@ static SCSI_State_t SCSI_TestUnitReady(SCSI_t * scsi, uint8_t *params)
 	return SCSI_State_Ok;
 }
 
-static SCSI_State_t  SCSI_Inquiry(SCSI_t * scsi, uint8_t *params)
+static SCSI_State_t  SCSI_Inquiry(SCSI_t * scsi, SCSI_CBW_t * cbw)
 {
 	uint16_t len;
 	const uint8_t * page;
 
-	if (params[1] & 0x01U) // Evpd is set
+	if (cbw->CB[1] & 0x01U) // Evpd is set
 	{
 		page = cSCSI_InquiryPage00;
-		len = LENGTH_INQUIRY_PAGE00;
+		len = INQUIRY_PAGE00_LEN;
 	}
 	else
 	{
 		page = cSCSI_InquiryPage;
 		len = (uint16_t)page[4] + 5U;
 
-		if (params[4] <= len)
+		if (cbw->CB[4] <= len)
 		{
-			len = params[4];
+			len = cbw->CB[4];
 		}
 	}
 
-	scsi->data_len = len;
 	memcpy(scsi->bfr, page, len);
+	scsi->data_len = len;
 	return SCSI_State_SendData;
 }
 
-static SCSI_State_t SCSI_ReadCapacity10(SCSI_t * scsi, uint8_t *params)
+static SCSI_State_t SCSI_ReadCapacity10(SCSI_t * scsi, SCSI_CBW_t * cbw)
 {
 	if (scsi->storage == NULL)
 	{
@@ -202,12 +260,12 @@ static SCSI_State_t SCSI_ReadCapacity10(SCSI_t * scsi, uint8_t *params)
 		scsi->bfr[6] = (uint8_t)(SCSI_BLOCK_SIZE >>  8);
 		scsi->bfr[7] = (uint8_t)(SCSI_BLOCK_SIZE);
 
-		scsi->data_len = 8U;
+		scsi->data_len = READ_CAPACITY10_LEN;
 		return SCSI_State_SendData;
 	}
 }
 
-static SCSI_State_t SCSI_ReadFormatCapacity(SCSI_t * scsi, uint8_t *params)
+static SCSI_State_t SCSI_ReadFormatCapacity(SCSI_t * scsi, SCSI_CBW_t * cbw)
 {
 	if (scsi->storage == NULL)
 	{
@@ -231,35 +289,33 @@ static SCSI_State_t SCSI_ReadFormatCapacity(SCSI_t * scsi, uint8_t *params)
 		scsi->bfr[10] = (uint8_t)(SCSI_BLOCK_SIZE >>  8);
 		scsi->bfr[11] = (uint8_t)(SCSI_BLOCK_SIZE);
 
-		scsi->data_len = 12U;
+		scsi->data_len = READ_FORMAT_CAPACITY_LEN;
 		return SCSI_State_SendData;
 	}
 }
 
-static SCSI_State_t SCSI_ModeSense6(SCSI_t * scsi, uint8_t *params)
+static SCSI_State_t SCSI_ModeSense6(SCSI_t * scsi, SCSI_CBW_t * cbw)
 {
-	uint16_t len = MODE_SENSE6_LEN;
-	scsi->data_len = len;
-	memset(scsi->bfr, 0, len);
+	memset(scsi->bfr, 0, MODE_SENSE6_LEN);
+	scsi->data_len = MODE_SENSE6_LEN;
 	return SCSI_State_SendData;
 }
 
-static SCSI_State_t SCSI_ModeSense10(SCSI_t * scsi, uint8_t *params)
+static SCSI_State_t SCSI_ModeSense10(SCSI_t * scsi, SCSI_CBW_t * cbw)
 {
-	uint16_t len = MODE_SENSE10_LEN;
-	scsi->data_len = len;
-	memset(scsi->bfr, 0x00, len);
+	memset(scsi->bfr, 0x00, MODE_SENSE10_LEN);
 	// Byte 2 is constant 0x06. I dont know how these commands are formatted.
 	scsi->bfr[2] = 0x06;
+	scsi->data_len = MODE_SENSE10_LEN;
 	return SCSI_State_SendData;
 }
 
-static SCSI_State_t SCSI_RequestSense(SCSI_t * scsi, uint8_t *params)
+static SCSI_State_t SCSI_RequestSense(SCSI_t * scsi, SCSI_CBW_t * cbw)
 {
-	memset(scsi->bfr, 0x00, REQUEST_SENSE_DATA_LEN);
+	memset(scsi->bfr, 0x00, REQUEST_SENSE_LEN);
 
 	scsi->bfr[0] = 0x70U;
-	scsi->bfr[7] = REQUEST_SENSE_DATA_LEN - 6U;
+	scsi->bfr[7] = REQUEST_SENSE_LEN - 6U;
 
 	if ((scsi->sense.head != scsi->sense.tail))
 	{
@@ -273,11 +329,11 @@ static SCSI_State_t SCSI_RequestSense(SCSI_t * scsi, uint8_t *params)
 			scsi->sense.head = 0U;
 		}
 	}
-	scsi->data_len = REQUEST_SENSE_DATA_LEN;
+	scsi->data_len = REQUEST_SENSE_LEN;
 
-	if (params[4] <= REQUEST_SENSE_DATA_LEN)
+	if (cbw->CB[4] <= REQUEST_SENSE_LEN)
 	{
-		scsi->data_len = params[4];
+		scsi->data_len = cbw->CB[4];
 	}
 	return SCSI_State_SendData;
 }
@@ -294,17 +350,14 @@ SCSI_State_t SCSI_SenseCode(SCSI_t  * scsi, uint8_t sKey, uint8_t ASC)
 	return SCSI_State_Error;
 }
 
-static SCSI_State_t SCSI_StartStopUnit(SCSI_t  * scsi, uint8_t *params)
+static SCSI_State_t SCSI_StartStopUnit(SCSI_t  * scsi, SCSI_CBW_t * cbw)
 {
 	return SCSI_State_Ok;
 }
 
-static SCSI_State_t SCSI_Read10(SCSI_t * scsi, uint8_t *params)
+static SCSI_State_t SCSI_Read10(SCSI_t * scsi, SCSI_CBW_t * cbw)
 {
-	USBD_MSC_BOT_HandleTypeDef  *hmsc = scsi->pClassData;
-
-	/* case 10 : Ho <> Di */
-	if ((hmsc->cbw.bmFlags & 0x80U) != 0x80U)
+	if ((cbw->bmFlags & 0x80U) != 0x80U)
 	{
 		return SCSI_SenseCode(scsi, SCSI_SKEY_ILLEGAL_REQUEST, SCSI_ASQ_INVALID_CDB);
 	}
@@ -314,12 +367,12 @@ static SCSI_State_t SCSI_Read10(SCSI_t * scsi, uint8_t *params)
 		return SCSI_SenseCode(scsi, SCSI_SKEY_NOT_READY, SCSI_ASQ_MEDIUM_NOT_PRESENT);
 	}
 
-	scsi->block_addr = ((uint32_t)params[2] << 24)
-					 | ((uint32_t)params[3] << 16)
-					 | ((uint32_t)params[4] <<  8)
-					 | (uint32_t)params[5];
+	scsi->block_addr = ((uint32_t)cbw->CB[2] << 24)
+					 | ((uint32_t)cbw->CB[3] << 16)
+					 | ((uint32_t)cbw->CB[4] <<  8)
+					 | (uint32_t)cbw->CB[5];
 
-	scsi->block_len = ((uint32_t)params[7] <<  8) | (uint32_t)params[8];
+	scsi->block_len = ((uint32_t)cbw->CB[7] <<  8) | (uint32_t)cbw->CB[8];
 
 	if (SCSI_CheckAddressRange(scsi, scsi->block_addr, scsi->block_len) != SCSI_State_Ok)
 	{
@@ -327,7 +380,7 @@ static SCSI_State_t SCSI_Read10(SCSI_t * scsi, uint8_t *params)
 	}
 
 	/* cases 4,5 : Hi <> Dn */
-	if (hmsc->cbw.dDataLength != (scsi->block_len * SCSI_BLOCK_SIZE))
+	if (cbw->dDataLength != (scsi->block_len * SCSI_BLOCK_SIZE))
 	{
 		return SCSI_SenseCode(scsi, SCSI_SKEY_ILLEGAL_REQUEST, SCSI_ASQ_INVALID_CDB);
 	}
@@ -335,12 +388,9 @@ static SCSI_State_t SCSI_Read10(SCSI_t * scsi, uint8_t *params)
 	return SCSI_ProcessRead(scsi);
 }
 
-static SCSI_State_t SCSI_Write10(SCSI_t * scsi, uint8_t *params)
+static SCSI_State_t SCSI_Write10(SCSI_t * scsi, SCSI_CBW_t * cbw)
 {
-	USBD_MSC_BOT_HandleTypeDef  *hmsc = scsi->pClassData;
-
-	// case 8 : Hi <> Do
-	if ((hmsc->cbw.bmFlags & 0x80U) == 0x80U)
+	if ((cbw->bmFlags & 0x80U) == 0x80U)
 	{
 		return SCSI_SenseCode(scsi, SCSI_SKEY_ILLEGAL_REQUEST, SCSI_ASQ_INVALID_CDB);
 	}
@@ -355,13 +405,13 @@ static SCSI_State_t SCSI_Write10(SCSI_t * scsi, uint8_t *params)
 		return SCSI_SenseCode(scsi, SCSI_SKEY_NOT_READY, SCSI_ASQ_WRITE_PROTECTED);
 	}
 
-	scsi->block_addr = ((uint32_t)params[2] << 24) |
-						  ((uint32_t)params[3] << 16) |
-						  ((uint32_t)params[4] << 8) |
-						  (uint32_t)params[5];
+	scsi->block_addr = ((uint32_t)cbw->CB[2] << 24) |
+						  ((uint32_t)cbw->CB[3] << 16) |
+						  ((uint32_t)cbw->CB[4] << 8) |
+						  (uint32_t)cbw->CB[5];
 
-	scsi->block_len = ((uint32_t)params[7] << 8) |
-						 (uint32_t)params[8];
+	scsi->block_len = ((uint32_t)cbw->CB[7] << 8) |
+						 (uint32_t)cbw->CB[8];
 
 	// check if LBA address is in the right range
 	if (SCSI_CheckAddressRange(scsi, scsi->block_addr, scsi->block_len) != SCSI_State_Ok)
@@ -369,22 +419,18 @@ static SCSI_State_t SCSI_Write10(SCSI_t * scsi, uint8_t *params)
 		return SCSI_State_Error;
 	}
 
-	uint32_t len = scsi->block_len * SCSI_BLOCK_SIZE;
-
-	// cases 3,11,13 : Hn,Ho <> D0
-	if (hmsc->cbw.dDataLength != len)
+	if (cbw->dDataLength != (scsi->block_len * SCSI_BLOCK_SIZE))
 	{
 		return SCSI_SenseCode(scsi, SCSI_SKEY_ILLEGAL_REQUEST, SCSI_ASQ_INVALID_CDB);
 	}
 
-	len = MIN(len, SCSI_BLOCK_SIZE);
-	scsi->data_len = len;
+	scsi->data_len = SCSI_BLOCK_SIZE;
 	return SCSI_State_DataOut;
 }
 
-static SCSI_State_t SCSI_Verify10(SCSI_t * scsi, uint8_t *params)
+static SCSI_State_t SCSI_Verify10(SCSI_t * scsi, SCSI_CBW_t * cbw)
 {
-	if ((params[1] & 0x02U) == 0x02U)
+	if ((cbw->CB[1] & 0x02U) == 0x02U)
 	{
 		// Verify mode not supported
 		return SCSI_SenseCode(scsi, SCSI_SKEY_ILLEGAL_REQUEST, SCSI_ASQ_INVALID_FIELD_IN_COMMAND);
@@ -408,24 +454,16 @@ static SCSI_State_t SCSI_CheckAddressRange(SCSI_t * scsi, uint32_t blk_offset, u
 
 static SCSI_State_t SCSI_ProcessRead(SCSI_t * scsi)
 {
-	USBD_MSC_BOT_HandleTypeDef * hmsc = scsi->pClassData;
-	uint32_t len = scsi->block_len * SCSI_BLOCK_SIZE;
-	len = MIN(len, SCSI_BLOCK_SIZE);
-	uint32_t blk_len = len / SCSI_BLOCK_SIZE;
-
-	if (!scsi->storage->read(scsi->bfr, scsi->block_addr, blk_len))
+	if (!scsi->storage->read(scsi->bfr, scsi->block_addr, 1))
 	{
 		return SCSI_SenseCode(scsi, SCSI_SKEY_HARDWARE_ERROR, SCSI_ASQ_UNRECOVERED_READ_ERROR);
 	}
 
-	scsi->block_addr += blk_len;
-	scsi->block_len -= blk_len;
+	scsi->block_addr += 1;
+	scsi->block_len -= 1;
 	scsi->data_len = SCSI_BLOCK_SIZE;
 
-	// case 6 : Hi = Di
-	hmsc->csw.dDataResidue -= len;
-
-	if (scsi->block_len == 0U)
+	if (scsi->block_len == 0)
 	{
 		return SCSI_State_LastDataIn;
 	}
@@ -434,24 +472,15 @@ static SCSI_State_t SCSI_ProcessRead(SCSI_t * scsi)
 
 static SCSI_State_t SCSI_ProcessWrite(SCSI_t  * scsi)
 {
-	USBD_MSC_BOT_HandleTypeDef * hmsc = scsi->pClassData;
-
-	uint32_t len = scsi->block_len * SCSI_BLOCK_SIZE;
-	len = MIN(len, SCSI_BLOCK_SIZE);
-	uint32_t blk_len = len / SCSI_BLOCK_SIZE;
-
-	if (!scsi->storage->write(scsi->bfr, scsi->block_addr, blk_len))
+	if (!scsi->storage->write(scsi->bfr, scsi->block_addr, 1))
 	{
 		return SCSI_SenseCode(scsi, SCSI_SKEY_HARDWARE_ERROR, SCSI_ASQ_WRITE_FAULT);
 	}
 
-	scsi->block_addr += blk_len;
-	scsi->block_len -= blk_len;
+	scsi->block_addr += 1;
+	scsi->block_len -= 1;
 
-	// case 12 : Ho = Do */
-	hmsc->csw.dDataResidue -= len;
-
-	if (scsi->block_len == 0U)
+	if (scsi->block_len == 0)
 	{
 		return SCSI_State_Ok;
 	}

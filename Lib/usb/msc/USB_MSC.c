@@ -4,23 +4,22 @@
 #ifdef USB_CLASS_MSC
 #include "../USB_EP.h"
 #include "../USB_CTL.h"
-#include "Core.h"
+#include "SCSI.h"
+
 #include <string.h>
 
-#include "SCSI.h"
 
 /*
  * PRIVATE DEFINITIONS
  */
 
-
 #define MSC_PACKET_SIZE						USB_PACKET_SIZE
 
 #define MSC_CBW_SIGNATURE             		0x43425355U
 #define MSC_CSW_SIGNATURE             		0x53425355U
-#define MSC_CBW_LENGTH                		31U
-#define MSC_CSW_LENGTH                		13U
-#define MSC_MAX_DATA                  		256U
+#define MSC_CBW_LENGTH                		31
+#define MSC_CSW_LENGTH                		13
+#define MSC_MAX_DATA                  		256
 
 #define MSC_STATUS_NORMAL             		0
 #define MSC_STATUS_RECOVERY           		1
@@ -37,25 +36,20 @@
  * PRIVATE TYPES
  */
 
-/*typedef struct
-{
-
-} MSC_t;*/
-
 /*
  * PRIVATE PROTOTYPES
  */
 
 static void USB_MSC_Reset(void);
-void USB_MSC_TransmitDone(uint32_t size);
-void USB_MSC_Receive(uint32_t size);
-void MSC_BOT_CplClrFeature(uint8_t epnum);
+static void USB_MSC_TransmitDone(uint32_t size);
+static void USB_MSC_Receive(uint32_t size);
 
-static void MSC_BOT_CBW_Decode(uint32_t size);
-static void MSC_BOT_SendData(uint8_t *pbuf, uint16_t len);
-static void MSC_BOT_Abort(void);
+static void USB_MSC_HandleCBW(uint32_t size);
+static void USB_MSC_SendData(uint8_t *pbuf, uint16_t len);
+static void USB_MSC_Abort(void);
+static void USB_MSC_HandleTransfer(SCSI_State_t state);
 
-static void USB_MSC_SCSI_Reply(SCSI_State_t state);
+static void USB_MSC_SendCSW(uint8_t CSW_Status);
 
 /*
  * PRIVATE VARIABLES
@@ -79,30 +73,24 @@ __ALIGNED(4) const uint8_t cUSB_MSC_ConfigDescriptor[USB_MSC_CONFIG_DESC_SIZE] =
 	USB_DESCR_BLOCK_ENDPOINT( MSC_OUT_EP, 0x02, MSC_PACKET_SIZE, 0x00 ),
 };
 
-//static MSC_t gMSC;
-
-static USBD_MSC_BOT_HandleTypeDef gHmsc;
-static USBD_MSC_BOT_HandleTypeDef * const hmsc = &gHmsc;
-
-
 static struct {
 	SCSI_t scsi;
 	uint8_t status;
 	int8_t state;
-} gMSC =
-{
-	.scsi = {
-		.pClassData = &gHmsc,
-	},
-};
+
+	SCSI_CBW_t cbw;
+	SCSI_CSW_t csw;
+
+	USB_MSC_Storage_t * storage;
+} gMSC;
 
 /*
  * PUBLIC FUNCTIONS
  */
 
-void USB_MSC_SetStorage(USB_MSC_Storage_t * storage)
+void USB_MSC_Mount(USB_MSC_Storage_t * storage)
 {
-	gMSC.scsi.storage = storage;
+	gMSC.storage = storage;
 }
 
 void USB_MSC_Init(uint8_t config)
@@ -111,10 +99,10 @@ void USB_MSC_Init(uint8_t config)
 	USB_EP_Open(MSC_IN_EP, USB_EP_TYPE_BULK, MSC_PACKET_SIZE, USB_MSC_TransmitDone);
 	USB_EP_Open(MSC_OUT_EP, USB_EP_TYPE_BULK, MSC_PACKET_SIZE, USB_MSC_Receive);
 
-	gMSC.state = SCSI_Init(&gMSC.scsi, gMSC.scsi.storage);
+	gMSC.state = SCSI_Init(&gMSC.scsi, gMSC.storage);
 	gMSC.status = MSC_STATUS_NORMAL;
 
-	USB_EP_Read(MSC_OUT_EP, (uint8_t *)&hmsc->cbw, MSC_CBW_LENGTH);
+	USB_EP_Read(MSC_OUT_EP, (uint8_t *)&gMSC.cbw, MSC_CBW_LENGTH);
 }
 
 void USB_MSC_Deinit(void)
@@ -150,19 +138,10 @@ void USB_MSC_Setup(USB_SetupRequest_t * req)
  * PRIVATE FUNCTIONS
  */
 
-static inline void Assert(bool statement)
-{
-	if (!statement)
-	{
-		__BKPT();
-	}
-}
-
-
 static void USB_MSC_Reset(void)
 {
 	gMSC.status = MSC_STATUS_RECOVERY;
-	USB_EP_Read(MSC_OUT_EP, (uint8_t *)&hmsc->cbw, MSC_CBW_LENGTH);
+	USB_EP_Read(MSC_OUT_EP, (uint8_t *)&gMSC.cbw, MSC_CBW_LENGTH);
 }
 
 void USB_MSC_TransmitDone(uint32_t size)
@@ -173,7 +152,7 @@ void USB_MSC_TransmitDone(uint32_t size)
 	case SCSI_State_SendData:
 	case SCSI_State_LastDataIn:
 		gMSC.state = SCSI_ResumeCmd(&gMSC.scsi, gMSC.state);
-		USB_MSC_SCSI_Reply(gMSC.state);
+		USB_MSC_HandleTransfer(gMSC.state);
 		break;
 	}
 }
@@ -184,115 +163,92 @@ void USB_MSC_Receive(uint32_t size)
 	{
 	case SCSI_State_DataOut:
 		gMSC.state = SCSI_ResumeCmd(&gMSC.scsi, gMSC.state);
-		USB_MSC_SCSI_Reply(gMSC.state);
+		USB_MSC_HandleTransfer(gMSC.state);
 		break;
 
 	default:
-		MSC_BOT_CBW_Decode(size);
+		USB_MSC_HandleCBW(size);
 		break;
 	}
 }
 
-/**
-* @brief  MSC_BOT_CBW_Decode
-*         Decode the CBW command and set the BOT state machine accordingly
-* @param  pdev: device instance
-* @retval None
-*/
-static void  MSC_BOT_CBW_Decode(uint32_t size)
+// Handle a new CBW message.
+static void  USB_MSC_HandleCBW(uint32_t size)
 {
-	hmsc->csw.dTag = hmsc->cbw.dTag;
-	hmsc->csw.dDataResidue = hmsc->cbw.dDataLength;
-
-	SCSI_t * scsi = &gMSC.scsi;
+	gMSC.csw.dTag = gMSC.cbw.dTag;
+	gMSC.csw.dDataResidue = gMSC.cbw.dDataLength;
 
 	if ((size != MSC_CBW_LENGTH) ||
-	  (hmsc->cbw.dSignature != MSC_CBW_SIGNATURE) ||
-	  (hmsc->cbw.bLUN > 1U) ||
-	  (hmsc->cbw.bCBLength < 1U) || (hmsc->cbw.bCBLength > 16U))
+	  (gMSC.cbw.dSignature != MSC_CBW_SIGNATURE) ||
+	  (gMSC.cbw.bLUN > 0) ||
+	  (gMSC.cbw.bCBLength < 1) || (gMSC.cbw.bCBLength > 16))
 	{
-		SCSI_SenseCode(scsi, SCSI_SKEY_ILLEGAL_REQUEST, SCSI_ASQ_INVALID_CDB);
+		// ST had a SCSI_SenseCode here. Seems redundant.
 
+		gMSC.state = SCSI_State_Error;
 		gMSC.status = MSC_STATUS_ERROR;
-		MSC_BOT_Abort();
+		USB_MSC_Abort();
 	}
 	else
 	{
-		gMSC.state = SCSI_ProcessCmd(scsi, &hmsc->cbw.CB[0]);
-		USB_MSC_SCSI_Reply(gMSC.state);
+		gMSC.state = SCSI_ProcessCmd(&gMSC.scsi, &gMSC.cbw);
+		USB_MSC_HandleTransfer(gMSC.state);
 	}
 }
 
-static void USB_MSC_SCSI_Reply(SCSI_State_t state)
+// Does the IO for the SCSI state machine
+static void USB_MSC_HandleTransfer(SCSI_State_t state)
 {
 	switch(state)
 	{
 	case SCSI_State_Error:
-		MSC_BOT_SendCSW(USBD_CSW_CMD_FAILED);
+		USB_MSC_SendCSW(USBD_CSW_CMD_FAILED);
 		break;
 	case SCSI_State_Ok:
-		MSC_BOT_SendCSW(USBD_CSW_CMD_PASSED);
+		USB_MSC_SendCSW(USBD_CSW_CMD_PASSED);
 		break;
 	case SCSI_State_SendData:
-		MSC_BOT_SendData(gMSC.scsi.bfr, gMSC.scsi.data_len);
+		USB_MSC_SendData(gMSC.scsi.bfr, gMSC.scsi.data_len);
 		break;
 	case SCSI_State_DataOut:
 		USB_EP_Read(MSC_OUT_EP, gMSC.scsi.bfr, gMSC.scsi.data_len);
+		gMSC.csw.dDataResidue -= gMSC.scsi.data_len;
 		break;
 	case SCSI_State_DataIn:
 	case SCSI_State_LastDataIn:
 		USB_EP_Write(MSC_IN_EP, gMSC.scsi.bfr, gMSC.scsi.data_len);
+		gMSC.csw.dDataResidue -= gMSC.scsi.data_len;
 		break;
 	default:
 		break;
 	}
 }
 
-/**
-* @brief  MSC_BOT_SendData
-*         Send the requested data
-* @param  pdev: device instance
-* @param  buf: pointer to data buffer
-* @param  len: Data Length
-* @retval None
-*/
-static void  MSC_BOT_SendData(uint8_t *pbuf, uint16_t len)
+static void  USB_MSC_SendData(uint8_t *pbuf, uint16_t len)
 {
-	uint16_t length = (uint16_t)MIN(hmsc->cbw.dDataLength, len);
+	uint16_t length = (uint16_t)MIN(gMSC.cbw.dDataLength, len);
 
-	hmsc->csw.dDataResidue -= len;
-	hmsc->csw.bStatus = USBD_CSW_CMD_PASSED;
+	gMSC.csw.dDataResidue -= len;
+	gMSC.csw.bStatus = USBD_CSW_CMD_PASSED;
 
 	USB_EP_Write( MSC_IN_EP, pbuf, length );
 }
 
-/**
-* @brief  MSC_BOT_SendCSW
-*         Send the Command Status Wrapper
-* @param  pdev: device instance
-* @param  status : CSW status
-* @retval None
-*/
-void  MSC_BOT_SendCSW(uint8_t CSW_Status)
+static void  USB_MSC_SendCSW(uint8_t CSW_Status)
 {
-	hmsc->csw.dSignature = MSC_CSW_SIGNATURE;
-	hmsc->csw.bStatus = CSW_Status;
+	gMSC.csw.dSignature = MSC_CSW_SIGNATURE;
+	gMSC.csw.bStatus = CSW_Status;
 
-	USB_EP_Write(MSC_IN_EP, (uint8_t *)&hmsc->csw, MSC_CSW_LENGTH);
+	USB_EP_Write(MSC_IN_EP, (uint8_t *)&gMSC.csw, MSC_CSW_LENGTH);
 	// Recieve next CBW
-	USB_EP_Read(MSC_OUT_EP, (uint8_t *)&hmsc->cbw, MSC_CBW_LENGTH);
+	USB_EP_Read(MSC_OUT_EP, (uint8_t *)&gMSC.cbw, MSC_CBW_LENGTH);
 }
 
-/**
-* @brief  MSC_BOT_Abort
-*         Abort the current transfer
-* @param  pdev: device instance
-* @retval status
-*/
-static void  MSC_BOT_Abort(void)
+// Abort the current transaction
+static void USB_MSC_Abort(void)
 {
-	if ((hmsc->cbw.bmFlags == 0U) &&
-	  (hmsc->cbw.dDataLength != 0U) &&
+	if ((gMSC.cbw.bmFlags == 0) &&
+	  (gMSC.cbw.dDataLength != 0) &&
 	  (gMSC.status == MSC_STATUS_NORMAL))
 	{
 		USB_EP_Stall(MSC_OUT_EP);
@@ -302,28 +258,22 @@ static void  MSC_BOT_Abort(void)
 
 	if (gMSC.status == MSC_STATUS_ERROR)
 	{
-		USB_EP_Read(MSC_OUT_EP, (uint8_t *)&hmsc->cbw, MSC_CBW_LENGTH);
+		USB_EP_Read(MSC_OUT_EP, (uint8_t *)&gMSC.cbw, MSC_CBW_LENGTH);
 	}
 }
 
-/**
-* @brief  MSC_BOT_CplClrFeature
-*         Complete the clear feature request
-* @param  pdev: device instance
-* @param  epnum: endpoint index
-* @retval None
-*/
-
+// Completes the USB Clear feature request.
+// Should be done on an interface clear feature request (I think)
 void  MSC_BOT_CplClrFeature(uint8_t epnum)
 {
-	if (gMSC.status == MSC_STATUS_ERROR) /* Bad CBW Signature */
+	if (gMSC.status == MSC_STATUS_ERROR)
 	{
 		USB_EP_Stall(MSC_IN_EP);
 		gMSC.status = MSC_STATUS_NORMAL;
 	}
 	else if (((epnum & 0x80U) == 0x80U) && (gMSC.status != MSC_STATUS_RECOVERY))
 	{
-		MSC_BOT_SendCSW(USBD_CSW_CMD_FAILED);
+		USB_MSC_SendCSW(USBD_CSW_CMD_FAILED);
 	}
 }
 
