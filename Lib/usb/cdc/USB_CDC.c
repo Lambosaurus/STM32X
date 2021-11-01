@@ -87,7 +87,6 @@ __ALIGNED(4) const uint8_t cUSB_CDC_ConfigDescriptor[USB_CDC_CONFIG_DESC_SIZE] =
 			0x02,	// two interfaces available
 			0x01
 	),
-
 	USB_DESCR_BLOCK_INTERFACE(
 		  0x00,
 		  0x01, // 1 endpoint used
@@ -125,7 +124,6 @@ __ALIGNED(4) const uint8_t cUSB_CDC_ConfigDescriptor[USB_CDC_CONFIG_DESC_SIZE] =
 
 	// Endpoint 2 Descriptor
 	USB_DESCR_BLOCK_ENDPOINT(CDC_CMD_EP, 0x03, CDC_CMD_PACKET_SIZE, CDC_BINTERVAL),
-	/*---------------------------------------------------------------------------*/
 
 	USB_DESCR_BLOCK_INTERFACE(
 		  0x01,
@@ -134,7 +132,6 @@ __ALIGNED(4) const uint8_t cUSB_CDC_ConfigDescriptor[USB_CDC_CONFIG_DESC_SIZE] =
 		  0x00, // Abstract Control Model
 		  0x00	// Common AT commands
 	),
-
 	USB_DESCR_BLOCK_ENDPOINT(CDC_OUT_EP, 0x02, CDC_PACKET_SIZE, 0x00), // Bulk endpoint
 	USB_DESCR_BLOCK_ENDPOINT(CDC_IN_EP, 0x02, CDC_PACKET_SIZE, 0x00), // Bulk endpoint
 };

@@ -469,6 +469,8 @@ static void USB_CTL_InterfaceRequest(USB_SetupRequest_t * req)
 	{
 	case USB_REQ_TYPE_CLASS:
 	case USB_REQ_TYPE_VENDOR:
+		USB_CLASS_SETUP(req);
+		return;
 	case USB_REQ_TYPE_STANDARD:
 		switch (gCTL.usb_state)
 		{

@@ -9,6 +9,8 @@
  * These may be overridden in the user Board.h
  */
 
+#define USB_PID						0x572A
+
 #ifndef USB_VID
 #define USB_VID						0x0483
 #endif
