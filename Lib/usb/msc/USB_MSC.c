@@ -7,45 +7,30 @@
 #include "Core.h"
 #include <string.h>
 
-#include "usbd_msc_scsi.h"
+#include "SCSI.h"
 
 /*
  * PRIVATE DEFINITIONS
  */
 
 
-#define MSC_PACKET_SIZE								USB_PACKET_SIZE
+#define MSC_PACKET_SIZE						USB_PACKET_SIZE
 
-#define USBD_BOT_CBW_SIGNATURE             0x43425355U
-#define USBD_BOT_CSW_SIGNATURE             0x53425355U
-#define USBD_BOT_CBW_LENGTH                31U
-#define USBD_BOT_CSW_LENGTH                13U
-#define USBD_BOT_MAX_DATA                  256U
+#define MSC_CBW_SIGNATURE             		0x43425355U
+#define MSC_CSW_SIGNATURE             		0x53425355U
+#define MSC_CBW_LENGTH                		31U
+#define MSC_CSW_LENGTH                		13U
+#define MSC_MAX_DATA                  		256U
 
-
-/* BOT Status */
-#define USBD_BOT_STATUS_NORMAL             0U
-#define USBD_BOT_STATUS_RECOVERY           1U
-#define USBD_BOT_STATUS_ERROR              2U
-
-
-#define USBD_DIR_IN                        0U
-#define USBD_DIR_OUT                       1U
-#define USBD_BOTH_DIR                      2U
-
+#define MSC_STATUS_NORMAL             		0
+#define MSC_STATUS_RECOVERY           		1
+#define MSC_STATUS_ERROR              		2
 
 #define MSC_LUN_COUNT						1
 #define MSC_MAX_LUN							(MSC_LUN_COUNT-1)
 
-#ifndef MSC_MEDIA_PACKET
-#define MSC_MEDIA_PACKET             512U
-#endif
-
-#define MSC_MAX_FS_PACKET            0x40U
-#define MSC_MAX_HS_PACKET            0x200U
-
-#define BOT_GET_MAX_LUN              0xFE
-#define BOT_RESET                    0xFF
+#define MSC_REQ_GET_MAX_LUN              	0xFE
+#define MSC_REQ_RESET                    	0xFF
 
 
 /*
@@ -61,10 +46,7 @@
  * PRIVATE PROTOTYPES
  */
 
-void MSC_BOT_Init(void);
-void MSC_BOT_Reset(void);
-void MSC_BOT_DeInit(void);
-
+static void USB_MSC_Reset(void);
 void USB_MSC_TransmitDone(uint32_t size);
 void USB_MSC_Receive(uint32_t size);
 void MSC_BOT_CplClrFeature(uint8_t epnum);
@@ -100,15 +82,24 @@ __ALIGNED(4) const uint8_t cUSB_MSC_ConfigDescriptor[USB_MSC_CONFIG_DESC_SIZE] =
 static USBD_MSC_BOT_HandleTypeDef gHmsc;
 static USBD_MSC_BOT_HandleTypeDef * const hmsc = &gHmsc;
 
-static SCSI_t gScsi = { .pClassData = &gHmsc };
+
+static struct {
+	SCSI_t scsi;
+	uint8_t status;
+} gMSC =
+{
+	.scsi = {
+		.pClassData = &gHmsc,
+	},
+};
 
 /*
  * PUBLIC FUNCTIONS
  */
 
-void USB_MSC_SetStorage(USBD_StorageTypeDef * storage)
+void USB_MSC_SetStorage(USB_MSC_Storage_t * storage)
 {
-	gScsi.pUserData = storage;
+	gMSC.scsi.storage = storage;
 }
 
 void USB_MSC_Init(uint8_t config)
@@ -116,12 +107,17 @@ void USB_MSC_Init(uint8_t config)
 	// Data endpoints
 	USB_EP_Open(MSC_IN_EP, USB_EP_TYPE_BULK, MSC_PACKET_SIZE, USB_MSC_TransmitDone);
 	USB_EP_Open(MSC_OUT_EP, USB_EP_TYPE_BULK, MSC_PACKET_SIZE, USB_MSC_Receive);
-	MSC_BOT_Init();
+
+	SCSI_Init(&gMSC.scsi, gMSC.scsi.storage);
+
+	hmsc->bot_state = USBD_BOT_IDLE;
+	gMSC.status = MSC_STATUS_NORMAL;
+
+	USB_EP_Read(MSC_OUT_EP, (uint8_t *)&hmsc->cbw, MSC_CBW_LENGTH);
 }
 
 void USB_MSC_Deinit(void)
 {
-	MSC_BOT_DeInit();
 	USB_EP_Close(MSC_IN_EP);
 	USB_EP_Close(MSC_OUT_EP);
 }
@@ -130,7 +126,7 @@ void USB_MSC_Setup(USB_SetupRequest_t * req)
 {
 	switch (req->bRequest)
 	{
-	case BOT_GET_MAX_LUN:
+	case MSC_REQ_GET_MAX_LUN:
 	  if (req->wValue == 0 && req->wLength == 1 && req->bmRequest & 0x80)
 	  {
 		  uint8_t max_lun = MSC_MAX_LUN;
@@ -138,10 +134,10 @@ void USB_MSC_Setup(USB_SetupRequest_t * req)
 		  return;
 	  }
 	  break;
-	case BOT_RESET :
+	case MSC_REQ_RESET:
 	  if (req->wValue == 0U && req->wLength == 0 && !(req->bmRequest & 0x80U))
 	  {
-		  MSC_BOT_Reset();
+		  USB_MSC_Reset();
 		  return;
 	  }
 	  break;
@@ -153,29 +149,12 @@ void USB_MSC_Setup(USB_SetupRequest_t * req)
  * PRIVATE FUNCTIONS
  */
 
-
-void MSC_BOT_Init(void)
-{
-  hmsc->bot_state = USBD_BOT_IDLE;
-  hmsc->bot_status = USBD_BOT_STATUS_NORMAL;
-
-  hmsc->scsi_sense_tail = 0U;
-  hmsc->scsi_sense_head = 0U;
-
-  USB_EP_Read(MSC_OUT_EP, (uint8_t *)&hmsc->cbw, USBD_BOT_CBW_LENGTH);
-}
-
-void MSC_BOT_Reset(void)
+static void USB_MSC_Reset(void)
 {
   hmsc->bot_state  = USBD_BOT_IDLE;
-  hmsc->bot_status = USBD_BOT_STATUS_RECOVERY;
+  gMSC.status = MSC_STATUS_RECOVERY;
 
-  USB_EP_Read(MSC_OUT_EP, (uint8_t *)&hmsc->cbw, USBD_BOT_CBW_LENGTH);
-}
-
-void MSC_BOT_DeInit(void)
-{
-  hmsc->bot_state = USBD_BOT_IDLE;
+  USB_EP_Read(MSC_OUT_EP, (uint8_t *)&hmsc->cbw, MSC_CBW_LENGTH);
 }
 
 void USB_MSC_TransmitDone(uint32_t size)
@@ -183,7 +162,7 @@ void USB_MSC_TransmitDone(uint32_t size)
   switch (hmsc->bot_state)
   {
     case USBD_BOT_DATA_IN:
-      if (SCSI_ProcessCmd(&gScsi, hmsc->cbw.bLUN, &hmsc->cbw.CB[0]) < 0)
+      if (SCSI_ProcessCmd(&gMSC.scsi, &hmsc->cbw.CB[0]) < 0)
       {
         MSC_BOT_SendCSW(USBD_CSW_CMD_FAILED);
       }
@@ -210,7 +189,7 @@ void USB_MSC_Receive(uint32_t size)
 
     case USBD_BOT_DATA_OUT:
 
-      if (SCSI_ProcessCmd(&gScsi, hmsc->cbw.bLUN, &hmsc->cbw.CB[0]) < 0)
+      if (SCSI_ProcessCmd(&gMSC.scsi, &hmsc->cbw.CB[0]) < 0)
       {
         MSC_BOT_SendCSW(USBD_CSW_CMD_FAILED);
       }
@@ -232,20 +211,22 @@ static void  MSC_BOT_CBW_Decode(uint32_t size)
   hmsc->csw.dTag = hmsc->cbw.dTag;
   hmsc->csw.dDataResidue = hmsc->cbw.dDataLength;
 
-  if ((size != USBD_BOT_CBW_LENGTH) ||
-      (hmsc->cbw.dSignature != USBD_BOT_CBW_SIGNATURE) ||
+  SCSI_t * scsi = &gMSC.scsi;
+
+  if ((size != MSC_CBW_LENGTH) ||
+      (hmsc->cbw.dSignature != MSC_CBW_SIGNATURE) ||
       (hmsc->cbw.bLUN > 1U) ||
       (hmsc->cbw.bCBLength < 1U) || (hmsc->cbw.bCBLength > 16U))
   {
 
-    SCSI_SenseCode(&gScsi, hmsc->cbw.bLUN, ILLEGAL_REQUEST, INVALID_CDB);
+    SCSI_SenseCode(scsi, SCSI_SKEY_ILLEGAL_REQUEST, SCSI_ASQ_INVALID_CDB);
 
-    hmsc->bot_status = USBD_BOT_STATUS_ERROR;
+    gMSC.status = MSC_STATUS_ERROR;
     MSC_BOT_Abort();
   }
   else
   {
-    if (SCSI_ProcessCmd(&gScsi, hmsc->cbw.bLUN, &hmsc->cbw.CB[0]) < 0)
+    if (SCSI_ProcessCmd(scsi, &hmsc->cbw.CB[0]) < 0)
     {
       if (hmsc->bot_state == USBD_BOT_NO_DATA)
       {
@@ -261,11 +242,11 @@ static void  MSC_BOT_CBW_Decode(uint32_t size)
              (hmsc->bot_state != USBD_BOT_DATA_OUT) &&
              (hmsc->bot_state != USBD_BOT_LAST_DATA_IN))
     {
-      if (hmsc->bot_data_length > 0U)
+      if (scsi->data_len > 0U)
       {
-        MSC_BOT_SendData(hmsc->bot_data, hmsc->bot_data_length);
+        MSC_BOT_SendData(scsi->bfr, scsi->data_len);
       }
-      else if (hmsc->bot_data_length == 0U)
+      else if (scsi->data_len == 0U)
       {
         MSC_BOT_SendCSW(USBD_CSW_CMD_PASSED);
       }
@@ -309,13 +290,13 @@ static void  MSC_BOT_SendData(uint8_t *pbuf, uint16_t len)
 */
 void  MSC_BOT_SendCSW(uint8_t CSW_Status)
 {
-  hmsc->csw.dSignature = USBD_BOT_CSW_SIGNATURE;
+  hmsc->csw.dSignature = MSC_CSW_SIGNATURE;
   hmsc->csw.bStatus = CSW_Status;
   hmsc->bot_state = USBD_BOT_IDLE;
 
-  USB_EP_Write(MSC_IN_EP, (uint8_t *)&hmsc->csw, USBD_BOT_CSW_LENGTH);
+  USB_EP_Write(MSC_IN_EP, (uint8_t *)&hmsc->csw, MSC_CSW_LENGTH);
   /* Prepare EP to Receive next Cmd */
-  USB_EP_Read(MSC_OUT_EP, (uint8_t *)&hmsc->cbw, USBD_BOT_CBW_LENGTH);
+  USB_EP_Read(MSC_OUT_EP, (uint8_t *)&hmsc->cbw, MSC_CBW_LENGTH);
 }
 
 /**
@@ -328,16 +309,16 @@ static void  MSC_BOT_Abort(void)
 {
   if ((hmsc->cbw.bmFlags == 0U) &&
       (hmsc->cbw.dDataLength != 0U) &&
-      (hmsc->bot_status == USBD_BOT_STATUS_NORMAL))
+      (gMSC.status == MSC_STATUS_NORMAL))
   {
 	  USB_EP_Stall(MSC_OUT_EP);
   }
 
   USB_EP_Stall(MSC_IN_EP);
 
-  if (hmsc->bot_status == USBD_BOT_STATUS_ERROR)
+  if (gMSC.status == MSC_STATUS_ERROR)
   {
-    USB_EP_Read(MSC_OUT_EP, (uint8_t *)&hmsc->cbw, USBD_BOT_CBW_LENGTH);
+    USB_EP_Read(MSC_OUT_EP, (uint8_t *)&hmsc->cbw, MSC_CBW_LENGTH);
   }
 }
 
@@ -351,12 +332,12 @@ static void  MSC_BOT_Abort(void)
 
 void  MSC_BOT_CplClrFeature(uint8_t epnum)
 {
-  if (hmsc->bot_status == USBD_BOT_STATUS_ERROR) /* Bad CBW Signature */
+  if (gMSC.status == MSC_STATUS_ERROR) /* Bad CBW Signature */
   {
 	  USB_EP_Stall(MSC_IN_EP);
-	  hmsc->bot_status = USBD_BOT_STATUS_NORMAL;
+	  gMSC.status = MSC_STATUS_NORMAL;
   }
-  else if (((epnum & 0x80U) == 0x80U) && (hmsc->bot_status != USBD_BOT_STATUS_RECOVERY))
+  else if (((epnum & 0x80U) == 0x80U) && (gMSC.status != MSC_STATUS_RECOVERY))
   {
 	  MSC_BOT_SendCSW(USBD_CSW_CMD_FAILED);
   }

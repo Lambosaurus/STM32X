@@ -37,7 +37,6 @@
 
 #define USBD_CSW_CMD_PASSED                0x00U
 #define USBD_CSW_CMD_FAILED                0x01U
-#define USBD_CSW_PHASE_ERROR               0x02U
 
 /*
  * PUBLIC TYPES
@@ -51,10 +50,9 @@
 // These should be referenced in USB_Class.h
 void USB_MSC_Init(uint8_t config);
 void USB_MSC_Deinit(void);
-void USB_MSC_CtlRxReady(void);
 void USB_MSC_Setup(USB_SetupRequest_t * req);
 
-void USB_MSC_SetStorage(USBD_StorageTypeDef * storage);
+void USB_MSC_SetStorage(USB_MSC_Storage_t * storage);
 
 // Delete this
 void MSC_BOT_SendCSW(uint8_t CSW_Status);

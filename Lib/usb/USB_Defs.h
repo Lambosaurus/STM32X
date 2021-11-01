@@ -210,7 +210,7 @@
 	HIBYTE(wTotalLength),		\
 	bNumInterfaces,				\
 	bConfigurationValue,		\
-	0x00,						\
+	USB_IDX_CONFIG_STR,			\
 	0xC0,						\
 	USB_MAX_POWER
 
