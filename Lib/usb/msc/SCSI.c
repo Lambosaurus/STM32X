@@ -123,10 +123,10 @@ const uint8_t cSCSI_InquiryPage[] = {/* 36 */
 	0x00,
 	0x00,
 	0x00,
-	'S', 'T', 'M', ' ', ' ', ' ', ' ', ' ', /* Manufacturer : 8 bytes */
-	'P', 'r', 'o', 'd', 'u', 'c', 't', ' ', /* Product      : 16 Bytes */
-	' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-	'0', '.', '0' ,'1'                      /* Version      : 4 Bytes */
+	'L', 'a', 'm', 'b', 'o', ' ', ' ', ' ', /* Manufacturer : 8 bytes */
+	'S', 'T', 'M', '3', '2', 'X', ' ', 'M', /* Product      : 16 Bytes */
+	'S', 'C', ' ', ' ', ' ', ' ', ' ', ' ',
+	'1', '.', '0' ,'0'                      /* Version      : 4 Bytes */
 };
 
 /*
