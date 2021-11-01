@@ -9,7 +9,7 @@
  * PUBLIC DEFINITIONS
  */
 
-#define SCSI_MEDIA_PACKET							512
+#define SCSI_BLOCK_SIZE								512
 
 #ifndef SCSI_SENSE_DEPTH
 #define SCSI_SENSE_DEPTH                           	4U
@@ -107,19 +107,29 @@ typedef struct {
 		uint8_t tail;
 	} sense;
 
-	uint8_t bfr[SCSI_MEDIA_PACKET];
+	uint8_t bfr[SCSI_BLOCK_SIZE];
 	uint16_t data_len;
 } SCSI_t;
+
+typedef enum {
+	SCSI_State_Error = -1,
+	SCSI_State_Ok = 0,
+	SCSI_State_SendData,
+	SCSI_State_DataOut,
+	SCSI_State_DataIn,
+	SCSI_State_LastDataIn,
+} SCSI_State_t;
 
 /*
  * PUBLIC FUNCTIONS
  */
 
-bool SCSI_Init(SCSI_t * scsi, USB_MSC_Storage_t * storage);
-int8_t SCSI_ProcessCmd(SCSI_t * scsi, uint8_t *cmd);
+SCSI_State_t SCSI_Init(SCSI_t * scsi, USB_MSC_Storage_t * storage);
+SCSI_State_t SCSI_ProcessCmd(SCSI_t * scsi, uint8_t *cmd);
+SCSI_State_t SCSI_ResumeCmd(SCSI_t * scsi, SCSI_State_t state);
 
 // TODO: Make internal.
-void SCSI_SenseCode(SCSI_t * scsi, uint8_t sKey, uint8_t ASC);
+SCSI_State_t SCSI_SenseCode(SCSI_t * scsi, uint8_t sKey, uint8_t ASC);
 
 
 

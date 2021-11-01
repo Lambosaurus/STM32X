@@ -42,8 +42,6 @@ typedef struct
 
 typedef struct
 {
-  uint8_t     bot_state;
-  //uint8_t     bot_status;
   SCSI_CBW_t  cbw;
   SCSI_CSW_t  csw;
 } USBD_MSC_BOT_HandleTypeDef;
