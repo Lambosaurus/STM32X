@@ -24,6 +24,17 @@
 
 #define USB_ENDPOINTS					3
 
+#elif defined(USB_CLASS_MSC)
+#include "msc/USB_MSC.h"
+
+#define USB_CLASS_DEVICE_DESCRIPTOR 	USB_MSC_CONFIG_DESC
+
+#define USB_CLASS_INIT(config)			USB_MSC_Init(config)
+#define USB_CLASS_DEINIT()				USB_MSC_Deinit()
+#define USB_CLASS_SETUP(request) 		USB_MSC_Setup(request)
+
+#define USB_ENDPOINTS					2
+
 #else
 #error "No USB Class defined"
 #endif

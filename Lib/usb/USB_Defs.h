@@ -9,6 +9,8 @@
  * These may be overridden in the user Board.h
  */
 
+#define USB_PID						0x572A
+
 #ifndef USB_VID
 #define USB_VID						0x0483
 #endif
@@ -208,7 +210,7 @@
 	HIBYTE(wTotalLength),		\
 	bNumInterfaces,				\
 	bConfigurationValue,		\
-	0x00,						\
+	USB_IDX_CONFIG_STR,			\
 	0xC0,						\
 	USB_MAX_POWER
 
