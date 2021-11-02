@@ -73,7 +73,7 @@ void USB_WriteStr(const char * str)
 #endif //USB_CLASS_CDC
 
 #ifdef USB_CLASS_MSC
-void USB_Mount(USB_MSC_Storage_t * storage)
+void USB_Mount(const USB_Storage_t * storage)
 {
 	USB_MSC_Mount(storage);
 }

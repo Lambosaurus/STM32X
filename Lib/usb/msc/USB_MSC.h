@@ -3,7 +3,7 @@
 
 #include "STM32X.h"
 #include "../USB_Defs.h"
-#include "USB_MSC_Storage.h"
+#include "USB_Storage.h"
 
 /*
  * FUNCTIONAL TESTING
@@ -39,7 +39,7 @@ void USB_MSC_Deinit(void);
 void USB_MSC_Setup(USB_SetupRequest_t * req);
 
 // Interface to user
-void USB_MSC_Mount(USB_MSC_Storage_t * storage);
+void USB_MSC_Mount(const USB_Storage_t * storage);
 
 /*
  * EXTERN DECLARATIONS

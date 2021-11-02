@@ -133,7 +133,7 @@ const uint8_t cSCSI_InquiryPage[] = {/* 36 */
  * PUBLIC FUNCTIONS
  */
 
-SCSI_State_t SCSI_Init(SCSI_t * scsi, USB_MSC_Storage_t * storage)
+SCSI_State_t SCSI_Init(SCSI_t * scsi, const USB_Storage_t * storage)
 {
 	scsi->sense.head = 0;
 	scsi->sense.tail = 0;

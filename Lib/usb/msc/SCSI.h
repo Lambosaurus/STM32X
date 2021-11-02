@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "USB_MSC_Storage.h"
+#include "USB_Storage.h"
 
 /*
  * PUBLIC DEFINITIONS
@@ -44,7 +44,7 @@ typedef struct
 } SCSI_CSW_t;
 
 typedef struct {
-	USB_MSC_Storage_t * storage;
+	const USB_Storage_t * storage;
 
 	uint32_t block_count;
 	uint32_t block_addr;
@@ -73,7 +73,7 @@ typedef enum {
  * PUBLIC FUNCTIONS
  */
 
-SCSI_State_t SCSI_Init(SCSI_t * scsi, USB_MSC_Storage_t * storage);
+SCSI_State_t SCSI_Init(SCSI_t * scsi, const USB_Storage_t * storage);
 SCSI_State_t SCSI_ProcessCmd(SCSI_t * scsi, SCSI_CBW_t * cbw);
 SCSI_State_t SCSI_ResumeCmd(SCSI_t * scsi, SCSI_State_t state);
 

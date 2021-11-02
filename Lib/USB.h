@@ -6,7 +6,7 @@
 #ifdef USB_ENABLE
 
 #ifdef USB_CLASS_MSC
-#include "usb/msc/USB_MSC_Storage.h"
+#include "usb/msc/USB_Storage.h"
 #endif
 
 /*
@@ -38,7 +38,7 @@ void USB_WriteStr(const char * str);
 #endif
 
 #ifdef USB_CLASS_MSC
-void USB_Mount(USB_MSC_Storage_t * storage);
+void USB_Mount(const USB_Storage_t * storage);
 #endif
 
 /*

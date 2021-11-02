@@ -81,14 +81,14 @@ static struct {
 	SCSI_CBW_t cbw;
 	SCSI_CSW_t csw;
 
-	USB_MSC_Storage_t * storage;
+	const USB_Storage_t * storage;
 } gMSC;
 
 /*
  * PUBLIC FUNCTIONS
  */
 
-void USB_MSC_Mount(USB_MSC_Storage_t * storage)
+void USB_MSC_Mount(const USB_Storage_t * storage)
 {
 	gMSC.storage = storage;
 }
