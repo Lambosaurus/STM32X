@@ -43,9 +43,6 @@
 
 #define USB_MAX_POWER				(USB_MAX_POWER_MA/2)
 
-#ifndef USB_MAX_NUM_INTERFACES
-#define USB_MAX_NUM_INTERFACES     	1
-#endif
 #ifndef USB_MAX_NUM_CONFIGURATION
 #define USB_MAX_NUM_CONFIGURATION   1
 #endif

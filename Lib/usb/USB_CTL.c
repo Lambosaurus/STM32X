@@ -479,7 +479,7 @@ static void USB_CTL_InterfaceRequest(USB_SetupRequest_t * req)
 		case USB_STATE_DEFAULT:
 		case USB_STATE_ADDRESSED:
 		case USB_STATE_CONFIGURED:
-			if (LOBYTE(req->wIndex) <= USB_MAX_NUM_INTERFACES)
+			if (LOBYTE(req->wIndex) < USB_CLASS_INTERFACES)
 			{
 				USB_CLASS_SETUP(req);
 				if ((req->wLength == 0U))
