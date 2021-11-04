@@ -131,7 +131,6 @@ void USB_MSC_Setup(USB_SetupRequest_t * req)
 	  }
 	  break;
 	}
-	// Error occurred. Probably shouldn't ignore?
 }
 
 /*

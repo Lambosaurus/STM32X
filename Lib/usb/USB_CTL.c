@@ -205,10 +205,12 @@ static void USB_CTL_EndpointRequest(USB_SetupRequest_t  *req)
 
 	switch (req->bmRequest & USB_REQ_TYPE_MASK)
 	{
+#ifdef USB_CLASS_CUSTOM_SETUP
 	case USB_REQ_TYPE_CLASS:
 	case USB_REQ_TYPE_VENDOR:
 		USB_CLASS_SETUP(req);
 		return;
+#endif
 	case USB_REQ_TYPE_STANDARD:
 		switch (req->bRequest)
 		{
@@ -311,10 +313,12 @@ static void USB_CTL_DeviceRequest(USB_SetupRequest_t *req)
 {
 	switch (req->bmRequest & USB_REQ_TYPE_MASK)
 	{
+#ifdef USB_CLASS_CUSTOM_SETUP
 	case USB_REQ_TYPE_CLASS:
 	case USB_REQ_TYPE_VENDOR:
 		USB_CLASS_SETUP(req);
 		return;
+#endif
 	case USB_REQ_TYPE_STANDARD:
 		switch (req->bRequest)
 		{
@@ -469,8 +473,6 @@ static void USB_CTL_InterfaceRequest(USB_SetupRequest_t * req)
 	{
 	case USB_REQ_TYPE_CLASS:
 	case USB_REQ_TYPE_VENDOR:
-		USB_CLASS_SETUP(req);
-		return;
 	case USB_REQ_TYPE_STANDARD:
 		switch (gCTL.usb_state)
 		{
