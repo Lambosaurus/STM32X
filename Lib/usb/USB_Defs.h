@@ -134,6 +134,7 @@
 #define  USB_DESC_TYPE_ENDPOINT                         0x05
 #define  USB_DESC_TYPE_DEVICE_QUALIFIER                 0x06
 #define  USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION        0x07
+#define  USB_DESC_TYPE_INTERFACE_ASSOCIATION			0x0B
 #define  USB_DESC_TYPE_BOS                              0x0F
 
 
@@ -152,7 +153,7 @@
  * bInterval: (0 for for Bulk transfer)
  */
 
-#define USB_DESCR_BLOCK_ENDPOINT(bEndpointAddress, bmAttributes, wMaxPacketSize, bInterval)  \
+#define USB_DESCR_BLOCK_ENDPOINT(bEndpointAddress, bmAttributes, wMaxPacketSize, bInterval) \
 	0x07,						\
 	USB_DESC_TYPE_ENDPOINT,		\
 	bEndpointAddress,			\
@@ -200,7 +201,7 @@
  * bMaxPower:
  */
 
-#define USB_DESCR_BLOCK_CONFIGURATION(wTotalLength, bNumInterfaces, bConfigurationValue)		\
+#define USB_DESCR_BLOCK_CONFIGURATION(wTotalLength, bNumInterfaces, bConfigurationValue) \
 	0x09,						\
 	USB_DESC_TYPE_CONFIGURATION,\
 	LOBYTE(wTotalLength),		\
@@ -210,6 +211,28 @@
 	USB_IDX_CONFIG_STR,			\
 	0xC0,						\
 	USB_MAX_POWER
+
+
+/*
+ * Descriptor block for describing interface associations (IAD)
+ *  bLength: Interface association descriptor size
+ *  bDescriptorType: IAD
+ *  bFirstInterface: First interface in the group
+ *  bInterfaceCount: Number of interfaces in the group
+ *  bFunctionClass:
+ *  bFunctionSubClass:
+ *  bFunctionProtocol:
+ *  iFunction: (0x00 for no string)
+ */
+#define USB_DESC_BLOCK_INTERFACE_ASSOCIATION(bFirstInterface, bInterfaceCount, bFunctionClass, bFunctionSubClass, bFunctionProtocol) \
+	0x08,								\
+	USB_DESC_TYPE_INTERFACE_ASSOCIATION,\
+	bFirstInterface,					\
+	bInterfaceCount,					\
+	bFunctionClass,						\
+	bFunctionSubClass,					\
+	bFunctionProtocol,					\
+	0x00
 
 
 /*
