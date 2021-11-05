@@ -31,6 +31,8 @@
 #define MSC_REQ_GET_MAX_LUN              	0xFE
 #define MSC_REQ_RESET                    	0xFF
 
+#define MSC_CSW_CMD_PASSED             		0x00
+#define MSC_CSW_CMD_FAILED             		0x01
 
 /*
  * PRIVATE TYPES
@@ -201,10 +203,10 @@ static void USB_MSC_HandleTransfer(SCSI_State_t state)
 	switch(state)
 	{
 	case SCSI_State_Error:
-		USB_MSC_SendCSW(USBD_CSW_CMD_FAILED);
+		USB_MSC_SendCSW(MSC_CSW_CMD_FAILED);
 		break;
 	case SCSI_State_Ok:
-		USB_MSC_SendCSW(USBD_CSW_CMD_PASSED);
+		USB_MSC_SendCSW(MSC_CSW_CMD_PASSED);
 		break;
 	case SCSI_State_SendData:
 		USB_MSC_SendData(gMSC.scsi.bfr, gMSC.scsi.data_len);
@@ -228,7 +230,7 @@ static void  USB_MSC_SendData(uint8_t *pbuf, uint16_t len)
 	uint16_t length = (uint16_t)MIN(gMSC.cbw.dDataLength, len);
 
 	gMSC.csw.dDataResidue -= len;
-	gMSC.csw.bStatus = USBD_CSW_CMD_PASSED;
+	gMSC.csw.bStatus = MSC_CSW_CMD_PASSED;
 
 	USB_EP_Write( MSC_IN_EP, pbuf, length );
 }
@@ -272,7 +274,7 @@ void  MSC_BOT_CplClrFeature(uint8_t epnum)
 	}
 	else if (((epnum & 0x80U) == 0x80U) && (gMSC.status != MSC_STATUS_RECOVERY))
 	{
-		USB_MSC_SendCSW(USBD_CSW_CMD_FAILED);
+		USB_MSC_SendCSW(MSC_CSW_CMD_FAILED);
 	}
 }
 
