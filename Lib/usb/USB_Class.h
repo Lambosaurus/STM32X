@@ -22,7 +22,8 @@
 #define USB_CLASS_CTL_RXREADY()			USB_CDC_CtlRxReady()
 //#define USB_CLASS_CTL_TXDONE
 
-#define USB_ENDPOINTS					3
+#define USB_ENDPOINTS					USB_CDC_ENDPOINTS
+#define USB_INTERFACES					USB_CDC_ENDPOINTS
 
 #elif defined(USB_CLASS_MSC)
 #include "msc/USB_MSC.h"
@@ -33,7 +34,8 @@
 #define USB_CLASS_DEINIT()				USB_MSC_Deinit()
 #define USB_CLASS_SETUP(request) 		USB_MSC_Setup(request)
 
-#define USB_ENDPOINTS					2
+#define USB_ENDPOINTS					USB_MSC_ENDPOINTS
+#define USB_INTERFACES					USB_MSC_INTERFACES
 
 #else
 #error "No USB Class defined"

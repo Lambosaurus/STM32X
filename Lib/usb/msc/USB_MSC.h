@@ -15,14 +15,14 @@
  * PUBLIC DEFINITIONS
  */
 
+#define USB_MSC_INTERFACES				1
+#define USB_MSC_ENDPOINTS				2
+
 #define USB_MSC_CONFIG_DESC_SIZE		32
 #define USB_MSC_CONFIG_DESC				cUSB_MSC_ConfigDescriptor
 
-#define MSC_IN_EP                        0x81
-#define MSC_OUT_EP                       0x01
-
-#define USBD_CSW_CMD_PASSED              0x00U
-#define USBD_CSW_CMD_FAILED              0x01U
+#define MSC_IN_EP                       0x81
+#define MSC_OUT_EP                      0x01
 
 /*
  * PUBLIC TYPES
