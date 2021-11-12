@@ -9,11 +9,11 @@ The capabilities of this module are dependant on whether you are willing to dedi
 
 `US_Init()` should not be called by the user. It will be initialised within `CORE_Init()`, see [CORE](CORE.md) for more info.
 
-## Minimal mode
+## Minimal mode:
 
 When no timer is provided, only `US_Delay()` is available. This is provided using a calibrated loop, and so it not highly accurate. It will typically run 4us longer than requested on a Cortex M0+ core @ 32MHz. This is still suitable for many uses.
 
-## Timer mode
+## Timer mode:
 
 When a timer is used, this module can be used for accurate time keeping.
 
