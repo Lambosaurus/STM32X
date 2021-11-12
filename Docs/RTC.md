@@ -58,7 +58,7 @@ RTC_OnAlarm(RTC_Alarm_A, &dt, RTC_Mask_Hour, User_Callback);
 
 Note that the alarms can be generated each second/hour/minute/day. For more custom periods - the alarm will have to be reinitialised with a new value each wakeup.
 
-## Timer
+## Timer:
 
 The RTC may also have an input timer. This can be used for higher frequency wakeups. Check your datasheet for the presence of this device.
 
@@ -75,7 +75,7 @@ while(1)
 }
 ```
 
-## Oscillator selection
+## Oscillator selection:
 
 Its important to note that the LSI (Low speed internal oscillator) is **extremely** inacurate. Check your parts datasheet. It is useful for wakeups, but not for accurate time keeping.
 

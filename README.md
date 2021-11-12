@@ -4,10 +4,13 @@ Currently only the STM32L0's and STM32F0's are supported. Other series may be ad
 
 ## Features
 * A clean API for all peripheral functions
-* Clock management handled
+* 'Opt in' design philosophy. Modules only need to be considered when required.
+* Clock management and interrupts are internally handled within the modules.
 * Expected features like UART circular buffers are built-in
 * Much less bloat than a vanilla STM32Cube project. A project using many peripherals including USB-CDC can easily compile to under 16KB.
-* Still compatible with the Cube if additional functionality needed (I still use much of it too)
+* Still compatible with the Cube if additional functionality needed (I still use some of it too)
+* There is very little abstraction between the STM32X api and the hardware. This promotes efficiency and predictibilty.
+* Low power is a key use case for this project: Low power modes are supported, and peripheral init/deinit is under user control.
 
 ## Creating a STM32X based project
 1) Create a new project using the STM32CubeIDE. STM32Cube should be the targeted project type.
@@ -18,55 +21,38 @@ Currently only the STM32L0's and STM32F0's are supported. Other series may be ad
 6) Edit `Board.h` to configure your peripherals. Ensure the correct processor is defined at the top.
 7) Build to confirm that the environment is set up correctly.
 
-## Module highlights
-### CORE
-* Clock intialisation
-* Idle mode (wait for interrupt)
-* System tick
+## Modules
 
-### RTC
-* LSE/LSI configuration
-* Periodic and alarm callbacks
+Documentation for each module can be found in [Docs](Docs\\)
 
-### UART
-* Interrupt driven reads & writes
-* Inbuilt circular buffers
+The [CORE](Docs\CORE.md) module provides a lot of basic functionality, and should be your starting point. Next, [GPIO](Docs\GPIO.md) and [UART](Docs\UART.md) make for good examples of what to expect from this project.
 
-### SPI
-* Master only
-* Blocking read & write
 
-### I2C
-* Master only
-* Blocking read & write
-* Automatic timing config & fast mode plus
+### Basic:
+* [CORE](Docs\CORE.md)
+* [CLK](Docs\CLK.md)
+* [GPIO](Docs\GPIO.md)
 
-### GPIO
-* Inlined reads & writes
-* Interrupt callbacks
+### Connectivity:
+* [UART](Docs\UART.md)
+* [SPI](Docs\SPI.md)
+* [I2C](Docs\I2C.md)
+* [CAN](Docs\CAN.md)
+* [USB](Docs\USB.md)
 
-### ADC
-* Blocking reads on input channels
-* Handles VREF & Temperature channels
+### Analog:
+* [ADC](Docs\ADC.md)
+* [COMP](Docs\COMP.md)
 
-### TIM
-* PWM configuration
-* Interrupt callbacks on reload and compare channels
+### Timing:
+* [TIM](Docs\TIM.md)
+* [RTC](Docs\RTC.md)
+* [WDG](Docs\WDG.md)
+* [US](Docs\US.md)
 
-### CAN
-* Polling read & writes
-* Uses rx mailboxes as storage
+### Storage:
+* [FLASH](Docs\FLASH.md)
+* [EEPROM](Docs\EEPROM.md)
 
-### USB
-* Interrupt based USB
-* USB-CDC (VCOM port)
-	* Works 'out of the box' using default windows driver
-	* Inbuilt circular buffers
-
-### WDG
-* Uses the independant watchdog
-
-### Others
-* CRC
-* EEPROM
-* FLASH
+### Misc:
+* [CRC](Docs\CRC.md)

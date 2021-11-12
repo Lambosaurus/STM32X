@@ -10,6 +10,9 @@
 #include "usb/cdc/USB_CDC.h"
 #include <string.h>
 #endif
+#ifdef USB_CLASS_MSC
+#include "usb/msc/USB_MSC.h"
+#endif
 
 /*
  * PRIVATE DEFINITIONS
@@ -68,6 +71,13 @@ void USB_WriteStr(const char * str)
 	USB_CDC_Write((uint8_t *)str, strlen(str));
 }
 #endif //USB_CLASS_CDC
+
+#ifdef USB_CLASS_MSC
+void USB_Mount(const USB_Storage_t * storage)
+{
+	USB_MSC_Mount(storage);
+}
+#endif
 
 /*
  * PRIVATE FUNCTIONS

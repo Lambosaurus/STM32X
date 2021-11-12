@@ -79,97 +79,61 @@ static void USB_CDC_TransmitDone(uint32_t count);
  * PRIVATE VARIABLES
  */
 
+
 __ALIGNED(4) const uint8_t cUSB_CDC_ConfigDescriptor[USB_CDC_CONFIG_DESC_SIZE] =
 {
-  //Configuration Descriptor
-  0x09,                     // bLength: Configuration Descriptor size
-  USB_DESC_TYPE_CONFIGURATION, // bDescriptorType: Configuration
-  USB_CDC_CONFIG_DESC_SIZE,  // wTotalLength:no of returned bytes
-  0x00,
-  0x02,                     // bNumInterfaces: 2 interface
-  0x01,                     // bConfigurationValue: Configuration value
-  0x00,                     // iConfiguration: Index of string descriptor describing the configuration
-  0xC0,                     // bmAttributes: self powered
-  USB_MAX_POWER,            // MaxPower 100 mA
-  //---------------------------------------------------------------------------
+	USB_DESCR_BLOCK_CONFIGURATION(
+			USB_CDC_CONFIG_DESC_SIZE,
+			0x02,	// two interfaces available
+			0x01
+	),
+	USB_DESCR_BLOCK_INTERFACE(
+		  0x00,
+		  0x01, // 1 endpoint used
+		  0x02,	// Communication Interface Class
+		  0x02, // Abstract Control Model
+		  0x01	// Common AT commands
+	),
 
-  // Interface Descriptor
-  0x09,                     // bLength: Interface Descriptor size
-  USB_DESC_TYPE_INTERFACE,  // bDescriptorType: Interface
-  // Interface descriptor type
-  0x00,                     // bInterfaceNumber: Number of Interface
-  0x00,                     // bAlternateSetting: Alternate setting
-  0x01,                     // bNumEndpoints: One endpoints used
-  0x02,                     // bInterfaceClass: Communication Interface Class
-  0x02,                     // bInterfaceSubClass: Abstract Control Model
-  0x01,                     // bInterfaceProtocol: Common AT commands
-  0x00,                     // iInterface:
+	// Header Functional Descriptor
+	0x05,                     // bLength: Endpoint Descriptor size
+	0x24,                     // bDescriptorType: CS_INTERFACE
+	0x00,                     // bDescriptorSubtype: Header Func Desc
+	0x10,                     // bcdCDC: spec release number
+	0x01,
 
-  // Header Functional Descriptor
-  0x05,                     // bLength: Endpoint Descriptor size
-  0x24,                     // bDescriptorType: CS_INTERFACE
-  0x00,                     // bDescriptorSubtype: Header Func Desc
-  0x10,                     // bcdCDC: spec release number
-  0x01,
+	// Call Management Functional Descriptor
+	0x05,                     // bFunctionLength
+	0x24,                     // bDescriptorType: CS_INTERFACE
+	0x01,                     // bDescriptorSubtype: Call Management Func Desc
+	0x00,                     // bmCapabilities: D0+D1
+	0x01,                     // bDataInterface: 1
 
-  // Call Management Functional Descriptor
-  0x05,                     // bFunctionLength
-  0x24,                     // bDescriptorType: CS_INTERFACE
-  0x01,                     // bDescriptorSubtype: Call Management Func Desc
-  0x00,                     // bmCapabilities: D0+D1
-  0x01,                     // bDataInterface: 1
+	// ACM Functional Descriptor
+	0x04,                     // bFunctionLength
+	0x24,                     // bDescriptorType: CS_INTERFACE
+	0x02,                     // bDescriptorSubtype: Abstract Control Management desc
+	0x02,                     // bmCapabilities
 
-  // ACM Functional Descriptor
-  0x04,                     // bFunctionLength
-  0x24,                     // bDescriptorType: CS_INTERFACE
-  0x02,                     // bDescriptorSubtype: Abstract Control Management desc
-  0x02,                     // bmCapabilities
+	// Union Functional Descriptor
+	0x05,                     // bFunctionLength
+	0x24,                     // bDescriptorType: CS_INTERFACE
+	0x06,                     // bDescriptorSubtype: Union func desc
+	0x00,                     // bMasterInterface: Communication class interface
+	0x01,                     // bSlaveInterface0: Data Class Interface
 
-  // Union Functional Descriptor
-  0x05,                     // bFunctionLength
-  0x24,                     // bDescriptorType: CS_INTERFACE
-  0x06,                     // bDescriptorSubtype: Union func desc
-  0x00,                     // bMasterInterface: Communication class interface
-  0x01,                     // bSlaveInterface0: Data Class Interface
+	// Endpoint 2 Descriptor
+	USB_DESCR_BLOCK_ENDPOINT(CDC_CMD_EP, 0x03, CDC_CMD_PACKET_SIZE, CDC_BINTERVAL),
 
-  // Endpoint 2 Descriptor
-  0x07,                     // bLength: Endpoint Descriptor size
-  USB_DESC_TYPE_ENDPOINT,   // bDescriptorType: Endpoint
-  CDC_CMD_EP,               // bEndpointAddress
-  0x03,                     // bmAttributes: Interrupt
-  LOBYTE(CDC_CMD_PACKET_SIZE),  // wMaxPacketSize:
-  HIBYTE(CDC_CMD_PACKET_SIZE),
-  CDC_BINTERVAL,            // bInterval:
-  /*---------------------------------------------------------------------------*/
-
-  // Data class interface descriptor
-  0x09,                     // bLength: Endpoint Descriptor size
-  USB_DESC_TYPE_INTERFACE,  // bDescriptorType:
-  0x01,                     // bInterfaceNumber: Number of Interface
-  0x00,                     // bAlternateSetting: Alternate setting
-  0x02,                     // bNumEndpoints: Two endpoints used
-  0x0A,                     // bInterfaceClass: CDC
-  0x00,                     // bInterfaceSubClass:
-  0x00,                     // bInterfaceProtocol:
-  0x00,                     // iInterface:
-
-  // Endpoint OUT Descriptor
-  0x07,                     // bLength: Endpoint Descriptor size
-  USB_DESC_TYPE_ENDPOINT,   // bDescriptorType: Endpoint
-  CDC_OUT_EP,               // bEndpointAddress
-  0x02,                     // bmAttributes: Bulk
-  LOBYTE(CDC_PACKET_SIZE),  // wMaxPacketSize:
-  HIBYTE(CDC_PACKET_SIZE),
-  0x00,                     // bInterval: ignore for Bulk transfer
-
-  // Endpoint IN Descriptor
-  0x07,                     // bLength: Endpoint Descriptor size
-  USB_DESC_TYPE_ENDPOINT,   // bDescriptorType: Endpoint
-  CDC_IN_EP,                // bEndpointAddress
-  0x02,                     // bmAttributes: Bulk
-  LOBYTE(CDC_PACKET_SIZE),  // wMaxPacketSize:
-  HIBYTE(CDC_PACKET_SIZE),
-  0x00                      // bInterval: ignore for Bulk transfer
+	USB_DESCR_BLOCK_INTERFACE(
+		  0x01,
+		  0x02, // 2 endpoints used
+		  0x0A,	// Communication Device Class
+		  0x00, // Abstract Control Model
+		  0x00	// Common AT commands
+	),
+	USB_DESCR_BLOCK_ENDPOINT(CDC_OUT_EP, 0x02, CDC_PACKET_SIZE, 0x00), // Bulk endpoint
+	USB_DESCR_BLOCK_ENDPOINT(CDC_IN_EP, 0x02, CDC_PACKET_SIZE, 0x00), // Bulk endpoint
 };
 
 static uint8_t gRxBuffer[CDC_PACKET_SIZE];
@@ -361,7 +325,15 @@ static void USB_CDC_Receive(uint32_t count)
 
 static void USB_CDC_TransmitDone(uint32_t count)
 {
-	gCDC.txBusy = false;
+	if (count > 0 && (count % CDC_PACKET_SIZE) == 0)
+	{
+		// Write a ZLP to complete the tx.
+		USB_EP_WriteZLP(CDC_IN_EP);
+	}
+	else
+	{
+		gCDC.txBusy = false;
+	}
 }
 
 #endif //USB_CLASS_CDC

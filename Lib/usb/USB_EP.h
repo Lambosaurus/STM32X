@@ -34,6 +34,7 @@ void USB_EP_Close(uint8_t endpoint);
 bool USB_EP_IsOpen(uint8_t endpoint);
 void USB_EP_Read(uint8_t endpoint, uint8_t *data, uint32_t count);
 void USB_EP_Write(uint8_t endpoint, const uint8_t * data, uint32_t count);
+void USB_EP_WriteZLP(uint8_t endpoint);
 void USB_EP_Stall(uint8_t endpoint);
 void USB_EP_Destall(uint8_t endpoint);
 bool USB_EP_IsStalled(uint8_t endpoint);
