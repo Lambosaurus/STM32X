@@ -23,36 +23,36 @@ Currently only the STM32L0's and STM32F0's are supported. Other series may be ad
 
 ## Modules
 
-Documentation for each module can be found in [Docs](Docs\\)
+Documentation for each module can be found in [Docs](Docs/)
 
-The [CORE](Docs\CORE.md) module provides a lot of basic functionality, and should be your starting point. Next, [GPIO](Docs\GPIO.md) and [UART](Docs\UART.md) make for good examples of what to expect from this project.
+The [CORE](Docs/CORE.md) module provides a lot of basic functionality, and should be your starting point. Next, [GPIO](Docs/GPIO.md) and [UART](Docs/UART.md) make for good examples of what to expect from this project.
 
 
 ### Basic:
-* [CORE](Docs\CORE.md)
-* [CLK](Docs\CLK.md)
-* [GPIO](Docs\GPIO.md)
+* [CORE](Docs/CORE.md)
+* [CLK](Docs/CLK.md)
+* [GPIO](Docs/GPIO.md)
 
 ### Connectivity:
-* [UART](Docs\UART.md)
-* [SPI](Docs\SPI.md)
-* [I2C](Docs\I2C.md)
-* [CAN](Docs\CAN.md)
-* [USB](Docs\USB.md)
+* [UART](Docs/UART.md)
+* [SPI](Docs/SPI.md)
+* [I2C](Docs/I2C.md)
+* [CAN](Docs/CAN.md)
+* [USB](Docs/USB.md)
 
 ### Analog:
-* [ADC](Docs\ADC.md)
-* [COMP](Docs\COMP.md)
+* [ADC](Docs/ADC.md)
+* [COMP](Docs/COMP.md)
 
 ### Timing:
-* [TIM](Docs\TIM.md)
-* [RTC](Docs\RTC.md)
-* [WDG](Docs\WDG.md)
-* [US](Docs\US.md)
+* [TIM](Docs/TIM.md)
+* [RTC](Docs/RTC.md)
+* [WDG](Docs/WDG.md)
+* [US](Docs/US.md)
 
 ### Storage:
-* [FLASH](Docs\FLASH.md)
-* [EEPROM](Docs\EEPROM.md)
+* [FLASH](Docs/FLASH.md)
+* [EEPROM](Docs/EEPROM.md)
 
 ### Misc:
-* [CRC](Docs\CRC.md)
+* [CRC](Docs/CRC.md)
