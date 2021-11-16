@@ -32,15 +32,15 @@
 #define CDC_PACKET_SIZE								USB_PACKET_SIZE
 #define CDC_CMD_PACKET_SIZE                         8
 
-#define CDC_SEND_ENCAPSULATED_COMMAND               0x00U
-#define CDC_GET_ENCAPSULATED_RESPONSE               0x01U
-#define CDC_SET_COMM_FEATURE                        0x02U
-#define CDC_GET_COMM_FEATURE                        0x03U
-#define CDC_CLEAR_COMM_FEATURE                      0x04U
-#define CDC_SET_LINE_CODING                         0x20U
-#define CDC_GET_LINE_CODING                         0x21U
-#define CDC_SET_CONTROL_LINE_STATE                  0x22U
-#define CDC_SEND_BREAK                              0x23U
+#define CDC_SEND_ENCAPSULATED_COMMAND               0x00
+#define CDC_GET_ENCAPSULATED_RESPONSE               0x01
+#define CDC_SET_COMM_FEATURE                        0x02
+#define CDC_GET_COMM_FEATURE                        0x03
+#define CDC_CLEAR_COMM_FEATURE                      0x04
+#define CDC_SET_LINE_CODING                         0x20
+#define CDC_GET_LINE_CODING                         0x21
+#define CDC_SET_CONTROL_LINE_STATE                  0x22
+#define CDC_SEND_BREAK                              0x23
 
 
 /*

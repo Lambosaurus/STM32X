@@ -171,7 +171,7 @@ void USB_CTL_HandleSetup(uint8_t * data)
 	}
 }
 
-void USB_CTL_Send(uint8_t * data, uint16_t size)
+void USB_CTL_Send(const uint8_t * data, uint16_t size)
 {
 	gCTL.ctl_state = CTL_STATE_DATA_IN;
 	USB_EP_Write(CTL_IN_EP, data, size);
@@ -451,7 +451,7 @@ static void USB_CTL_GetStatus(USB_SetupRequest_t * req)
 	case USB_STATE_DEFAULT:
 	case USB_STATE_ADDRESSED:
 	case USB_STATE_CONFIGURED:
-		if (req->wLength == 0x2U)
+		if (req->wLength == 2)
 		{
 #ifdef USB_SELF_POWERED
 			uint16_t status = USB_CONFIG_SELF_POWERED;
