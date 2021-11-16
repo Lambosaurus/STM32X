@@ -74,6 +74,7 @@ typedef struct
 static void USB_CDC_Control(uint8_t cmd, uint8_t* data, uint16_t length);
 static void USB_CDC_Receive(uint32_t count);
 static void USB_CDC_TransmitDone(uint32_t count);
+static void USB_CDC_CtlRxReady(void);
 
 /*
  * PRIVATE VARIABLES
@@ -234,15 +235,6 @@ uint32_t USB_CDC_Read(uint8_t * data, uint32_t count)
 	return count;
 }
 
-void USB_CDC_CtlRxReady(void)
-{
-	if (gCDC.cmd.opcode != 0xFF)
-	{
-		USB_CDC_Control(gCDC.cmd.opcode, (uint8_t *)gCDC.cmd.data,  gCDC.cmd.size);
-		gCDC.cmd.opcode = 0xFF;
-	}
-}
-
 void USB_CDC_Setup(USB_SetupRequest_t * req)
 {
 	if (req->wLength)
@@ -256,7 +248,7 @@ void USB_CDC_Setup(USB_SetupRequest_t * req)
 		{
 			gCDC.cmd.opcode = req->bRequest;
 			gCDC.cmd.size = req->wLength;
-			USB_CTL_Receive((uint8_t *)gCDC.cmd.data, req->wLength);
+			USB_CTL_Receive((uint8_t *)gCDC.cmd.data, req->wLength, USB_CDC_CtlRxReady);
 		}
 	}
 	else
@@ -268,6 +260,15 @@ void USB_CDC_Setup(USB_SetupRequest_t * req)
 /*
  * PRIVATE FUNCTIONS
  */
+
+static void USB_CDC_CtlRxReady(void)
+{
+	if (gCDC.cmd.opcode != 0xFF)
+	{
+		USB_CDC_Control(gCDC.cmd.opcode, (uint8_t *)gCDC.cmd.data,  gCDC.cmd.size);
+		gCDC.cmd.opcode = 0xFF;
+	}
+}
 
 static void USB_CDC_Control(uint8_t cmd, uint8_t* data, uint16_t length)
 {

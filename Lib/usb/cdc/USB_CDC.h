@@ -36,7 +36,6 @@
 // These should be referenced in USB_Class.h
 void USB_CDC_Init(uint8_t config);
 void USB_CDC_Deinit(void);
-void USB_CDC_CtlRxReady(void);
 void USB_CDC_Setup(USB_SetupRequest_t * req);
 
 // Interface to user
