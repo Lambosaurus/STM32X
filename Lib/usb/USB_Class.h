@@ -20,7 +20,7 @@
 #define USB_CLASS_SETUP(request) 		USB_CDC_Setup(request)
 
 #define USB_ENDPOINTS					USB_CDC_ENDPOINTS
-#define USB_INTERFACES					USB_CDC_ENDPOINTS
+#define USB_INTERFACES					USB_CDC_INTERFACES
 
 #elif defined(USB_CLASS_MSC)
 #include "msc/USB_MSC.h"
