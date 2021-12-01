@@ -24,12 +24,12 @@
  */
 
 uint32_t FLASH_GetPageCount(void);
-uint32_t * FLASH_GetPage(uint32_t page);
+const uint32_t * FLASH_GetPage(uint32_t page);
 
 // The erase is expected to target a page start address
-void FLASH_Erase(uint32_t * address);
+void FLASH_Erase(const uint32_t * address);
 // Take care with writes: if not aligned to the series flash word sizes, they may be lost.
-void FLASH_Write(uint32_t * address, const uint32_t * data, uint32_t size);
+void FLASH_Write(const uint32_t * address, const uint32_t * data, uint32_t size);
 
 /*
  * EXTERN DECLARATIONS

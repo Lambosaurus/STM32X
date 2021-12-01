@@ -66,19 +66,19 @@ uint32_t FLASH_GetPageCount(void)
 	return FLASH_PAGE_COUNT();
 }
 
-uint32_t * FLASH_GetPage(uint32_t page)
+const uint32_t * FLASH_GetPage(uint32_t page)
 {
-	return (uint32_t *)(FLASH_BASE + (FLASH_PAGE_SIZE * page));
+	return (const uint32_t *)(FLASH_BASE + (FLASH_PAGE_SIZE * page));
 }
 
-void FLASH_Erase(uint32_t * address)
+void FLASH_Erase(const uint32_t * address)
 {
 	FLASH_Unlock();
 	_FLASH_SET_CR(_FLASH_CR_ERASE);
 
 #if defined(STM32L0)
 	// Write 0 to the first word of the page to erase
-	*address = 0;
+	*((uint32_t *)address) = 0;
 #elif defined(STM32F0)
     FLASH->AR = (uint32_t)address;
     _FLASH_SET_CR(FLASH_CR_STRT);
@@ -89,7 +89,7 @@ void FLASH_Erase(uint32_t * address)
 	FLASH_Lock();
 }
 
-void FLASH_Write(uint32_t * address, const uint32_t * data, uint32_t size)
+void FLASH_Write(const uint32_t * address, const uint32_t * data, uint32_t size)
 {
 	uint32_t dest = (uint32_t)address;
 	const void * data_head = data;

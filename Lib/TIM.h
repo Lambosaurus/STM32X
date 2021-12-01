@@ -72,6 +72,9 @@ extern TIM_t * TIM_2;
 #ifdef TIM3_ENABLE
 extern TIM_t * TIM_3;
 #endif
+#ifdef TIM5_ENABLE
+extern TIM_t * TIM_5;
+#endif
 #ifdef TIM6_ENABLE
 extern TIM_t * TIM_6;
 #endif

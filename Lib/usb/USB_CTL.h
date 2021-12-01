@@ -22,8 +22,8 @@ void USB_CTL_Deinit(void);
 void USB_CTL_HandleSetup(uint8_t * data);
 
 // Required by classes to reply to EP0 requests
-void USB_CTL_Send(uint8_t * data, uint16_t size);
-void USB_CTL_Receive(uint8_t * data, uint16_t size);
+void USB_CTL_Send(const uint8_t * data, uint16_t size);
+void USB_CTL_Receive(uint8_t * data, uint16_t size, VoidFunction_t callback);
 
 /*
  * EXTERN DECLARATIONS

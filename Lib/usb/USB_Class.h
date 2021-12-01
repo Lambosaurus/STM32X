@@ -15,15 +15,12 @@
 #define USB_CLASS_PROTOCOLID			USB_CDC_PROTOCOLID
 #define USB_CLASS_DEVICE_DESCRIPTOR 	USB_CDC_CONFIG_DESC
 
-
 #define USB_CLASS_INIT(config)			USB_CDC_Init(config)
 #define USB_CLASS_DEINIT()				USB_CDC_Deinit()
 #define USB_CLASS_SETUP(request) 		USB_CDC_Setup(request)
-#define USB_CLASS_CTL_RXREADY()			USB_CDC_CtlRxReady()
-//#define USB_CLASS_CTL_TXDONE
 
 #define USB_ENDPOINTS					USB_CDC_ENDPOINTS
-#define USB_INTERFACES					USB_CDC_ENDPOINTS
+#define USB_INTERFACES					USB_CDC_INTERFACES
 
 #elif defined(USB_CLASS_MSC)
 #include "msc/USB_MSC.h"

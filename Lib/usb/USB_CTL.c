@@ -91,6 +91,7 @@ static struct {
 	uint8_t ctl_state;
 	uint16_t ctl_len;
 	uint8_t buffer[CTL_BUFFER_SIZE];
+	VoidFunction_t rx_callback;
 } gCTL;
 
 __ALIGNED(4) const uint8_t cUsbDeviceDescriptor[USB_LEN_DEV_DESC] =
@@ -170,14 +171,15 @@ void USB_CTL_HandleSetup(uint8_t * data)
 	}
 }
 
-void USB_CTL_Send(uint8_t * data, uint16_t size)
+void USB_CTL_Send(const uint8_t * data, uint16_t size)
 {
 	gCTL.ctl_state = CTL_STATE_DATA_IN;
 	USB_EP_Write(CTL_IN_EP, data, size);
 }
 
-void USB_CTL_Receive(uint8_t * data, uint16_t size)
+void USB_CTL_Receive(uint8_t * data, uint16_t size, VoidFunction_t callback)
 {
+	gCTL.rx_callback = callback;
 	gCTL.ctl_state = CTL_STATE_DATA_OUT;
 	USB_EP_Read(CTL_OUT_EP, data, size);
 }
@@ -449,7 +451,7 @@ static void USB_CTL_GetStatus(USB_SetupRequest_t * req)
 	case USB_STATE_DEFAULT:
 	case USB_STATE_ADDRESSED:
 	case USB_STATE_CONFIGURED:
-		if (req->wLength == 0x2U)
+		if (req->wLength == 2)
 		{
 #ifdef USB_SELF_POWERED
 			uint16_t status = USB_CONFIG_SELF_POWERED;
@@ -629,12 +631,7 @@ static void USB_CTL_DataOut(uint32_t count)
 	switch (gCTL.ctl_state)
 	{
 	case CTL_STATE_DATA_OUT:
-#ifdef USB_CLASS_CTL_RXREADY
-		if (gCTL.usb_state == USB_STATE_CONFIGURED)
-		{
-			USB_CLASS_CTL_RXREADY();
-		}
-#endif
+		gCTL.rx_callback();
 		USB_CTL_SendStatus();
 		break;
 	case CTL_STATE_STATUS_OUT:
