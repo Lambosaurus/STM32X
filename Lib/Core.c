@@ -80,8 +80,12 @@ void CORE_Init(void)
 #endif
 }
 
-void CORE_Idle(void)
+void __attribute__ ((noinline)) CORE_Idle(void)
 {
+	// The push and pop of this function protects r0 from being clobbered during interrupt.
+	// I do not understand why this is not preserved by the IRQ's push/pop.
+	// If this function is inlined - then the usually pushed registers can get clobbered when returning from WFI.
+
 	// As long as systick is on, this will at least return each millisecond.
 	__WFI();
 }
