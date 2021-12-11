@@ -21,9 +21,6 @@
 #define USB_MSC_CONFIG_DESC_SIZE		32
 #define USB_MSC_CONFIG_DESC				cUSB_MSC_ConfigDescriptor
 
-#define MSC_IN_EP                       0x81
-#define MSC_OUT_EP                      0x01
-
 /*
  * PUBLIC TYPES
  */

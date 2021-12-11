@@ -7,7 +7,22 @@
  * PUBLIC DEFINITIONS
  */
 
-#if defined(USB_CLASS_CDC)
+#if defined(USB_CLASS_COMPOSITE)
+#include "USB_Composite.h"
+
+#define USB_CLASS_CLASSID				USB_COMPOSITE_CLASSID
+#define USB_CLASS_SUBCLASSID			USB_COMPOSITE_SUBCLASSID
+#define USB_CLASS_PROTOCOLID			USB_COMPOSITE_PROTOCOLID
+
+#define USB_CLASS_INIT(config)			USB_Composite_Init(config)
+#define USB_CLASS_DEINIT()				USB_Composite_Deinit()
+#define USB_CLASS_SETUP(request) 		USB_Composite_Setup(request)
+
+#define USB_CONFIG_DESCRIPTOR 			USB_COMPOSITE_CONFIG_DESC
+#define USB_ENDPOINTS					USB_COMPOSITE_ENDPOINTS
+#define USB_INTERFACES					USB_COMPOSITE_INTERFACES
+
+#elif defined(USB_CLASS_CDC)
 #include "cdc/USB_CDC.h"
 
 #define USB_CLASS_CLASSID				USB_CDC_CLASSID

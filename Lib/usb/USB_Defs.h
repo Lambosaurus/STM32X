@@ -247,4 +247,9 @@ typedef struct usb_setup_req
 } USB_SetupRequest_t;
 
 
+#ifdef USB_CLASS_COMPOSITE
+// USB Composite is needed by other classes so USB_Composite can override their base interfaces and endpoints.
+#include "USB_Composite.h"
+#endif
+
 #endif // USB_DEFS_H
