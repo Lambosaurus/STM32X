@@ -101,7 +101,7 @@ class USBClassInfo():
 
         if self.iad_required:
             # Add an interface association descriptor to combine the interfaces
-            descriptors.insert(0, "USB_DESC_BLOCK_INTERFACE_ASSOCIATION({}, {}, {}, {}, {}),".format(
+            descriptors.insert(0, "USB_DESC_BLOCK_INTERFACE_ASSOCIATION({}, {}, {}, {}, {})".format(
                 self.interface_base, self.interfaces, self.class_id, self.subclass_id, self.protocol_id
             ))
             size += IAD_DESCRIPTOR_SIZE
