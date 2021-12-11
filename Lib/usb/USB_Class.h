@@ -48,6 +48,17 @@
 #define USB_ENDPOINTS					USB_MSC_ENDPOINTS
 #define USB_INTERFACES					USB_MSC_INTERFACES
 
+#elif defined(USB_CLASS_HID)
+#include "hid/USB_HID.h"
+
+#define USB_CLASS_INIT(config)			USB_HID_Init(config)
+#define USB_CLASS_DEINIT()				USB_HID_Deinit()
+#define USB_CLASS_SETUP(request) 		USB_HID_Setup(request)
+
+#define USB_CONFIG_DESCRIPTOR 			USB_HID_CONFIG_DESC
+#define USB_ENDPOINTS					USB_HID_ENDPOINTS
+#define USB_INTERFACES					USB_HID_INTERFACES
+
 #else
 #error "No USB Class defined"
 #endif
