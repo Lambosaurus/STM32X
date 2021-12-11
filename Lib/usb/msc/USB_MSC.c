@@ -13,6 +13,23 @@
  * PRIVATE DEFINITIONS
  */
 
+
+// Having adjustable endpoint and interface offsets is required for composite device support
+#ifndef USB_MSC_ENDPOINT_BASE
+#define USB_MSC_ENDPOINT_BASE				1
+#endif
+
+#ifndef USB_MSC_INTERFACE_BASE
+#define USB_MSC_INTERFACE_BASE				0
+#endif
+
+#define IN_EP(n)							((USB_MSC_ENDPOINT_BASE + n) | 0x80)
+#define OUT_EP(n)							(USB_MSC_ENDPOINT_BASE + n)
+
+#define MSC_IN_EP                       	IN_EP(0)
+#define MSC_OUT_EP                     		OUT_EP(0)
+
+
 #define MSC_PACKET_SIZE						USB_PACKET_SIZE
 
 #define MSC_CBW_SIGNATURE             		0x43425355U
@@ -65,7 +82,7 @@ __ALIGNED(4) const uint8_t cUSB_MSC_ConfigDescriptor[USB_MSC_CONFIG_DESC_SIZE] =
 			0x01
 			),
 	USB_DESCR_BLOCK_INTERFACE(
-			0x00,
+			USB_MSC_INTERFACE_BASE,
 			0x02, // 2 endpoints used
 			0x08, // Mass Storage Class
 			0x06, // SCSI transparent
