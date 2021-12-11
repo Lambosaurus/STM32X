@@ -516,8 +516,8 @@ static void USB_CTL_GetDescriptor(USB_SetupRequest_t * req)
 		break;
 
 	case USB_DESC_TYPE_CONFIGURATION:
-		data = (uint8_t *)USB_CLASS_DEVICE_DESCRIPTOR;
-		len = sizeof(USB_CLASS_DEVICE_DESCRIPTOR);
+		data = (uint8_t *)USB_CONFIG_DESCRIPTOR;
+		len = sizeof(USB_CONFIG_DESCRIPTOR);
 		break;
 
 	case USB_DESC_TYPE_STRING:

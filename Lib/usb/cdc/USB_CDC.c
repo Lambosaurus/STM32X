@@ -24,9 +24,21 @@
 #endif
 
 
-#define CDC_IN_EP                                   0x81
-#define CDC_OUT_EP                                  0x01
-#define CDC_CMD_EP                                  0x82
+// Having adjustable endpoint and interface offsets is required for composite device support
+#ifndef USB_CDC_ENDPOINT_BASE
+#define USB_CDC_ENDPOINT_BASE						1
+#endif
+
+#ifndef USB_CDC_INTERFACE_BASE
+#define USB_CDC_INTERFACE_BASE						0
+#endif
+
+#define IN_EP(n)									((USB_CDC_ENDPOINT_BASE + n) | 0x80)
+#define OUT_EP(n)									(USB_CDC_ENDPOINT_BASE + n)
+
+#define CDC_IN_EP                                   IN_EP(0)
+#define CDC_OUT_EP                                  OUT_EP(0)
+#define CDC_CMD_EP                                  OUT_EP(1)
 
 #define CDC_BINTERVAL                          		0x10
 #define CDC_PACKET_SIZE								USB_PACKET_SIZE
@@ -89,7 +101,7 @@ __ALIGNED(4) const uint8_t cUSB_CDC_ConfigDescriptor[USB_CDC_CONFIG_DESC_SIZE] =
 			0x01
 	),
 	USB_DESCR_BLOCK_INTERFACE(
-		  0x00,
+		  USB_CDC_INTERFACE_BASE,
 		  0x01, // 1 endpoint used
 		  0x02,	// Communication Interface Class
 		  0x02, // Abstract Control Model
@@ -127,7 +139,7 @@ __ALIGNED(4) const uint8_t cUSB_CDC_ConfigDescriptor[USB_CDC_CONFIG_DESC_SIZE] =
 	USB_DESCR_BLOCK_ENDPOINT(CDC_CMD_EP, 0x03, CDC_CMD_PACKET_SIZE, CDC_BINTERVAL),
 
 	USB_DESCR_BLOCK_INTERFACE(
-		  0x01,
+		  USB_CDC_INTERFACE_BASE + 1,
 		  0x02, // 2 endpoints used
 		  0x0A,	// Communication Device Class
 		  0x00, // Abstract Control Model
