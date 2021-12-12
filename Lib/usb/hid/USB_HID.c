@@ -5,7 +5,7 @@
 #include "../USB_EP.h"
 #include "../USB_CTL.h"
 
-#include <string.h>
+#include "HID_Defs.h"
 
 
 /*
@@ -48,13 +48,46 @@ static void USB_HID_Receive(uint32_t count);
  * PRIVATE VARIABLES
  */
 
-#define USB_HID_REPORT_DESC_SIZE			0x30
+#define USB_HID_REPORT_DESC_SIZE			50
 
 
 __ALIGNED(4) const uint8_t cUSB_HID_ReportDescriptor[USB_HID_REPORT_DESC_SIZE] =
 {
+	USAGE_PAGE(PAGE_GENERIC_DESKTOP),
+	USAGE(USAGE_MOUSE),
+	COLLECTION(COLLECTION_APPLICATION),
+		USAGE(USAGE_POINTER),
+		COLLECTION(COLLECTION_PHYSICAL),
 
+			// 3 buttons
+			USAGE_PAGE(PAGE_BUTTON),
+			USAGE_MINIMUM(1),
+			USAGE_MAXIMUM(3),
+			LOGICAL_MINIMUM(0),
+			LOGICAL_MAXIMUM(1),
+			REPORT_COUNT(3),
+			REPORT_SIZE(1),
+			INPUT(IO_VARIABLE),
+
+			// 5 pad bits
+			REPORT_COUNT(1),
+			REPORT_SIZE(5),
+			INPUT(IO_CONST | IO_VARIABLE),
+
+			// An X,Y relative position
+			USAGE_PAGE(PAGE_GENERIC_DESKTOP),
+			USAGE(USAGE_X),
+			USAGE(USAGE_Y),
+			LOGICAL_MINIMUM(-127),
+			LOGICAL_MAXIMUM(127),
+			REPORT_SIZE(8),
+			REPORT_COUNT(2),
+			INPUT(IO_VARIABLE | IO_RELATIVE),
+
+		END_COLLECTION(),
+	END_COLLECTION(),
 };
+
 
 __ALIGNED(4) const uint8_t cUSB_HID_ConfigDescriptor[USB_HID_CONFIG_DESC_SIZE] =
 {
@@ -77,15 +110,26 @@ __ALIGNED(4) const uint8_t cUSB_HID_ConfigDescriptor[USB_HID_CONFIG_DESC_SIZE] =
 	USB_DESCR_BLOCK_ENDPOINT( HID_OUT_EP, 0x03, HID_PACKET_SIZE, HID_INTERVAL),
 };
 
+
+static struct {
+	bool isBusy;
+	uint8_t rx[10];
+} gHid;
+
+
 /*
  * PUBLIC FUNCTIONS
  */
 
 void USB_HID_Init(uint8_t config)
 {
+	gHid.isBusy = false;
+
 	// Data endpoints
 	USB_EP_Open(HID_IN_EP, USB_EP_TYPE_INTR, HID_PACKET_SIZE, USB_HID_TransmitDone);
 	USB_EP_Open(HID_OUT_EP, USB_EP_TYPE_INTR, HID_PACKET_SIZE, USB_HID_Receive);
+
+	USB_EP_Read(HID_OUT_EP, gHid.rx, sizeof(gHid.rx));
 }
 
 void USB_HID_Deinit(void)
@@ -107,18 +151,141 @@ void USB_HID_Setup(USB_SetupRequest_t * req)
 	return;
 }
 
+void USB_HID_Report(HID_Report_t * report)
+{
+	if (!gHid.isBusy)
+	{
+		gHid.isBusy = true;
+		USB_EP_Write(HID_IN_EP, (uint8_t*)report, 3);
+	}
+}
+
+/*
+ * static uint8_t  USBD_HID_Setup(USBD_HandleTypeDef *pdev,
+                               USBD_SetupReqTypedef *req)
+{
+  USBD_HID_HandleTypeDef *hhid = (USBD_HID_HandleTypeDef *) pdev->pClassData;
+  uint16_t len = 0U;
+  uint8_t *pbuf = NULL;
+  uint16_t status_info = 0U;
+  USBD_StatusTypeDef ret = USBD_OK;
+
+  switch (req->bmRequest & USB_REQ_TYPE_MASK)
+  {
+    case USB_REQ_TYPE_CLASS :
+      switch (req->bRequest)
+      {
+        case HID_REQ_SET_PROTOCOL:
+          hhid->Protocol = (uint8_t)(req->wValue);
+          break;
+
+        case HID_REQ_GET_PROTOCOL:
+          USBD_CtlSendData(pdev, (uint8_t *)(void *)&hhid->Protocol, 1U);
+          break;
+
+        case HID_REQ_SET_IDLE:
+          hhid->IdleState = (uint8_t)(req->wValue >> 8);
+          break;
+
+        case HID_REQ_GET_IDLE:
+          USBD_CtlSendData(pdev, (uint8_t *)(void *)&hhid->IdleState, 1U);
+          break;
+
+        default:
+          USBD_CtlError(pdev, req);
+          ret = USBD_FAIL;
+          break;
+      }
+      break;
+    case USB_REQ_TYPE_STANDARD:
+      switch (req->bRequest)
+      {
+        case USB_REQ_GET_STATUS:
+          if (pdev->dev_state == USBD_STATE_CONFIGURED)
+          {
+            USBD_CtlSendData(pdev, (uint8_t *)(void *)&status_info, 2U);
+          }
+          else
+          {
+            USBD_CtlError(pdev, req);
+            ret = USBD_FAIL;
+          }
+          break;
+
+        case USB_REQ_GET_DESCRIPTOR:
+          if (req->wValue >> 8 == HID_REPORT_DESC)
+          {
+            len = MIN(HID_MOUSE_REPORT_DESC_SIZE, req->wLength);
+            pbuf = HID_MOUSE_ReportDesc;
+          }
+          else if (req->wValue >> 8 == HID_DESCRIPTOR_TYPE)
+          {
+            pbuf = USBD_HID_Desc;
+            len = MIN(USB_HID_DESC_SIZ, req->wLength);
+          }
+          else
+          {
+            USBD_CtlError(pdev, req);
+            ret = USBD_FAIL;
+            break;
+          }
+          USBD_CtlSendData(pdev, pbuf, len);
+          break;
+
+        case USB_REQ_GET_INTERFACE :
+          if (pdev->dev_state == USBD_STATE_CONFIGURED)
+          {
+            USBD_CtlSendData(pdev, (uint8_t *)(void *)&hhid->AltSetting, 1U);
+          }
+          else
+          {
+            USBD_CtlError(pdev, req);
+            ret = USBD_FAIL;
+          }
+          break;
+
+        case USB_REQ_SET_INTERFACE :
+          if (pdev->dev_state == USBD_STATE_CONFIGURED)
+          {
+            hhid->AltSetting = (uint8_t)(req->wValue);
+          }
+          else
+          {
+            USBD_CtlError(pdev, req);
+            ret = USBD_FAIL;
+          }
+          break;
+
+        default:
+          USBD_CtlError(pdev, req);
+          ret = USBD_FAIL;
+          break;
+      }
+      break;
+
+    default:
+      USBD_CtlError(pdev, req);
+      ret = USBD_FAIL;
+      break;
+  }
+
+  return ret;
+}
+ */
+
 /*
  * PRIVATE FUNCTIONS
  */
 
 static void USB_HID_TransmitDone(uint32_t count)
 {
-
+	 gHid.isBusy = false;
 }
 
 static void USB_HID_Receive(uint32_t count)
 {
 
+	USB_EP_Read(HID_OUT_EP, gHid.rx, sizeof(gHid.rx));
 }
 
 static void USB_HID_GetDescriptor(USB_SetupRequest_t * req)
