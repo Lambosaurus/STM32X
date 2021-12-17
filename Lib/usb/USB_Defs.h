@@ -134,6 +134,8 @@
 #define  USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION        0x07
 #define  USB_DESC_TYPE_INTERFACE_ASSOCIATION			0x0B
 #define  USB_DESC_TYPE_BOS                              0x0F
+#define  USB_DESC_TYPE_HID								0x21
+#define  USB_DESC_TYPE_HID_REPORT						0x22
 
 
 /*
@@ -231,6 +233,33 @@
 	bFunctionSubClass,					\
 	bFunctionProtocol,					\
 	0x00
+
+
+/*
+ * Descriptor blocks for describing a HID descriptor
+ *  bLength:                           0x09
+ *  bDescriptorType:                   0x21
+ *  bcdHID:                            0x0111
+ *  bCountryCode:                      0x00
+ *  bNumDescriptors:                   0x01
+ *  bDescriptorType:                   0x22 (Report Descriptor)
+ *  wDescriptorLength:                 0x0097
+ */
+#define USB_DESCR_BLOCK_HID(wDescriptorLength)	\
+	0x09,							\
+	USB_DESC_TYPE_HID,				\
+	0x11,							\
+	0x01,							\
+	0x00,							\
+	0x01,							\
+	USB_DESC_TYPE_HID_REPORT, 		\
+	LOBYTE(wDescriptorLength),		\
+	HIBYTE(wDescriptorLength)
+
+
+
+
+
 
 
 /*
