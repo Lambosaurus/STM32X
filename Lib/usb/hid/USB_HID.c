@@ -6,7 +6,8 @@
 #include "../USB_CTL.h"
 
 #include "HID_Defs.h"
-
+#include "Core.h"
+#include <string.h>
 
 /*
  * PRIVATE DEFINITIONS
@@ -32,6 +33,17 @@
 
 #define HID_INTERVAL						0x01
 
+
+
+#define HID_REQ_SET_PROTOCOL          0x0B
+#define HID_REQ_GET_PROTOCOL          0x03
+
+#define HID_REQ_SET_IDLE              0x0A
+#define HID_REQ_GET_IDLE              0x02
+
+#define HID_REQ_SET_REPORT            0x09
+#define HID_REQ_GET_REPORT            0x01
+
 /*
  * PRIVATE TYPES
  */
@@ -48,44 +60,9 @@ static void USB_HID_Receive(uint32_t count);
  * PRIVATE VARIABLES
  */
 
-#define USB_HID_REPORT_DESC_SIZE			50
-
-
 __ALIGNED(4) const uint8_t cUSB_HID_ReportDescriptor[USB_HID_REPORT_DESC_SIZE] =
 {
-	USAGE_PAGE(PAGE_GENERIC_DESKTOP),
-	USAGE(USAGE_MOUSE),
-	COLLECTION(COLLECTION_APPLICATION),
-		USAGE(USAGE_POINTER),
-		COLLECTION(COLLECTION_PHYSICAL),
-
-			// 3 buttons
-			USAGE_PAGE(PAGE_BUTTON),
-			USAGE_MINIMUM(1),
-			USAGE_MAXIMUM(3),
-			LOGICAL_MINIMUM(0),
-			LOGICAL_MAXIMUM(1),
-			REPORT_COUNT(3),
-			REPORT_SIZE(1),
-			INPUT(IO_VARIABLE),
-
-			// 5 pad bits
-			REPORT_COUNT(1),
-			REPORT_SIZE(5),
-			INPUT(IO_CONST | IO_VARIABLE),
-
-			// An X,Y relative position
-			USAGE_PAGE(PAGE_GENERIC_DESKTOP),
-			USAGE(USAGE_X),
-			USAGE(USAGE_Y),
-			LOGICAL_MINIMUM(-127),
-			LOGICAL_MAXIMUM(127),
-			REPORT_SIZE(8),
-			REPORT_COUNT(2),
-			INPUT(IO_VARIABLE | IO_RELATIVE),
-
-		END_COLLECTION(),
-	END_COLLECTION(),
+	USB_HID_REPORT_DESC_BODY
 };
 
 
@@ -291,7 +268,7 @@ static void USB_HID_Receive(uint32_t count)
 static void USB_HID_GetDescriptor(USB_SetupRequest_t * req)
 {
 	uint8_t type = HIBYTE(req->wValue);
-	uint8_t index = LOBYTE(req->wValue);
+	//uint8_t index = LOBYTE(req->wValue);
 
 	uint16_t len = 0;
 	const uint8_t * data = NULL;

@@ -4,6 +4,14 @@
 #include "STM32X.h"
 #include "../USB_Defs.h"
 
+#ifdef USB_CLASS_HID
+
+#ifdef USB_HID_MOUSE
+#include "devices/HID_Mouse.h"
+#else
+#error "No HID device type defined"
+#endif
+
 /*
  * FUNCTIONAL TESTING
  * STM32L0: N
@@ -24,12 +32,6 @@
  * PUBLIC TYPES
  */
 
-typedef struct {
-	uint8_t buttons;
-	int8_t x;
-	int8_t y;
-} HID_Report_t;
-
 /*
  * PUBLIC FUNCTIONS
  */
@@ -40,7 +42,7 @@ void USB_HID_Init(uint8_t config);
 void USB_HID_Deinit(void);
 void USB_HID_Setup(USB_SetupRequest_t * req);
 
-void USB_HID_Report(HID_Report_t * report);
+void USB_HID_Report(USB_HID_Report_t * report);
 
 /*
  * EXTERN DECLARATIONS
@@ -49,4 +51,5 @@ void USB_HID_Report(HID_Report_t * report);
 extern const uint8_t cUSB_HID_ConfigDescriptor[USB_HID_CONFIG_DESC_SIZE];
 
 
+#endif //USB_CLASS_HID
 #endif //USB_MSC_H
