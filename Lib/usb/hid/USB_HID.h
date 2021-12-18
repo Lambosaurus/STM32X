@@ -14,8 +14,17 @@
 
 /*
  * FUNCTIONAL TESTING
- * STM32L0: N
+ * STM32L0: Y
  * STM32F0: N
+ */
+
+
+/*
+ * TODO:
+ * 	Boot protocols are not yet implemented.
+ *  Multiple reports are not yet implemented.
+ *  Keyboard, Gamepad & Custom devices are not yet implemented.
+ *  Mouse with scroll wheel would be nice too.
  */
 
 /*
