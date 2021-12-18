@@ -16,9 +16,9 @@
  */
 
 #define USB_MTP_INTERFACES				1
-#define USB_MTP_ENDPOINTS				2
+#define USB_MTP_ENDPOINTS				3
 
-#define USB_MTP_CONFIG_DESC_SIZE		41
+#define USB_MTP_CONFIG_DESC_SIZE		39
 #define USB_MTP_CONFIG_DESC				cUSB_MTP_ConfigDescriptor
 
 /*
