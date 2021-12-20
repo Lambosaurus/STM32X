@@ -5,8 +5,8 @@
 #include "../USB_EP.h"
 #include "../USB_CTL.h"
 
-#include "MTP_Defs.h"
-#include <string.h>
+#include "MTP.h"
+#include "MTP_FS.h"
 
 /*
  * PRIVATE DEFINITIONS
@@ -42,6 +42,7 @@
 
 static void USB_MTP_TransmitDone(uint32_t count);
 static void USB_MTP_Receive(uint32_t count);
+static void USB_MTP_EnterState(MTP_State_t state);
 
 /*
  * PRIVATE VARIABLES
@@ -68,14 +69,21 @@ __ALIGNED(4) const uint8_t cUSB_MTP_ConfigDescriptor[USB_MTP_CONFIG_DESC_SIZE] =
 
 
 static struct {
-	bool isBusy;
+	uint8_t state;
 	MTP_Operation_t operation;
+	MTP_Container_t container;
+	MTP_t * mtp;
 } gMtp;
 
 
 /*
  * PUBLIC FUNCTIONS
  */
+
+void USB_MTP_Mount(MTP_t * mtp)
+{
+	gMtp.mtp = mtp;
+}
 
 void USB_MTP_Init(uint8_t config)
 {
@@ -84,7 +92,8 @@ void USB_MTP_Init(uint8_t config)
 	USB_EP_Open(MTP_OUT_EP, USB_EP_TYPE_BULK, MTP_PACKET_SIZE, USB_MTP_Receive);
 	USB_EP_Open(MTP_CMP_EP, USB_EP_TYPE_INTR, MTP_CMD_SIZE, NULL);
 
-	USB_EP_Read(MTP_OUT_EP, (uint8_t *)(&gMtp.operation), MTP_OPERATION_SIZE);
+	gMtp.state = MTP_Reset(gMtp.mtp);
+	USB_MTP_EnterState(gMtp.state);
 }
 
 void USB_MTP_Deinit(void)
@@ -96,117 +105,69 @@ void USB_MTP_Deinit(void)
 
 void USB_MTP_Setup(USB_SetupRequest_t * req)
 {
+	// TODO .....
 }
 
 /*
  * PRIVATE FUNCTIONS
  */
 
-
-static uint8_t * MTP_Write32(uint8_t * dst, uint32_t value)
-{
-	*dst++ = (uint8_t)(value >> 24);
-	*dst++ = (uint8_t)(value >> 16);
-	*dst++ = (uint8_t)(value >> 8);
-	*dst++ = (uint8_t)(value);
-	return dst;
-}
-
-static uint8_t * MTP_Write16(uint8_t * dst, uint16_t value)
-{
-	*dst++ = (uint8_t)(value >> 8);
-	*dst++ = (uint8_t)(value);
-	return dst;
-}
-
-static uint8_t * MTP_WriteArray32(uint8_t * dst, const uint32_t * array, uint32_t count)
-{
-	dst = MTP_Write32(dst, count);
-	while(count--)
-	{
-		dst = MTP_Write32(dst, *array++);
-	}
-	return dst;
-}
-
-static uint8_t * MTP_WriteArray16(uint8_t * dst, const uint16_t * array, uint32_t count)
-{
-	dst = MTP_Write32(dst, count);
-	while(count--)
-	{
-		dst = MTP_Write16(dst, *array++);
-	}
-	return dst;
-}
-
-static uint8_t * MTP_WriteString(uint8_t * dst, const char * str)
-{
-	uint8_t len = strlen(str);
-
-	// The null character should be written if string is not empty
-	if (len > 0) { len += 1; }
-
-	*dst++ = len;
-
-	while (len--)
-	{
-		// Unicode format
-		*dst++ = *str++;
-		*dst++ = 0;
-	}
-
-	return dst;
-}
-
-static void USB_MTP_GetDeviceInfo(uint8_t * dst)
-{
-	// Standard version: 1.0
-	dst = MTP_Write16(dst, 100);
-	// MTP vendor extension: None
-	dst = MTP_Write32(dst, 0xFFFFFFFF);
-	// MTP version: 1.1
-	dst = MTP_Write32(dst, 110);
-	// MTP extentions: None?
-	dst = MTP_WriteString(dst, "");
-	// Functional mode: Standard
-	dst = MTP_Write16(dst, 0);
-
-	// Supported operations
-	dst = MTP_WriteArray16(dst, NULL, 0);
-	// Supported events
-	dst = MTP_WriteArray16(dst, NULL, 0);
-	// Device properties
-	dst = MTP_WriteArray16(dst, NULL, 0);
-
-	const uint16_t supported_formats[] = { MTP_OBJ_UNDEF };
-
-	// Capture formats (formats emitted by the device)
-	dst = MTP_WriteArray16(dst, supported_formats, LENGTH(supported_formats));
-	// Playback formats (formats supported by the device)
-	dst = MTP_WriteArray16(dst, supported_formats, LENGTH(supported_formats));
-
-	// Manufacturer
-	dst = MTP_WriteString(dst, USB_MANUFACTURER_STRING);
-	// Model
-	dst = MTP_WriteString(dst, USB_PRODUCT_STRING);
-	// Device version
-	dst = MTP_WriteString(dst, "1.0");
-	// Device serial: TODO ...
-	dst = MTP_WriteString(dst, "0000");
-}
-
 static void USB_MTP_TransmitDone(uint32_t count)
 {
-	 gMtp.isBusy = false;
+	switch (gMtp.state)
+	{
+	case MTP_State_TxData:
+		gMtp.state = MTP_NextData(gMtp.mtp, &gMtp.container);
+		break;
+
+	case MTP_State_RxOperation:
+	case MTP_State_RxData:
+		// We should NOT have got here.
+	case MTP_State_TxResponse:
+		// When a response is sent, we await next operation
+		gMtp.state = MTP_State_RxOperation;
+		break;
+	}
+
+	USB_MTP_EnterState(gMtp.state);
 }
 
 static void USB_MTP_Receive(uint32_t count)
 {
-	__BKPT();
+	switch (gMtp.state)
+	{
+	case MTP_State_RxOperation:
+		gMtp.state = MTP_HandleOperation(gMtp.mtp, &gMtp.operation, &gMtp.container);
+		break;
+	case MTP_State_RxData:
+	case MTP_State_TxResponse:
+	case MTP_State_TxData:
+		// Unexpected cases. Await next operation.
+		gMtp.state = MTP_State_RxOperation;
+		break;
+	}
 
-	//USB_EP_Read(MTP_OUT_EP, gHid.rx, sizeof(gHid.rx));
+	USB_MTP_EnterState(gMtp.state);
 }
 
+static void USB_MTP_EnterState(MTP_State_t state)
+{
+	switch (gMtp.state)
+	{
+	case MTP_State_RxOperation:
+		// Await next operations
+		USB_EP_Read(MTP_OUT_EP, (uint8_t *)(&gMtp.operation), MTP_OPERATION_SIZE);
+		break;
+	case MTP_State_RxData:
+		__BKPT(); // Unhandled so far...
+		break;
+	case MTP_State_TxData:
+	case MTP_State_TxResponse:
+		// Pump out the recieved data.
+		USB_EP_Write(MTP_IN_EP, (uint8_t *)(&gMtp.container), gMtp.container.length);
+		break;
+	}
+}
 
 #endif //USB_CLASS_MTP
 

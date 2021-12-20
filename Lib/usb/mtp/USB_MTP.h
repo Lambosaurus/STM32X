@@ -3,6 +3,7 @@
 
 #include "STM32X.h"
 #include "../USB_Defs.h"
+#include "MTP_FS.h"
 
 /*
  * FUNCTIONAL TESTING
@@ -34,6 +35,8 @@
 void USB_MTP_Init(uint8_t config);
 void USB_MTP_Deinit(void);
 void USB_MTP_Setup(USB_SetupRequest_t * req);
+
+void USB_MTP_Mount(MTP_t * mtp);
 
 /*
  * EXTERN DECLARATIONS
