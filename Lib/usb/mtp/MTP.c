@@ -42,7 +42,9 @@ static MTP_State_t MTP_GetObjectHandles(MTP_t * mtp, MTP_Container_t * container
 static MTP_State_t MTP_GetObjectInfo(MTP_t * mtp, MTP_Container_t * container, uint32_t object_id);
 static MTP_State_t MTP_GetObjectPropertiesSupported(MTP_Container_t * container, uint32_t object_type);
 static MTP_State_t MTP_GetObjectPropertyDescriptor(MTP_Container_t * container, uint32_t property_id);
-static MTP_State_t MTP_GetObjectPropertyList(MTP_t * mtp, MTP_Container_t * container, const MTP_Operation_t * op);
+static MTP_State_t MTP_GetObjectPropertyList(MTP_t * mtp, MTP_Container_t * container, uint32_t object_id);
+static MTP_State_t MTP_GetObjectPropertyValue(MTP_t * mtp, MTP_Container_t * container, uint32_t object_id, uint32_t property_id);
+static MTP_State_t MTP_GetObject(MTP_t * mtp, MTP_Container_t * container, uint32_t object_id);
 static MTP_State_t MTP_GetObjectReferences(MTP_t * mtp, MTP_Container_t * container, uint32_t object_id);
 static MTP_State_t MTP_OpenSession(MTP_t * mtp, MTP_Container_t * container);
 
@@ -106,11 +108,13 @@ MTP_State_t MTP_HandleOperation(MTP_t * mtp, MTP_Operation_t * op, MTP_Container
 		return MTP_GetObjectPropertyDescriptor(container, op->param[0]);
 
 	case MTP_OP_GET_OBJECT_PROPLIST:
-		return MTP_GetObjectPropertyList(mtp, container, op);
+		return MTP_GetObjectPropertyList(mtp, container, op->param[0]);
 
 	case MTP_OP_GET_OBJECT_PROP_VALUE:
-		//USBD_MTP_OPT_GetObjectPropValue(pdev);
-		//hmtp->MTP_ResponsePhase = MTP_RESPONSE_PHASE;
+		return MTP_GetObjectPropertyValue(mtp, container, op->param[0], op->param[1]);
+
+	case MTP_OP_SET_OBJECT_PROP_VALUE:
+		__BKPT();
 		break;
 
 	case MTP_OP_GET_DEVICE_PROP_DESC:
@@ -118,9 +122,7 @@ MTP_State_t MTP_HandleOperation(MTP_t * mtp, MTP_Operation_t * op, MTP_Container
 		//return MTP_GetDevicePropertyDescriptor(container);
 
 	case MTP_OP_GET_OBJECT:
-		//USBD_MTP_OPT_GetObject(pdev);
-		//hmtp->MTP_ResponsePhase = MTP_READ_DATA;
-		break;
+		return MTP_GetObject(mtp, container, op->param[0]);
 
 	case MTP_OP_SEND_OBJECT_INFO:
 		//USBD_MTP_OPT_SendObjectInfo(pdev, (uint8_t *)(hmtp->rx_buff), MTP_DataLength.prv_len);
@@ -183,8 +185,6 @@ static MTP_State_t MTP_OpenSession(MTP_t * mtp, MTP_Container_t * container)
 }
 
 
-//*
-
 static const uint16_t cSuppOps[] = { MTP_OP_GET_DEVICE_INFO, MTP_OP_OPEN_SESSION, MTP_OP_CLOSE_SESSION,
                                    MTP_OP_GET_STORAGE_IDS, MTP_OP_GET_STORAGE_INFO, MTP_OP_GET_NUM_OBJECTS,
                                    MTP_OP_GET_OBJECT_HANDLES, MTP_OP_GET_OBJECT_INFO, MTP_OP_GET_OBJECT,
@@ -221,37 +221,22 @@ static const uint16_t cSuppImgFormat[] = {MTP_OBJ_FORMAT_UNDEFINED, MTP_OBJ_FORM
 static MTP_State_t MTP_GetDeviceInfo(MTP_Container_t * container)
 {
 	uint8_t * dst = container->data;
-	// Standard version: 1.0
-	dst = MTP_Write16(dst, 100);
-	// MTP vendor extension: None
-	dst = MTP_Write32(dst, 0x06);
-	// MTP version: 1.0
-	dst = MTP_Write16(dst, 100);
-	// MTP extentions: windows compatability garbage.....
-	dst = MTP_WriteString(dst, "microsoft.com: 1.0; ");
-	// Functional mode: Standard
-	dst = MTP_Write16(dst, 0);
 
-	// Supported operations
-	dst = MTP_WriteArray16(dst, cSuppOps, LENGTH(cSuppOps));
-	// Supported events
-	dst = MTP_WriteArray16(dst, cSuppEvents, LENGTH(cSuppEvents));
-	// Device properties
-	dst = MTP_WriteArray16(dst, NULL, 0);
+	dst = MTP_Write16(dst, 100); // Standard version: 1.0
+	dst = MTP_Write32(dst, 0x06); // MTP vendor extension: None
+	dst = MTP_Write16(dst, 100); // MTP version: 1.0
+	dst = MTP_WriteString(dst, "microsoft.com: 1.0; "); // MTP extentions: windows compatability garbage.....
+	dst = MTP_Write16(dst, 0); // Functional mode: Standard
+	dst = MTP_WriteArray16(dst, cSuppOps, LENGTH(cSuppOps)); // Supported operations
+	dst = MTP_WriteArray16(dst, cSuppEvents, LENGTH(cSuppEvents)); // Supported events
+	dst = MTP_WriteArray16(dst, NULL, 0); // Device properties
+	dst = MTP_WriteArray16(dst, cSuppObjects, LENGTH(cSuppObjects)); // Capture formats (formats emitted by the device)
+	dst = MTP_WriteArray16(dst, cSuppObjects, LENGTH(cSuppObjects)); // Image formats (formats supported by the device)
+	dst = MTP_WriteString(dst, USB_MANUFACTURER_STRING); // Manufacturer
+	dst = MTP_WriteString(dst, USB_PRODUCT_STRING); // Model
+	dst = MTP_WriteString(dst, "V1.00"); // Device version
+	dst = MTP_WriteString(dst, "00000000000000000000000000000000"); // Device serial: Must be a 32 char hex string.
 
-	// Capture formats (formats emitted by the device)
-	dst = MTP_WriteArray16(dst, cSuppObjects, LENGTH(cSuppObjects));
-	// Image formats (formats supported by the device)
-	dst = MTP_WriteArray16(dst, cSuppObjects, LENGTH(cSuppObjects));
-
-	// Manufacturer
-	dst = MTP_WriteString(dst, USB_MANUFACTURER_STRING);
-	// Model
-	dst = MTP_WriteString(dst, USB_PRODUCT_STRING);
-	// Device version
-	dst = MTP_WriteString(dst, "V1.00");
-	// Device serial: Must be a 32 char hex string. Probably windows compatability garbage.
-	dst = MTP_WriteString(dst, "00000000000000000000000000000000");
 	uint32_t size = dst - container->data;
 	return MTP_SendData(container, size);
 }
@@ -379,73 +364,54 @@ static MTP_State_t MTP_GetObjectHandles(MTP_t * mtp, MTP_Container_t * container
 	return MTP_SendData(container, size);
 }
 
-static uint8_t * MTP_GetObjectPropertyListItem(uint8_t * dst, MTP_File_t * file, uint32_t object_id, uint32_t property_id)
+static MTP_State_t MTP_GetObjectPropertyValue(MTP_t * mtp, MTP_Container_t * container, uint32_t object_id, uint32_t property_id)
 {
+	MTP_File_t * file = MTP_GetObjectById(mtp, object_id);
+	if (file == NULL)
+	{
+		return MTP_SendResponse(container, MTP_RESP_INVALID_OBJECT_HANDLE);
+	}
+
 	uint32_t data;
 	uint16_t data_type = MTP_GetObjectProperty(file, property_id, &data);
-	if (data_type != 0)
+	if (data_type == 0)
 	{
-		dst = MTP_Write32(dst, object_id);
-		dst = MTP_Write16(dst, property_id);
-		dst = MTP_Write16(dst, data_type);
-		dst = MTP_WriteType(dst, data_type, data);
+		return MTP_SendResponse(container, MTP_RESP_OBJECT_PROP_NOT_SUPPORTED);
 	}
-	return dst;
+
+	uint8_t * dst = MTP_WriteType(container->data, data_type, data);
+	uint32_t size = dst - container->data;
+	return MTP_SendData(container, size);
 }
 
-static MTP_State_t MTP_GetObjectPropertyList(MTP_t * mtp, MTP_Container_t * container, const MTP_Operation_t * op)
+static MTP_State_t MTP_GetObjectPropertyList(MTP_t * mtp, MTP_Container_t * container, uint32_t object_id)
 {
-	// params are..
-	// object_id
-	// [object_format]
-	// property_id
-	// [property_group_code]
-	// [depth]
+	// We are going to ignore all the garbage in the spec about group specification, ect.
 
-	uint32_t property_id = op->param[2];
-	if (property_id == 0)
+	// The object may be 0 for 'all', but we dont want to overflow our packet buffer.
+	// Lets just let those conditions throw INVALID_OBJECT_HANDLE....
+
+	MTP_File_t * file = MTP_GetObjectById(mtp, object_id);
+	if (file == NULL)
 	{
-		return MTP_SendResponse(container, MTP_RESP_SPECIFICATION_BY_GROUP_UNSUPPORTED);
+		return MTP_SendResponse(container, MTP_RESP_INVALID_OBJECT_HANDLE);
 	}
 
-	if (op->param[4] != 0)
+	uint8_t * dst = container->data;
+	dst = MTP_Write32(container->data, LENGTH(cSuppObjProps));
+	for (uint32_t i = 0; i < LENGTH(cSuppObjProps); i++)
 	{
-		// Specification by depth.
-		// The object_id is the 'head' (0 for root), and all items below up to the depth are requested.
-		// Hard to implement....
-		return MTP_SendResponse(container, MTP_RESP_SPECIFICATION_BY_DEPTH_UNSUPPORTED);
-	}
-
-	uint8_t * dst = container->data + sizeof(uint32_t); // We need to amend this field later
-	uint32_t object_id = op->param[0];
-	uint32_t item_count = 0;
-	if (object_id)
-	{
-		// A specific object has been specified.
-		MTP_File_t * file = MTP_GetObjectById(mtp, object_id);
-		if (file == NULL)
+		uint32_t property_id = cSuppObjProps[i];
+		uint32_t data;
+		uint16_t data_type = MTP_GetObjectProperty(file, property_id, &data);
+		if (data_type)
 		{
-			return MTP_SendResponse(container, MTP_RESP_INVALID_OBJECT_HANDLE);
-		}
-		item_count += 1;
-		dst = MTP_GetObjectPropertyListItem(dst, file, object_id, property_id);
-	}
-	else // All objects are specified..
-	{
-		uint32_t object_format = op->param[1];
-		for (uint32_t i = 0; i < LENGTH(mtp->objects); i++)
-		{
-			MTP_File_t * file = mtp->objects[i];
-			if ( file != NULL && (object_format == 0 || file->type == object_format))
-			{
-				object_id = i + 1;
-				item_count += 1;
-				dst = MTP_GetObjectPropertyListItem(dst, file, object_id, property_id);
-			}
+			dst = MTP_Write32(dst, object_id);
+			dst = MTP_Write16(dst, property_id);
+			dst = MTP_Write16(dst, data_type);
+			dst = MTP_WriteType(dst, data_type, data);
 		}
 	}
-
-	MTP_Write32(container->data, item_count);
 
 	uint32_t size = dst - container->data;
 	return MTP_SendData(container, size);
@@ -465,23 +431,11 @@ static MTP_State_t MTP_GetObjectInfo(MTP_t * mtp, MTP_Container_t * container, u
 	dst = MTP_Write16(dst, (file->write) ? MTP_OBJ_NO_PROTECTION : MTP_OBJ_READ_ONLY);
 	dst = MTP_Write32(dst, file->size);
 
-	// A bunch of PTP garbage. Zero it.
-	// Thumb format (16)
-	// Thumb compressed size (32)
-	// Thumb pix width (32)
-	// Thumb pix height (32)
-	// Image pix width (32)
-	// Image pix height (32)
-	// Image bit depth (32)
-	// Parent object (32)
-	// Association type (16)
-	// Association description (32)
-	// Sequence number (32)
+	// A bunch of PTP garbage regarding thumbnail and image properties. Zero it.
 	bzero(dst, 40);
 	dst += 40;
 
 	dst = MTP_WriteString(dst, file->name);
-
 	dst = MTP_WriteString(dst, NULL); // Capture date
 	dst = MTP_WriteString(dst, NULL); // Modified date
 	dst = MTP_WriteString(dst, NULL); // Keywords
@@ -492,8 +446,32 @@ static MTP_State_t MTP_GetObjectInfo(MTP_t * mtp, MTP_Container_t * container, u
 
 static MTP_State_t MTP_GetObjectReferences(MTP_t * mtp, MTP_Container_t * container, uint32_t object_id)
 {
-	//__BKPT();
+	// I dont know why windows hits this....
 	return MTP_SendResponse(container, MTP_RESP_INVALID_OBJECT_HANDLE);
+}
+
+static MTP_State_t MTP_GetObject(MTP_t * mtp, MTP_Container_t * container, uint32_t object_id)
+{
+	MTP_File_t * file = MTP_GetObjectById(mtp, object_id);
+	if (file == NULL)
+	{
+		return MTP_SendResponse(container, MTP_RESP_INVALID_OBJECT_HANDLE);
+	}
+
+	if (file->read == NULL)
+	{
+		return MTP_SendResponse(container, MTP_RESP_ACCESS_DENIED);
+	}
+
+	uint32_t toread = MIN(file->size, sizeof(container->data));
+	bool success = file->read( container->data, 0, toread);
+
+	if (!success)
+	{
+		return MTP_SendResponse(container, MTP_RESP_GENERAL_ERROR);
+	}
+
+	return MTP_SendData( container, file->size );
 }
 
 // Primitive writing structures

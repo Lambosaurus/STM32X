@@ -36,7 +36,11 @@ bool MTP_AddFile(MTP_t * mtp, MTP_File_t * file)
 		// Find the next free slot to insert a file
 		if (mtp->objects[i] == NULL)
 		{
-			file->type = MTP_OBJ_FORMAT_UNDEFINED;
+			if (file->type == 0)
+			{
+				// Assign the file format.
+				file->type = MTP_OBJ_FORMAT_TEXT; //MTP_OBJ_FORMAT_UNDEFINED;
+			}
 			mtp->objects[i] = file;
 			return true;
 		}
