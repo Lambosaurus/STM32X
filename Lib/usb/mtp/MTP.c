@@ -35,7 +35,7 @@ static uint8_t * MTP_WriteString(uint8_t * dst, const char * str);
 // TODO: Does giving these the same signature improve performance?
 
 static MTP_State_t MTP_GetDeviceInfo(MTP_Container_t * container);
-static MTP_State_t MTP_GetDevicePropertyDescriptor(MTP_Container_t * container);
+//static MTP_State_t MTP_GetDevicePropertyDescriptor(MTP_Container_t * container);
 static MTP_State_t MTP_GetStorageIDs(MTP_Container_t * container);
 static MTP_State_t MTP_GetStorageInfo(MTP_Container_t * container, uint32_t storage_id);
 static MTP_State_t MTP_GetObjectHandles(MTP_t * mtp, MTP_Container_t * container);
@@ -113,10 +113,6 @@ MTP_State_t MTP_HandleOperation(MTP_t * mtp, MTP_Operation_t * op, MTP_Container
 
 	case MTP_OP_GET_OBJECT_PROP_VALUE:
 		return MTP_GetObjectPropertyValue(mtp, container, op->param[0], op->param[1]);
-
-	case MTP_OP_SET_OBJECT_PROP_VALUE:
-		__BKPT();
-		break;
 
 	case MTP_OP_GET_DEVICE_PROP_DESC:
 		break;
@@ -225,9 +221,8 @@ static const uint16_t cSuppOps[] = { MTP_OP_GET_DEVICE_INFO, MTP_OP_OPEN_SESSION
 								   MTP_OP_GET_OBJECT_HANDLES, MTP_OP_GET_OBJECT_INFO, MTP_OP_GET_OBJECT,
 								   MTP_OP_DELETE_OBJECT, MTP_OP_SEND_OBJECT_INFO, MTP_OP_SEND_OBJECT,
 								   MTP_OP_GET_DEVICE_PROP_DESC, MTP_OP_GET_DEVICE_PROP_VALUE,
-								   MTP_OP_SET_OBJECT_PROP_VALUE, MTP_OP_GET_OBJECT_PROP_VALUE,
-								   MTP_OP_GET_OBJECT_PROPS_SUPPORTED, MTP_OP_GET_OBJECT_PROPLIST,
-								   MTP_OP_GET_OBJECT_PROP_DESC, MTP_OP_GET_OBJECT_REFERENCES
+								   MTP_OP_GET_OBJECT_PROP_VALUE, MTP_OP_GET_OBJECT_PROPS_SUPPORTED,
+								   MTP_OP_GET_OBJECT_PROPLIST, MTP_OP_GET_OBJECT_PROP_DESC, MTP_OP_GET_OBJECT_REFERENCES
 								 };
 
 static const uint16_t cSuppEvents[] = { MTP_EVENT_OBJECTADDED };
@@ -368,12 +363,10 @@ static MTP_State_t MTP_GetObjectPropertyDescriptor(MTP_Container_t * container, 
 		return MTP_SendResponse(container, MTP_RESP_OBJECT_PROP_NOT_SUPPORTED);
 	}
 
-	uint8_t get_set = (property_id == MTP_OBJ_PROP_PROTECTION_STATUS) ? MTP_PROP_GET_SET : MTP_PROP_GET;
-
 	uint8_t * dst = container->data;
 	dst = MTP_Write16(dst, property_id);
 	dst = MTP_Write16(dst, data_type);
-	dst = MTP_Write8(dst, get_set);
+	dst = MTP_Write8(dst, MTP_PROP_GET);
 	dst = MTP_WriteType(dst, data_type, data);
 	dst = MTP_Write32(dst, 0); // GroupCode
 	dst = MTP_Write16(dst, 0); // FormFlag
