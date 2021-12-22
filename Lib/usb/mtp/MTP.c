@@ -8,7 +8,6 @@
  */
 
 #define MTP_STORAGE_ID		0x00010001
-#define MTP_STORAGE_SPACE	(1024 * 1024)
 
 /*
  * PRIVATE TYPES
@@ -22,6 +21,10 @@
  * PRIVATE VARIABLES
  */
 
+static inline uint8_t * MTP_Read16(uint8_t * src, uint16_t * value);
+static inline uint8_t * MTP_Read32(uint8_t * src, uint32_t * value);
+static inline uint8_t * MTP_ReadString(uint8_t * src, char * str);
+
 static uint8_t * MTP_WriteType(uint8_t * dst, uint16_t type, uint32_t data);
 static uint8_t * MTP_Write128(uint8_t * dst, uint32_t value);
 static uint8_t * MTP_Write64(uint8_t * dst, uint64_t value);
@@ -34,6 +37,7 @@ static uint8_t * MTP_WriteString(uint8_t * dst, const char * str);
 
 // TODO: Does giving these the same signature improve performance?
 
+static MTP_State_t MTP_OpenSession(MTP_t * mtp, MTP_Container_t * container);
 static MTP_State_t MTP_GetDeviceInfo(MTP_Container_t * container);
 //static MTP_State_t MTP_GetDevicePropertyDescriptor(MTP_Container_t * container);
 static MTP_State_t MTP_GetStorageIDs(MTP_Container_t * container);
@@ -46,10 +50,12 @@ static MTP_State_t MTP_GetObjectPropertyList(MTP_t * mtp, MTP_Container_t * cont
 static MTP_State_t MTP_GetObjectPropertyValue(MTP_t * mtp, MTP_Container_t * container, uint32_t object_id, uint32_t property_id);
 static MTP_State_t MTP_GetObject(MTP_t * mtp, MTP_Container_t * container, uint32_t object_id);
 static MTP_State_t MTP_GetObjectReferences(MTP_t * mtp, MTP_Container_t * container, uint32_t object_id);
-static MTP_State_t MTP_OpenSession(MTP_t * mtp, MTP_Container_t * container);
+
+static MTP_State_t MTP_RecieveObjectInfo(MTP_t * mtp, MTP_Container_t * container, uint32_t storage_id, uint32_t parent_id);
 
 static MTP_State_t MTP_SendResponse(MTP_Container_t * container, uint16_t code);
 static MTP_State_t MTP_SendData(MTP_Container_t * container, uint32_t size);
+static MTP_State_t MTP_ReceiveData(MTP_Container_t * container, uint32_t size);
 
 /*
  * PUBLIC FUNCTIONS
@@ -73,7 +79,6 @@ MTP_State_t MTP_HandleOperation(MTP_t * mtp, MTP_Operation_t * op, MTP_Container
 			op->param[i] = 0;
 		}
 	}
-
 
 	// code and transaction_id will be reused during data/response send
 	container->code = op->code;
@@ -122,13 +127,11 @@ MTP_State_t MTP_HandleOperation(MTP_t * mtp, MTP_Operation_t * op, MTP_Container
 		return MTP_GetObject(mtp, container, op->param[0]);
 
 	case MTP_OP_SEND_OBJECT_INFO:
-		//USBD_MTP_OPT_SendObjectInfo(pdev, (uint8_t *)(hmtp->rx_buff), MTP_DataLength.prv_len);
-		//hmtp->MTP_ResponsePhase = MTP_RECEIVE_DATA;
-		break;
+		return MTP_ReceiveData(container, sizeof(container->data));
 
 	case MTP_OP_SEND_OBJECT:
-		//USBD_MTP_OPT_SendObject(pdev, (uint8_t *)(hmtp->rx_buff), MTP_DataLength.rx_length);
-		//hmtp->MTP_ResponsePhase = MTP_RECEIVE_DATA;
+		// Our receive on this shall be aligned.
+		//return MTP_ReceiveData(container, sizeof(container->data) - MTP_CONT_HEADER_SIZE);
 		break;
 
 	case MTP_OP_DELETE_OBJECT:
@@ -180,6 +183,20 @@ MTP_State_t MTP_NextData(MTP_t * mtp, MTP_Operation_t * op, MTP_Container_t * co
 	return MTP_SendResponse(container, MTP_RESP_OK);
 }
 
+MTP_State_t MTP_HandleData(MTP_t * mtp, MTP_Operation_t * op, MTP_Container_t * container)
+{
+	switch (op->code)
+	{
+	case MTP_OP_SEND_OBJECT_INFO:
+		return MTP_RecieveObjectInfo(mtp, container, op->param[0], op->param[1]);
+
+	default:
+		break;
+	}
+	// Should not occurr.
+	return MTP_State_RxOperation;
+}
+
 
 /*
  * PRIVATE FUNCTIONS
@@ -194,12 +211,29 @@ static MTP_State_t MTP_SendResponse(MTP_Container_t * container, uint16_t code)
 	return MTP_State_TxResponse;
 }
 
+static MTP_State_t MTP_SendResponseParams(MTP_Container_t * container, uint32_t * params, uint32_t count)
+{
+	uint32_t param_size = sizeof(uint32_t) * count;
+	container->code = MTP_RESP_OK;
+	container->type = MTP_CONT_TYPE_RESPONSE;
+	container->length = MTP_CONT_HEADER_SIZE + param_size;
+	container->packet_size = container->length;
+	memcpy(container->data, params, param_size);
+	return MTP_State_TxResponse;
+}
+
 static MTP_State_t MTP_SendData(MTP_Container_t * container, uint32_t size)
 {
 	container->type = MTP_CONT_TYPE_DATA;
 	container->length = MTP_CONT_HEADER_SIZE + size;
 	container->packet_size = container->length;
 	return MTP_State_TxDataLast;
+}
+
+static MTP_State_t MTP_ReceiveData(MTP_Container_t * container, uint32_t size)
+{
+	container->packet_size = MTP_CONT_HEADER_SIZE + size;
+	return MTP_State_RxData;
 }
 
 static MTP_State_t MTP_OpenSession(MTP_t * mtp, MTP_Container_t * container)
@@ -520,6 +554,64 @@ static MTP_State_t MTP_GetObject(MTP_t * mtp, MTP_Container_t * container, uint3
 	return MTP_State_TxData;
 }
 
+static MTP_State_t MTP_RecieveObjectInfo(MTP_t * mtp, MTP_Container_t * container, uint32_t storage_id, uint32_t parent_id)
+{
+	if (parent_id != 0xFFFFFFFF)
+	{
+		return MTP_SendResponse(container, MTP_RESP_INVALID_PARENT_OBJECT);
+	}
+
+	uint16_t obj_type;
+	MTP_Read16(container->data + 4, &obj_type);
+	uint32_t size;
+	MTP_Read32(container->data + 8, &size);
+	char name[MTP_STRING_MAX];
+	MTP_ReadString(container->data + 52, name);
+
+	uint32_t object_id = 0;
+
+	// First.. find a spare object id.
+	for (uint32_t i = 0; i < LENGTH(mtp->objects); i++)
+	{
+		if (mtp->objects[i] == NULL)
+		{
+			object_id = i + 1;
+			break;
+		}
+	}
+
+	if (object_id == 0)
+	{
+		// No space.
+		return MTP_SendResponse(container, MTP_RESP_STORE_FULL);
+	}
+
+	// Next.. see if the user wants the file.
+	if (mtp->new_file_callback)
+	{
+		MTP_File_t * file = mtp->new_file_callback(name, size);
+		if (file && file->write)
+		{
+			mtp->objects[object_id - 1] = file;
+			mtp->new_file = file; // This is where a subsequent send data will occurr.
+
+			file->size = size;
+			file->type = obj_type;
+
+			uint32_t params[] = {
+				MTP_STORAGE_ID,
+				parent_id,
+				object_id,
+			};
+
+			return MTP_SendResponseParams(container, params, LENGTH(params));
+		}
+	}
+	// Reject the file.
+	return MTP_SendResponse(container, MTP_RESP_INVALID_DATASET);
+}
+
+
 // Primitive writing structures
 
 static uint8_t * MTP_WriteType(uint8_t * dst, uint16_t type, uint32_t data)
@@ -627,4 +719,44 @@ static uint8_t * MTP_WriteString(uint8_t * dst, const char * str)
 		}
 	}
 	return dst;
+}
+
+static inline uint8_t * MTP_Read16(uint8_t * src, uint16_t * value)
+{
+	*value = src[0] | (src[1] << 8);
+	return src + 2;
+}
+
+static inline uint8_t * MTP_Read32(uint8_t * src, uint32_t * value)
+{
+	*value = src[0] | (src[1] << 8) | (src[2] << 16) | (src[3] << 24);
+	return src + 4;
+}
+
+static uint8_t * MTP_ReadString(uint8_t * src, char * str)
+{
+	uint32_t length = *src++;
+
+	if (length == 0)
+	{
+		*str = 0;
+		return src;
+	}
+
+	uint32_t skip = 1; // Skip the null char.
+	if (length >= MTP_STRING_MAX)
+	{
+		// We are going to just truncate it for now.
+		length = MTP_STRING_MAX - 1;
+		skip += length - MTP_STRING_MAX;
+	}
+
+	while (length--)
+	{
+		*str++ = *src;
+		src += 2;
+	}
+
+	*str = 0;
+	return src + (skip * 2);
 }

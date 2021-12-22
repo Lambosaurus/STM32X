@@ -71,6 +71,11 @@ MTP_File_t * MTP_GetObjectById(MTP_t * mtp, uint32_t object_id)
 	return NULL;
 }
 
+void MTP_OnNewFile(MTP_t * mtp, MTP_NewFileCallback_t callback)
+{
+	mtp->new_file_callback = callback;
+}
+
 /*
  * PRIVATE FUNCTIONS
  */

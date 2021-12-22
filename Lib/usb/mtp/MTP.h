@@ -24,6 +24,7 @@ typedef enum
 
 MTP_State_t MTP_Reset(MTP_t * mtp);
 MTP_State_t MTP_HandleOperation(MTP_t * mtp, MTP_Operation_t * op, MTP_Container_t * container);
+MTP_State_t MTP_HandleData(MTP_t * mtp, MTP_Operation_t * op, MTP_Container_t * container);
 MTP_State_t MTP_NextData(MTP_t * mtp, MTP_Operation_t * op, MTP_Container_t * container);
 
 /*

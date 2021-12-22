@@ -147,6 +147,9 @@ static void USB_MTP_Receive(uint32_t count)
 	case MTP_State_RxOperation:
 		gMtp.state = MTP_HandleOperation(gMtp.mtp, &gMtp.operation, &gMtp.container);
 		break;
+	case MTP_State_RxData:
+		gMtp.state = MTP_HandleData(gMtp.mtp, &gMtp.operation, &gMtp.container);
+		break;
 	default:
 		// Unexpected cases. Await next operation.
 		gMtp.state = MTP_State_RxOperation;
@@ -165,7 +168,7 @@ static void USB_MTP_EnterState(MTP_State_t state)
 		USB_EP_Read(MTP_OUT_EP, (uint8_t *)(&gMtp.operation), MTP_OPERATION_SIZE);
 		break;
 	case MTP_State_RxData:
-		__BKPT(); // Unhandled so far...
+		USB_EP_Read(MTP_OUT_EP, (uint8_t *)(&gMtp.container), gMtp.container.packet_size);
 		break;
 	case MTP_State_TxData:
 	case MTP_State_TxResponse:

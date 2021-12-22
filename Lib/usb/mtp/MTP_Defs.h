@@ -345,6 +345,7 @@
 #define MTP_RESP_SESSION_ALREADY_OPEN                      0x201E
 #define MTP_RESP_TRANSACTION_CANCELLED                     0x201F
 #define MTP_RESP_INVALID_OBJECT_PROP_CODE                  0xA801
+#define MTP_RESP_INVALID_DATASET                           0xA806
 #define MTP_RESP_SPECIFICATION_BY_GROUP_UNSUPPORTED        0xA807
 #define MTP_RESP_SPECIFICATION_BY_DEPTH_UNSUPPORTED        0xA808
 #define MTP_RESP_OBJECT_TOO_LARGE                          0xA809
@@ -405,6 +406,10 @@
 #define MTP_CONT_HEADER_SIZE				12
 #define MTP_CMD_SIZE						8
 #define MTP_MEDIA_PACKET					512
+
+
+// Could be 255. Lets limit it to this anyway.
+#define MTP_STRING_MAX						64
 
 /*
  * PUBLIC TYPES
