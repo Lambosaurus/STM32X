@@ -116,12 +116,20 @@ static void USB_MTP_TransmitDone(uint32_t count)
 {
 	switch (gMtp.state)
 	{
+	case MTP_State_TxDataLast:
+
+		if (gMtp.container.packet_size != 0 && (gMtp.container.packet_size % MTP_PACKET_SIZE) == 0)
+		{
+			gMtp.container.packet_size = 0;
+			break;
+		}
+		// Fallthrough.
+
 	case MTP_State_TxData:
-		gMtp.state = MTP_NextData(gMtp.mtp, &gMtp.container);
+		gMtp.state = MTP_NextData(gMtp.mtp, &gMtp.operation, &gMtp.container);
 		break;
 
-	case MTP_State_RxOperation:
-	case MTP_State_RxData:
+	default:
 		// We should NOT have got here.
 	case MTP_State_TxResponse:
 		// When a response is sent, we await next operation
@@ -139,9 +147,7 @@ static void USB_MTP_Receive(uint32_t count)
 	case MTP_State_RxOperation:
 		gMtp.state = MTP_HandleOperation(gMtp.mtp, &gMtp.operation, &gMtp.container);
 		break;
-	case MTP_State_RxData:
-	case MTP_State_TxResponse:
-	case MTP_State_TxData:
+	default:
 		// Unexpected cases. Await next operation.
 		gMtp.state = MTP_State_RxOperation;
 		break;
@@ -163,8 +169,9 @@ static void USB_MTP_EnterState(MTP_State_t state)
 		break;
 	case MTP_State_TxData:
 	case MTP_State_TxResponse:
+	case MTP_State_TxDataLast:
 		// Pump out the recieved data.
-		USB_EP_Write(MTP_IN_EP, (uint8_t *)(&gMtp.container), gMtp.container.length);
+		USB_EP_Write(MTP_IN_EP, (uint8_t *)(&gMtp.container), gMtp.container.packet_size);
 		break;
 	}
 }

@@ -14,6 +14,7 @@ typedef enum
 	MTP_State_RxOperation,
 	MTP_State_RxData,
 	MTP_State_TxData,
+	MTP_State_TxDataLast,
 	MTP_State_TxResponse,
 } MTP_State_t;
 
@@ -23,7 +24,7 @@ typedef enum
 
 MTP_State_t MTP_Reset(MTP_t * mtp);
 MTP_State_t MTP_HandleOperation(MTP_t * mtp, MTP_Operation_t * op, MTP_Container_t * container);
-MTP_State_t MTP_NextData(MTP_t * mtp, MTP_Container_t * container);
+MTP_State_t MTP_NextData(MTP_t * mtp, MTP_Operation_t * op, MTP_Container_t * container);
 
 /*
  * PUBLIC FUNCTIONS

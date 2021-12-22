@@ -410,7 +410,6 @@
  * PUBLIC TYPES
  */
 
-// Used for both operations and responses.
 typedef struct __attribute((packed)) {
 	uint32_t length;
 	uint16_t type;
@@ -425,6 +424,7 @@ typedef struct __attribute((packed)) {
 	uint16_t code;
 	uint32_t transaction_id;
 	uint8_t  data[MTP_MEDIA_PACKET];
+	uint32_t packet_size;
 } MTP_Container_t;
 
 /*

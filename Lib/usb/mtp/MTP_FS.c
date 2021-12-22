@@ -39,7 +39,7 @@ bool MTP_AddFile(MTP_t * mtp, MTP_File_t * file)
 			if (file->type == 0)
 			{
 				// Assign the file format.
-				file->type = MTP_OBJ_FORMAT_TEXT; //MTP_OBJ_FORMAT_UNDEFINED;
+				file->type = MTP_OBJ_FORMAT_UNDEFINED; //MTP_OBJ_FORMAT_TEXT
 			}
 			mtp->objects[i] = file;
 			return true;

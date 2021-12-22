@@ -24,6 +24,11 @@ typedef struct {
 typedef struct {
 	bool in_session;
 	MTP_File_t * objects[MTP_MAX_OBJECTS];
+	struct {
+		uint32_t offset;
+		uint32_t remaining;
+		bool (*callback)(uint8_t * bfr, uint32_t pos, uint32_t count);
+	} transaction;
 } MTP_t;
 
 /*

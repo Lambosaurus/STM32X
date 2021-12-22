@@ -58,6 +58,7 @@ static MTP_State_t MTP_SendData(MTP_Container_t * container, uint32_t size);
 MTP_State_t MTP_Reset(MTP_t * mtp)
 {
 	mtp->in_session = false;
+	mtp->transaction.remaining = 0;
 	return MTP_State_RxOperation;
 }
 
@@ -143,11 +144,24 @@ MTP_State_t MTP_HandleOperation(MTP_t * mtp, MTP_Operation_t * op, MTP_Container
 		break;
 	}
 
+	__BKPT();
 	return MTP_SendResponse(container, MTP_RESP_OPERATION_NOT_SUPPORTED);
 }
 
-MTP_State_t MTP_NextData(MTP_t * mtp, MTP_Container_t * container)
+MTP_State_t MTP_NextData(MTP_t * mtp, MTP_Operation_t * op, MTP_Container_t * container)
 {
+	if (mtp->transaction.remaining)
+	{
+		uint32_t chunk = MIN(mtp->transaction.remaining, sizeof(container->data));
+		mtp->transaction.callback((uint8_t*)container, mtp->transaction.offset, chunk);
+		mtp->transaction.offset += chunk;
+		mtp->transaction.remaining -= chunk;
+		container->packet_size = chunk;
+		return (mtp->transaction.remaining == 0) ? MTP_State_TxDataLast : MTP_State_TxData;
+	}
+
+	container->code = op->code;
+	container->transaction_id = op->transaction_id;
 	return MTP_SendResponse(container, MTP_RESP_OK);
 }
 
@@ -161,6 +175,7 @@ static MTP_State_t MTP_SendResponse(MTP_Container_t * container, uint16_t code)
 	container->code = code;
 	container->type = MTP_CONT_TYPE_RESPONSE;
 	container->length = MTP_CONT_HEADER_SIZE;
+	container->packet_size = MTP_CONT_HEADER_SIZE;
 	return MTP_State_TxResponse;
 }
 
@@ -168,7 +183,8 @@ static MTP_State_t MTP_SendData(MTP_Container_t * container, uint32_t size)
 {
 	container->type = MTP_CONT_TYPE_DATA;
 	container->length = MTP_CONT_HEADER_SIZE + size;
-	return MTP_State_TxData;
+	container->packet_size = container->length;
+	return MTP_State_TxDataLast;
 }
 
 static MTP_State_t MTP_OpenSession(MTP_t * mtp, MTP_Container_t * container)
@@ -186,14 +202,14 @@ static MTP_State_t MTP_OpenSession(MTP_t * mtp, MTP_Container_t * container)
 
 
 static const uint16_t cSuppOps[] = { MTP_OP_GET_DEVICE_INFO, MTP_OP_OPEN_SESSION, MTP_OP_CLOSE_SESSION,
-                                   MTP_OP_GET_STORAGE_IDS, MTP_OP_GET_STORAGE_INFO, MTP_OP_GET_NUM_OBJECTS,
-                                   MTP_OP_GET_OBJECT_HANDLES, MTP_OP_GET_OBJECT_INFO, MTP_OP_GET_OBJECT,
-                                   MTP_OP_DELETE_OBJECT, MTP_OP_SEND_OBJECT_INFO, MTP_OP_SEND_OBJECT,
-                                   MTP_OP_GET_DEVICE_PROP_DESC, MTP_OP_GET_DEVICE_PROP_VALUE,
-                                   MTP_OP_SET_OBJECT_PROP_VALUE, MTP_OP_GET_OBJECT_PROP_VALUE,
-                                   MTP_OP_GET_OBJECT_PROPS_SUPPORTED, MTP_OP_GET_OBJECT_PROPLIST,
-                                   MTP_OP_GET_OBJECT_PROP_DESC, MTP_OP_GET_OBJECT_REFERENCES
-                                 };
+								   MTP_OP_GET_STORAGE_IDS, MTP_OP_GET_STORAGE_INFO, MTP_OP_GET_NUM_OBJECTS,
+								   MTP_OP_GET_OBJECT_HANDLES, MTP_OP_GET_OBJECT_INFO, MTP_OP_GET_OBJECT,
+								   MTP_OP_DELETE_OBJECT, MTP_OP_SEND_OBJECT_INFO, MTP_OP_SEND_OBJECT,
+								   MTP_OP_GET_DEVICE_PROP_DESC, MTP_OP_GET_DEVICE_PROP_VALUE,
+								   MTP_OP_SET_OBJECT_PROP_VALUE, MTP_OP_GET_OBJECT_PROP_VALUE,
+								   MTP_OP_GET_OBJECT_PROPS_SUPPORTED, MTP_OP_GET_OBJECT_PROPLIST,
+								   MTP_OP_GET_OBJECT_PROP_DESC, MTP_OP_GET_OBJECT_REFERENCES
+								 };
 
 static const uint16_t cSuppEvents[] = { MTP_EVENT_OBJECTADDED };
 
@@ -205,16 +221,14 @@ static const uint16_t cSuppObjProps[] = {  MTP_OBJ_PROP_STORAGE_ID, MTP_OBJ_PROP
 									   };
 
 /*
-
 static const uint16_t cSuppDevProps[] = { MTP_DEV_PROP_DEVICE_FRIENDLY_NAME, MTP_DEV_PROP_BATTERY_LEVEL };
 
 static const uint16_t cSuppImgFormat[] = {MTP_OBJ_FORMAT_UNDEFINED, MTP_OBJ_FORMAT_TEXT, MTP_OBJ_FORMAT_ASSOCIATION,
-                                         MTP_OBJ_FORMAT_EXECUTABLE, MTP_OBJ_FORMAT_WAV, MTP_OBJ_FORMAT_MP3,
-                                         MTP_OBJ_FORMAT_EXIF_JPEG, MTP_OBJ_FORMAT_MPEG, MTP_OBJ_FORMAT_MP4_CONTAINER,
-                                         MTP_OBJ_FORMAT_WINDOWS_IMAGE_FORMAT, MTP_OBJ_FORMAT_PNG, MTP_OBJ_FORMAT_WMA,
-                                         MTP_OBJ_FORMAT_WMV
-                                        };
-
+										 MTP_OBJ_FORMAT_EXECUTABLE, MTP_OBJ_FORMAT_WAV, MTP_OBJ_FORMAT_MP3,
+										 MTP_OBJ_FORMAT_EXIF_JPEG, MTP_OBJ_FORMAT_MPEG, MTP_OBJ_FORMAT_MP4_CONTAINER,
+										 MTP_OBJ_FORMAT_WINDOWS_IMAGE_FORMAT, MTP_OBJ_FORMAT_PNG, MTP_OBJ_FORMAT_WMA,
+										 MTP_OBJ_FORMAT_WMV
+										};
 */
 
 
@@ -463,15 +477,33 @@ static MTP_State_t MTP_GetObject(MTP_t * mtp, MTP_Container_t * container, uint3
 		return MTP_SendResponse(container, MTP_RESP_ACCESS_DENIED);
 	}
 
-	uint32_t toread = MIN(file->size, sizeof(container->data));
-	bool success = file->read( container->data, 0, toread);
-
+	uint32_t chunk = MIN(file->size, sizeof(container->data) - MTP_CONT_HEADER_SIZE);
+	bool success = file->read(container->data, 0, chunk);
 	if (!success)
 	{
 		return MTP_SendResponse(container, MTP_RESP_GENERAL_ERROR);
 	}
 
-	return MTP_SendData( container, file->size );
+	mtp->transaction.offset = chunk;
+	mtp->transaction.callback = file->read;
+	mtp->transaction.remaining = file->size - chunk;
+
+	container->type = MTP_CONT_TYPE_DATA;
+	container->length = MTP_CONT_HEADER_SIZE + file->size;
+	container->packet_size = MTP_CONT_HEADER_SIZE + chunk;
+
+	return (mtp->transaction.remaining == 0) ? MTP_State_TxDataLast : MTP_State_TxData;
+
+	/*
+	mtp->transaction.offset = 0;
+	mtp->transaction.remaining = file->size;
+	mtp->transaction.callback = file->read;
+
+	container->type = MTP_CONT_TYPE_DATA;
+	container->length = MTP_CONT_HEADER_SIZE + file->size;
+	container->size = MTP_CONT_HEADER_SIZE;
+	return MTP_State_TxData;
+	*/
 }
 
 // Primitive writing structures
