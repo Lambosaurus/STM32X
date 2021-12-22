@@ -152,12 +152,31 @@ MTP_State_t MTP_NextData(MTP_t * mtp, MTP_Operation_t * op, MTP_Container_t * co
 {
 	if (mtp->transaction.remaining)
 	{
-		uint32_t chunk = MIN(mtp->transaction.remaining, sizeof(container->data));
-		mtp->transaction.callback((uint8_t*)container, mtp->transaction.offset, chunk);
+		// The read function overreads by up to 12 bytes.
+		// Put these into the head of our container.
+		memcpy(container, container->data + sizeof(container->data) - MTP_CONT_HEADER_SIZE, MTP_CONT_HEADER_SIZE);
+
+		// If the remaining data is less than 12, we would have already sent it.
+		uint32_t remaining = mtp->transaction.remaining - MTP_CONT_HEADER_SIZE;
+
+		uint32_t chunk = MIN(remaining, sizeof(container->data));
+		mtp->transaction.callback(container->data, mtp->transaction.offset, chunk);
 		mtp->transaction.offset += chunk;
-		mtp->transaction.remaining -= chunk;
-		container->packet_size = chunk;
-		return (mtp->transaction.remaining == 0) ? MTP_State_TxDataLast : MTP_State_TxData;
+
+		if (chunk == remaining)
+		{
+			// We have read our last. Send it all.
+			container->packet_size = remaining + MTP_CONT_HEADER_SIZE;
+			mtp->transaction.remaining = 0;
+			return MTP_State_TxDataLast;
+		}
+
+		// Otherwise we still need follow up packets.
+		// Make sure we only send aligned packets.
+		remaining -= sizeof(container->data) - MTP_CONT_HEADER_SIZE;
+		container->packet_size = sizeof(container->data);
+		mtp->transaction.remaining = remaining;
+		return MTP_State_TxData;
 	}
 
 	container->code = op->code;
@@ -477,33 +496,35 @@ static MTP_State_t MTP_GetObject(MTP_t * mtp, MTP_Container_t * container, uint3
 		return MTP_SendResponse(container, MTP_RESP_ACCESS_DENIED);
 	}
 
-	uint32_t chunk = MIN(file->size, sizeof(container->data) - MTP_CONT_HEADER_SIZE);
+	// We align our reads to 512 byte chunks to ease compatibility with other systems.
+	uint32_t chunk = MIN(file->size, sizeof(container->data));
 	bool success = file->read(container->data, 0, chunk);
 	if (!success)
 	{
 		return MTP_SendResponse(container, MTP_RESP_GENERAL_ERROR);
 	}
 
+	if (chunk == file->size)
+	{
+		// We can send this all in one go. Do it.
+		return MTP_SendData(container, chunk);
+	}
+
+	// Otherwise we must stagger this over multiple writes.
+	// Our writes MUST align to 64 byte chunks - including the header.
+	// Otherwise we would send a short packet - which signals the end of the data phase.
+
+	// We only send 500 bytes in the first packet, because of the header.
+	// We will send the remaining 12 bytes later.
 	mtp->transaction.offset = chunk;
-	mtp->transaction.callback = file->read;
-	mtp->transaction.remaining = file->size - chunk;
-
-	container->type = MTP_CONT_TYPE_DATA;
-	container->length = MTP_CONT_HEADER_SIZE + file->size;
-	container->packet_size = MTP_CONT_HEADER_SIZE + chunk;
-
-	return (mtp->transaction.remaining == 0) ? MTP_State_TxDataLast : MTP_State_TxData;
-
-	/*
-	mtp->transaction.offset = 0;
-	mtp->transaction.remaining = file->size;
+	mtp->transaction.remaining = file->size - (chunk - MTP_CONT_HEADER_SIZE); // Remaining includes any overread bytes.
 	mtp->transaction.callback = file->read;
 
 	container->type = MTP_CONT_TYPE_DATA;
 	container->length = MTP_CONT_HEADER_SIZE + file->size;
-	container->size = MTP_CONT_HEADER_SIZE;
+	container->packet_size = sizeof(container->data);
+
 	return MTP_State_TxData;
-	*/
 }
 
 // Primitive writing structures
