@@ -43,19 +43,26 @@ static MTP_State_t MTP_GetDeviceInfo(MTP_Container_t * container);
 static MTP_State_t MTP_GetStorageIDs(MTP_Container_t * container);
 static MTP_State_t MTP_GetStorageInfo(MTP_Container_t * container, uint32_t storage_id);
 static MTP_State_t MTP_GetObjectHandles(MTP_t * mtp, MTP_Container_t * container);
-static MTP_State_t MTP_GetObjectInfo(MTP_t * mtp, MTP_Container_t * container, uint32_t object_id);
 static MTP_State_t MTP_GetObjectPropertiesSupported(MTP_Container_t * container, uint32_t object_type);
 static MTP_State_t MTP_GetObjectPropertyDescriptor(MTP_Container_t * container, uint32_t property_id);
 static MTP_State_t MTP_GetObjectPropertyList(MTP_t * mtp, MTP_Container_t * container, uint32_t object_id);
 static MTP_State_t MTP_GetObjectPropertyValue(MTP_t * mtp, MTP_Container_t * container, uint32_t object_id, uint32_t property_id);
-static MTP_State_t MTP_GetObject(MTP_t * mtp, MTP_Container_t * container, uint32_t object_id);
 static MTP_State_t MTP_GetObjectReferences(MTP_t * mtp, MTP_Container_t * container, uint32_t object_id);
 
+static MTP_State_t MTP_GetObjectInfo(MTP_t * mtp, MTP_Container_t * container, uint32_t object_id);
+static MTP_State_t MTP_GetObject(MTP_t * mtp, MTP_Container_t * container, uint32_t object_id);
+static MTP_State_t MTP_TransmitObject(MTP_t * mtp, MTP_Container_t * container);
+
+static MTP_State_t MTP_SendObjectInfo(MTP_Container_t * container);
 static MTP_State_t MTP_RecieveObjectInfo(MTP_t * mtp, MTP_Container_t * container, uint32_t storage_id, uint32_t parent_id);
+static MTP_State_t MTP_SendObject(MTP_t * mtp, MTP_Container_t * container);
+static MTP_State_t MTP_RecieveObject(MTP_t * mtp, MTP_Container_t * container, MTP_Operation_t * op);
+
 
 static MTP_State_t MTP_SendResponse(MTP_Container_t * container, uint16_t code);
 static MTP_State_t MTP_SendData(MTP_Container_t * container, uint32_t size);
 static MTP_State_t MTP_ReceiveData(MTP_Container_t * container, uint32_t size);
+
 
 /*
  * PUBLIC FUNCTIONS
@@ -127,12 +134,10 @@ MTP_State_t MTP_HandleOperation(MTP_t * mtp, MTP_Operation_t * op, MTP_Container
 		return MTP_GetObject(mtp, container, op->param[0]);
 
 	case MTP_OP_SEND_OBJECT_INFO:
-		return MTP_ReceiveData(container, sizeof(container->data));
+		return MTP_SendObjectInfo(container);
 
 	case MTP_OP_SEND_OBJECT:
-		// Our receive on this shall be aligned.
-		//return MTP_ReceiveData(container, sizeof(container->data) - MTP_CONT_HEADER_SIZE);
-		break;
+		return MTP_SendObject(mtp, container);
 
 	case MTP_OP_DELETE_OBJECT:
 		//USBD_MTP_OPT_DeleteObject(pdev);
@@ -151,31 +156,12 @@ MTP_State_t MTP_NextData(MTP_t * mtp, MTP_Operation_t * op, MTP_Container_t * co
 {
 	if (mtp->transaction.remaining)
 	{
-		// The read function overreads by up to 12 bytes.
-		// Put these into the head of our container.
-		memcpy(container, container->data + sizeof(container->data) - MTP_CONT_HEADER_SIZE, MTP_CONT_HEADER_SIZE);
-
-		// If the remaining data is less than 12, we would have already sent it.
-		uint32_t remaining = mtp->transaction.remaining - MTP_CONT_HEADER_SIZE;
-
-		uint32_t chunk = MIN(remaining, sizeof(container->data));
-		mtp->transaction.callback(container->data, mtp->transaction.offset, chunk);
-		mtp->transaction.offset += chunk;
-
-		if (chunk == remaining)
+		switch( op->code )
 		{
-			// We have read our last. Send it all.
-			container->packet_size = remaining + MTP_CONT_HEADER_SIZE;
-			mtp->transaction.remaining = 0;
-			return MTP_State_TxDataLast;
+		case MTP_OP_GET_OBJECT:
+			return MTP_TransmitObject(mtp, container);
+			break;
 		}
-
-		// Otherwise we still need follow up packets.
-		// Make sure we only send aligned packets.
-		remaining -= sizeof(container->data) - MTP_CONT_HEADER_SIZE;
-		container->packet_size = sizeof(container->data);
-		mtp->transaction.remaining = remaining;
-		return MTP_State_TxData;
 	}
 
 	container->code = op->code;
@@ -189,6 +175,9 @@ MTP_State_t MTP_HandleData(MTP_t * mtp, MTP_Operation_t * op, MTP_Container_t * 
 	{
 	case MTP_OP_SEND_OBJECT_INFO:
 		return MTP_RecieveObjectInfo(mtp, container, op->param[0], op->param[1]);
+
+	case MTP_OP_SEND_OBJECT:
+		return MTP_RecieveObject(mtp, container, op);
 
 	default:
 		break;
@@ -554,6 +543,40 @@ static MTP_State_t MTP_GetObject(MTP_t * mtp, MTP_Container_t * container, uint3
 	return MTP_State_TxData;
 }
 
+static MTP_State_t MTP_TransmitObject(MTP_t * mtp, MTP_Container_t * container)
+{
+	// The read function overreads by up to 12 bytes.
+	// Put these into the head of our container.
+	memcpy(container, container->data + sizeof(container->data) - MTP_CONT_HEADER_SIZE, MTP_CONT_HEADER_SIZE);
+
+	// If the remaining data is less than 12, we would have already sent it.
+	uint32_t remaining = mtp->transaction.remaining - MTP_CONT_HEADER_SIZE;
+
+	uint32_t chunk = MIN(remaining, sizeof(container->data));
+	mtp->transaction.callback(container->data, mtp->transaction.offset, chunk);
+	mtp->transaction.offset += chunk;
+
+	if (chunk == remaining)
+	{
+		// We have read our last. Send it all.
+		container->packet_size = remaining + MTP_CONT_HEADER_SIZE;
+		mtp->transaction.remaining = 0;
+		return MTP_State_TxDataLast;
+	}
+
+	// Otherwise we still need follow up packets.
+	// Make sure we only send aligned packets.
+	remaining -= sizeof(container->data) - MTP_CONT_HEADER_SIZE;
+	container->packet_size = sizeof(container->data);
+	mtp->transaction.remaining = remaining;
+	return MTP_State_TxData;
+}
+
+static MTP_State_t MTP_SendObjectInfo(MTP_Container_t * container)
+{
+	return MTP_ReceiveData(container, sizeof(container->data));
+}
+
 static MTP_State_t MTP_RecieveObjectInfo(MTP_t * mtp, MTP_Container_t * container, uint32_t storage_id, uint32_t parent_id)
 {
 	if (parent_id != 0xFFFFFFFF)
@@ -569,8 +592,7 @@ static MTP_State_t MTP_RecieveObjectInfo(MTP_t * mtp, MTP_Container_t * containe
 	MTP_ReadString(container->data + 52, name);
 
 	uint32_t object_id = 0;
-
-	// First.. find a spare object id.
+	// Find a spare object id.
 	for (uint32_t i = 0; i < LENGTH(mtp->objects); i++)
 	{
 		if (mtp->objects[i] == NULL)
@@ -600,7 +622,7 @@ static MTP_State_t MTP_RecieveObjectInfo(MTP_t * mtp, MTP_Container_t * containe
 
 			uint32_t params[] = {
 				MTP_STORAGE_ID,
-				parent_id,
+				0,
 				object_id,
 			};
 
@@ -611,8 +633,78 @@ static MTP_State_t MTP_RecieveObjectInfo(MTP_t * mtp, MTP_Container_t * containe
 	return MTP_SendResponse(container, MTP_RESP_INVALID_DATASET);
 }
 
+static MTP_State_t MTP_SendObject(MTP_t * mtp, MTP_Container_t * container)
+{
+	if (mtp->new_file == NULL)
+	{
+		return MTP_SendResponse(container, MTP_RESP_NO_VALID_OBJECT_INFO);
+	}
+	// Ignore the type difference. The read/write functions have a slightly different signature.
+	mtp->transaction.callback = (void*)(mtp->new_file->write);
+	mtp->transaction.remaining = 0;
+	mtp->transaction.offset = 0;
+	return MTP_ReceiveData(container, sizeof(container->data) - MTP_CONT_HEADER_SIZE);
+}
 
-// Primitive writing structures
+static MTP_State_t MTP_RecieveObject(MTP_t * mtp, MTP_Container_t * container, MTP_Operation_t * op)
+{
+	uint32_t size = container->packet_size;
+	uint8_t * src = (uint8_t*)container;
+
+	if (mtp->transaction.offset == 0)
+	{
+		// Is this our first packet?
+
+		if (size < MTP_CONT_HEADER_SIZE)
+		{
+			// If this packet is short... abandon ship.
+			mtp->transaction.remaining = 0;
+
+			container->code = op->code;
+			container->transaction_id = op->transaction_id;
+
+			return MTP_SendResponse(container, MTP_RESP_INCOMPLETE_TRANSFER);
+		}
+
+		mtp->transaction.remaining = container->length - MTP_CONT_HEADER_SIZE;
+
+		src += MTP_CONT_HEADER_SIZE;
+		size -= MTP_CONT_HEADER_SIZE;
+	}
+
+	if (mtp->transaction.callback)
+	{
+		mtp->transaction.callback(src, mtp->transaction.offset, size);
+	}
+	mtp->transaction.offset += size;
+	mtp->transaction.remaining -= size;
+
+	if (container->packet_size == sizeof(container->data))
+	{
+		// No short packet. Await more data.
+		return MTP_ReceiveData(container, sizeof(container->data) - MTP_CONT_HEADER_SIZE);
+	}
+	else
+	{
+		// We are done here. Indicate our success.
+		bool success = mtp->transaction.remaining == 0;
+		mtp->transaction.remaining = 0;
+		if (success)
+		{
+			mtp->new_file = NULL;
+		}
+
+		container->code = op->code;
+		container->transaction_id = op->transaction_id;
+
+		return MTP_SendResponse(container, success ? MTP_RESP_OK : MTP_RESP_INCOMPLETE_TRANSFER );
+	}
+}
+
+/*
+ *	Primitive writing structures
+ *	These definitions may look inefficient - but they respond well to optimisation.
+ */
 
 static uint8_t * MTP_WriteType(uint8_t * dst, uint16_t type, uint32_t data)
 {

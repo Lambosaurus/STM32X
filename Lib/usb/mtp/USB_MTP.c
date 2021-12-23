@@ -148,6 +148,7 @@ static void USB_MTP_Receive(uint32_t count)
 		gMtp.state = MTP_HandleOperation(gMtp.mtp, &gMtp.operation, &gMtp.container);
 		break;
 	case MTP_State_RxData:
+		gMtp.container.packet_size = count;
 		gMtp.state = MTP_HandleData(gMtp.mtp, &gMtp.operation, &gMtp.container);
 		break;
 	default:
@@ -173,7 +174,7 @@ static void USB_MTP_EnterState(MTP_State_t state)
 	case MTP_State_TxData:
 	case MTP_State_TxResponse:
 	case MTP_State_TxDataLast:
-		// Pump out the recieved data.
+		// Pump out the received data.
 		USB_EP_Write(MTP_IN_EP, (uint8_t *)(&gMtp.container), gMtp.container.packet_size);
 		break;
 	}
