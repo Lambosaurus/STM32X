@@ -11,7 +11,7 @@
 // Filter configuration
 #define I2C_USE_ANALOGFILTER
 #define I2C_DIGITALFILTER_SIZE	0
-#define I2C_SCL_DUTY_PCT 33
+#define I2C_SCL_DUTY_PCT 60
 
 #ifdef I2C_USE_ANALOGFILTER
 // This can probably be calculated but it seems to match what ST use
