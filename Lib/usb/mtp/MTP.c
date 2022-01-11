@@ -42,7 +42,7 @@ static MTP_State_t MTP_GetDeviceInfo(MTP_Container_t * container);
 //static MTP_State_t MTP_GetDevicePropertyDescriptor(MTP_Container_t * container);
 static MTP_State_t MTP_GetStorageIDs(MTP_Container_t * container);
 static MTP_State_t MTP_GetStorageInfo(MTP_Container_t * container, uint32_t storage_id);
-static MTP_State_t MTP_GetObjectHandles(MTP_t * mtp, MTP_Container_t * container);
+static MTP_State_t MTP_GetObjectHandles(MTP_t * mtp, MTP_Container_t * container, uint32_t storage_id, uint32_t object_type, uint32_t parent_id);
 static MTP_State_t MTP_GetObjectPropertiesSupported(MTP_Container_t * container, uint32_t object_type);
 static MTP_State_t MTP_GetObjectPropertyDescriptor(MTP_Container_t * container, uint32_t property_id);
 static MTP_State_t MTP_GetObjectPropertyList(MTP_t * mtp, MTP_Container_t * container, uint32_t object_id);
@@ -106,7 +106,7 @@ MTP_State_t MTP_HandleOperation(MTP_t * mtp, MTP_Operation_t * op, MTP_Container
 		return MTP_GetStorageInfo(container, op->param[0]);
 
 	case MTP_OP_GET_OBJECT_HANDLES:
-		return MTP_GetObjectHandles(mtp, container);
+		return MTP_GetObjectHandles(mtp, container, op->param[0], op->param[1], op->param[2]);
 
 	case MTP_OP_GET_OBJECT_INFO:
 		return MTP_GetObjectInfo(mtp, container, op->param[0]);
@@ -343,8 +343,8 @@ static uint16_t MTP_GetObjectProperty(const MTP_File_t * file, uint32_t property
 		return MTP_DATATYPE_UINT32;
 
 	case MTP_OBJ_PROP_PARENT_OBJECT:
-		*data = (uint32_t)NULL;
-		return MTP_DATATYPE_STR;
+		*data = 0xFFFFFFFF;
+		return MTP_DATATYPE_UINT32;
 
 	case MTP_OBJ_PROP_OBJECT_SIZE:
 		*data = file->size;
@@ -397,8 +397,19 @@ static MTP_State_t MTP_GetObjectPropertyDescriptor(MTP_Container_t * container, 
 	return MTP_SendData(container, size);
 }
 
-static MTP_State_t MTP_GetObjectHandles(MTP_t * mtp, MTP_Container_t * container)
+static MTP_State_t MTP_GetObjectHandles(MTP_t * mtp, MTP_Container_t * container, uint32_t storage_id, uint32_t object_type, uint32_t parent_id)
 {
+	// Ignore storage_id being wrong for now....
+	if (!(parent_id == 0 || parent_id == 0xFFFFFFFF))
+	{
+		return MTP_SendResponse(container, MTP_RESP_PARAMETER_NOT_SUPPORTED);
+	}
+
+	if (object_type != 0)
+	{
+		return MTP_SendResponse(container, MTP_RESP_SPECIFICATION_BY_FORMAT_NOT_SUPPORTED);
+	}
+
 	uint32_t count = 0;
 	uint32_t handles[LENGTH(mtp->objects)];
 	for (uint32_t i = 0; i < LENGTH(mtp->objects); i++)
@@ -495,8 +506,18 @@ static MTP_State_t MTP_GetObjectInfo(MTP_t * mtp, MTP_Container_t * container, u
 
 static MTP_State_t MTP_GetObjectReferences(MTP_t * mtp, MTP_Container_t * container, uint32_t object_id)
 {
+	//uint8_t * dst = container->data;
+	//dst = MTP_WriteArray32(dst, NULL, 0);
+	//uint32_t size = dst - container->data;
+	//return MTP_SendData(container, size);
+
+	uint8_t * dst = container->data;
+	dst = MTP_Write32(dst, 0xFFFFFFFF);
+	uint32_t size = dst - container->data;
+	return MTP_SendData(container, size);
+
 	// I dont know why windows hits this....
-	return MTP_SendResponse(container, MTP_RESP_INVALID_OBJECT_HANDLE);
+	//return MTP_SendResponse(container, MTP_RESP_INVALID_OBJECT_HANDLE);
 }
 
 static MTP_State_t MTP_GetObject(MTP_t * mtp, MTP_Container_t * container, uint32_t object_id)
