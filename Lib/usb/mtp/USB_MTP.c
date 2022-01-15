@@ -2,6 +2,7 @@
 #include "USB_MTP.h"
 
 #ifdef USB_CLASS_MTP
+#include "CORE.h"
 #include "../USB_EP.h"
 #include "../USB_CTL.h"
 
@@ -27,7 +28,7 @@
 
 #define MTP_IN_EP                       	IN_EP(0)
 #define MTP_OUT_EP                     		OUT_EP(0)
-#define MTP_CMP_EP							IN_EP(1)
+#define MTP_EVT_EP							IN_EP(1)
 
 #define MTP_PACKET_SIZE						USB_PACKET_SIZE
 
@@ -43,6 +44,7 @@
 static void USB_MTP_TransmitDone(uint32_t count);
 static void USB_MTP_Receive(uint32_t count);
 static void USB_MTP_EnterState(MTP_State_t state);
+static void USB_MTP_EventTransmitDone(uint32_t count);
 
 /*
  * PRIVATE VARIABLES
@@ -64,12 +66,13 @@ __ALIGNED(4) const uint8_t cUSB_MTP_ConfigDescriptor[USB_MTP_CONFIG_DESC_SIZE] =
 	),
 	USB_DESCR_BLOCK_ENDPOINT( MTP_IN_EP, 0x02, MTP_PACKET_SIZE, 0),
 	USB_DESCR_BLOCK_ENDPOINT( MTP_OUT_EP, 0x02, MTP_PACKET_SIZE, 0),
-	USB_DESCR_BLOCK_ENDPOINT( MTP_CMP_EP, 0x03, MTP_CMD_SIZE, 0x10),
+	USB_DESCR_BLOCK_ENDPOINT( MTP_EVT_EP, 0x03, MTP_EVT_SIZE, 0x10),
 };
 
 
 static struct {
 	uint8_t state;
+	volatile bool event_busy;
 	MTP_Operation_t operation;
 	MTP_Container_t container;
 	MTP_t * mtp;
@@ -90,9 +93,10 @@ void USB_MTP_Init(uint8_t config)
 	// Data endpoints
 	USB_EP_Open(MTP_IN_EP, USB_EP_TYPE_BULK, MTP_PACKET_SIZE, USB_MTP_TransmitDone);
 	USB_EP_Open(MTP_OUT_EP, USB_EP_TYPE_BULK, MTP_PACKET_SIZE, USB_MTP_Receive);
-	USB_EP_Open(MTP_CMP_EP, USB_EP_TYPE_INTR, MTP_CMD_SIZE, NULL);
+	USB_EP_Open(MTP_EVT_EP, USB_EP_TYPE_INTR, MTP_EVT_SIZE, USB_MTP_EventTransmitDone);
 
 	gMtp.state = MTP_Reset(gMtp.mtp);
+	gMtp.event_busy = false;
 	USB_MTP_EnterState(gMtp.state);
 }
 
@@ -100,7 +104,7 @@ void USB_MTP_Deinit(void)
 {
 	USB_EP_Close(MTP_IN_EP);
 	USB_EP_Close(MTP_OUT_EP);
-	USB_EP_Close(MTP_CMP_EP);
+	USB_EP_Close(MTP_EVT_EP);
 }
 
 void USB_MTP_Setup(USB_SetupRequest_t * req)
@@ -108,9 +112,31 @@ void USB_MTP_Setup(USB_SetupRequest_t * req)
 	// TODO .....
 }
 
+bool USB_MTP_SubmitEvent(MTP_Event_t * event)
+{
+	// Wait for the endpoint to be free. Timeout should be reviewed.
+	uint32_t start = CORE_GetTick();
+	while (CORE_GetTick() - start < 50 && !gMtp.event_busy)
+
+	if (!gMtp.event_busy)
+	{
+		// TODO: This is an interrupt hazard.
+		// If we had other events generated in IRQ's perhaps.
+		gMtp.event_busy = true;
+		USB_EP_Write(MTP_EVT_EP, (uint8_t *)event, event->length);
+		return true;
+	}
+	return false;
+}
+
 /*
  * PRIVATE FUNCTIONS
  */
+
+static void USB_MTP_EventTransmitDone(uint32_t count)
+{
+	gMtp.event_busy = false;
+}
 
 static void USB_MTP_TransmitDone(uint32_t count)
 {

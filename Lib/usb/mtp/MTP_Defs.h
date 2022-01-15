@@ -404,7 +404,7 @@
 // Packet sizes
 #define MTP_OPERATION_SIZE					sizeof(MTP_Operation_t)
 #define MTP_CONT_HEADER_SIZE				12
-#define MTP_CMD_SIZE						8
+#define MTP_EVT_SIZE						24
 #define MTP_MEDIA_PACKET					512
 
 
@@ -431,6 +431,14 @@ typedef struct __attribute((packed)) {
 	uint8_t  data[MTP_MEDIA_PACKET];
 	uint32_t packet_size;
 } MTP_Container_t;
+
+typedef struct __attribute((packed)) {
+	uint32_t length;
+	uint16_t type;
+	uint16_t code;
+	uint32_t transaction_id;
+	uint32_t param[3];
+} MTP_Event_t;
 
 /*
  * PUBLIC FUNCTIONS

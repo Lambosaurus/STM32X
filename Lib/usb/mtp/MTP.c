@@ -186,6 +186,23 @@ MTP_State_t MTP_HandleData(MTP_t * mtp, MTP_Operation_t * op, MTP_Container_t * 
 	return MTP_State_RxOperation;
 }
 
+void MTP_UpdateFileEvent(MTP_t * mtp, MTP_File_t * file, uint16_t code)
+{
+	if (mtp->in_session)
+	{
+		MTP_Event_t event = {
+			.length = 16,
+			.type = MTP_CONT_TYPE_EVENT,
+			.code = code,
+			.transaction_id = 0,
+			.param = { file->mtp.id, 0, 0 }
+		};
+
+		// Params are the same for ObjectRemoved, ObjectAdded, ObjectInfoChanged.
+
+		USB_MTP_SubmitEvent(&event);
+	}
+}
 
 /*
  * PRIVATE FUNCTIONS
@@ -248,7 +265,7 @@ static const uint16_t cSuppOps[] = { MTP_OP_GET_DEVICE_INFO, MTP_OP_OPEN_SESSION
 								   MTP_OP_GET_OBJECT_PROPLIST, MTP_OP_GET_OBJECT_PROP_DESC, MTP_OP_GET_OBJECT_REFERENCES
 								 };
 
-static const uint16_t cSuppEvents[] = { MTP_EVENT_OBJECTADDED };
+static const uint16_t cSuppEvents[] = { MTP_EVENT_OBJECTADDED, MTP_EVENT_OBJECTREMOVED, MTP_EVENT_OBJECTINFOCHANGED };
 
 static const uint16_t cSuppObjects[] = { MTP_OBJ_FORMAT_UNDEFINED, MTP_OBJ_FORMAT_ASSOCIATION, MTP_OBJ_FORMAT_TEXT };
 

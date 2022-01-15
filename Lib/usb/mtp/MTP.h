@@ -27,6 +27,10 @@ MTP_State_t MTP_HandleOperation(MTP_t * mtp, MTP_Operation_t * op, MTP_Container
 MTP_State_t MTP_HandleData(MTP_t * mtp, MTP_Operation_t * op, MTP_Container_t * container);
 MTP_State_t MTP_NextData(MTP_t * mtp, MTP_Operation_t * op, MTP_Container_t * container);
 
+// Extern function. TODO: Clean this up.
+bool USB_MTP_SubmitEvent(MTP_Event_t * event);
+void MTP_UpdateFileEvent(MTP_t * mtp, MTP_File_t * file, uint16_t code);
+
 /*
  * PUBLIC FUNCTIONS
  */
