@@ -27,20 +27,31 @@
 void MTP_Init(MTP_t * mtp)
 {
 	bzero(mtp, sizeof(MTP_t));
+	mtp->next_id = 1;
 }
 
 bool MTP_AddFile(MTP_t * mtp, MTP_File_t * file)
+{
+	if (MTP_AddFileInternal(mtp, file))
+	{
+		if (file->mtp.type == 0)
+		{
+			// Assign the file format.
+			file->mtp.type = MTP_OBJ_FORMAT_UNDEFINED; //MTP_OBJ_FORMAT_TEXT
+		}
+		file->mtp.id = mtp->next_id++;
+		return true;
+	}
+	return false;
+}
+
+bool MTP_AddFileInternal(MTP_t * mtp, MTP_File_t * file)
 {
 	for (uint32_t i = 0; i < LENGTH(mtp->objects); i++)
 	{
 		// Find the next free slot to insert a file
 		if (mtp->objects[i] == NULL)
 		{
-			if (file->type == 0)
-			{
-				// Assign the file format.
-				file->type = MTP_OBJ_FORMAT_UNDEFINED; //MTP_OBJ_FORMAT_TEXT
-			}
 			mtp->objects[i] = file;
 			return true;
 		}
@@ -50,10 +61,11 @@ bool MTP_AddFile(MTP_t * mtp, MTP_File_t * file)
 
 void MTP_RemoveFile(MTP_t * mtp, MTP_File_t * file)
 {
+	uint32_t object_id = file->mtp.id;
 	for (uint32_t i = 0; i < LENGTH(mtp->objects); i++)
 	{
 		// Locate the file so it may be deleted.
-		if (mtp->objects[i] == file)
+		if (mtp->objects[i]->mtp.id == object_id)
 		{
 			mtp->objects[i] = NULL;
 			return;
@@ -63,10 +75,12 @@ void MTP_RemoveFile(MTP_t * mtp, MTP_File_t * file)
 
 MTP_File_t * MTP_GetObjectById(MTP_t * mtp, uint32_t object_id)
 {
-	object_id -= 1;
-	if (object_id < LENGTH(mtp->objects))
+	for (uint32_t i = 0; i < LENGTH(mtp->objects); i++)
 	{
-		return mtp->objects[object_id];
+		if (mtp->objects[i]->mtp.id == object_id)
+		{
+			return mtp->objects[i];
+		}
 	}
 	return NULL;
 }
@@ -74,6 +88,19 @@ MTP_File_t * MTP_GetObjectById(MTP_t * mtp, uint32_t object_id)
 void MTP_OnNewFile(MTP_t * mtp, MTP_NewFileCallback_t callback)
 {
 	mtp->new_file_callback = callback;
+}
+
+uint32_t MTP_FreeObjects(MTP_t * mtp)
+{
+	uint32_t free = MTP_MAX_OBJECTS;
+	for (uint32_t i = 0; i < LENGTH(mtp->objects); i++)
+	{
+		if (mtp->objects[i] != NULL)
+		{
+			free--;
+		}
+	}
+	return free;
 }
 
 /*

@@ -41,7 +41,7 @@ static MTP_State_t MTP_OpenSession(MTP_t * mtp, MTP_Container_t * container);
 static MTP_State_t MTP_GetDeviceInfo(MTP_Container_t * container);
 //static MTP_State_t MTP_GetDevicePropertyDescriptor(MTP_Container_t * container);
 static MTP_State_t MTP_GetStorageIDs(MTP_Container_t * container);
-static MTP_State_t MTP_GetStorageInfo(MTP_Container_t * container, uint32_t storage_id);
+static MTP_State_t MTP_GetStorageInfo(MTP_t * mtp, MTP_Container_t * container, uint32_t storage_id);
 static MTP_State_t MTP_GetObjectHandles(MTP_t * mtp, MTP_Container_t * container, uint32_t storage_id, uint32_t object_type, uint32_t parent_id);
 static MTP_State_t MTP_GetObjectPropertiesSupported(MTP_Container_t * container, uint32_t object_type);
 static MTP_State_t MTP_GetObjectPropertyDescriptor(MTP_Container_t * container, uint32_t property_id);
@@ -103,7 +103,7 @@ MTP_State_t MTP_HandleOperation(MTP_t * mtp, MTP_Operation_t * op, MTP_Container
 		return MTP_GetStorageIDs(container);
 
 	case MTP_OP_GET_STORAGE_INFO:
-		return MTP_GetStorageInfo(container, op->param[0]);
+		return MTP_GetStorageInfo(mtp, container, op->param[0]);
 
 	case MTP_OP_GET_OBJECT_HANDLES:
 		return MTP_GetObjectHandles(mtp, container, op->param[0], op->param[1], op->param[2]);
@@ -300,7 +300,7 @@ static MTP_State_t MTP_GetStorageIDs(MTP_Container_t * container)
 	return MTP_SendData(container, size);
 }
 
-static MTP_State_t MTP_GetStorageInfo(MTP_Container_t * container, uint32_t storage_id)
+static MTP_State_t MTP_GetStorageInfo(MTP_t * mtp, MTP_Container_t * container, uint32_t storage_id)
 {
 	if (storage_id == MTP_STORAGE_ID)
 	{
@@ -310,7 +310,7 @@ static MTP_State_t MTP_GetStorageInfo(MTP_Container_t * container, uint32_t stor
 		dst = MTP_Write16(dst, MTP_ACCESS_CAP_RW);
 		dst = MTP_Write64(dst, 0xFFFFFFFF);// MTP_STORAGE_SPACE); // Max capacity
 		dst = MTP_Write64(dst, 0xFFFFFFFF); //0xFFFFFFFFFFFFFFFF); // Free space
-		dst = MTP_Write32(dst, MTP_MAX_OBJECTS); // Free objects TODO: (NOT MAX)
+		dst = MTP_Write32(dst, MTP_FreeObjects(mtp));
 		dst = MTP_WriteString(dst, NULL);
 		dst = MTP_WriteString(dst, NULL);
 		uint32_t size = dst - container->data;
@@ -335,7 +335,7 @@ static uint16_t MTP_GetObjectProperty(const MTP_File_t * file, uint32_t property
 	switch (property_id)
 	{
 	case MTP_OBJ_PROP_OBJECT_FORMAT :
-		*data = file->type;
+		*data = file->mtp.type;
 		return MTP_DATATYPE_UINT16;
 
 	case MTP_OBJ_PROP_STORAGE_ID :
@@ -356,7 +356,7 @@ static uint16_t MTP_GetObjectProperty(const MTP_File_t * file, uint32_t property
 		return MTP_DATATYPE_STR;
 
 	case MTP_OBJ_PROP_PERS_UNIQ_OBJ_IDEN:
-		*data = 0;
+		*data = file->mtp.id; // The file should be uniquely identified by this. Our ID's are suitable unique.
 		return MTP_DATATYPE_UINT128;
 
 	case MTP_OBJ_PROP_PROTECTION_STATUS:
@@ -373,7 +373,10 @@ const MTP_File_t cDefaultFile = {
 		.read = (void*)1,
 		.write = (void*)1,
 		.size = 0,
-		.type = MTP_OBJ_FORMAT_UNDEFINED,
+		.mtp = {
+			.type = MTP_OBJ_FORMAT_UNDEFINED,
+			.id = 0,
+		},
 };
 
 static MTP_State_t MTP_GetObjectPropertyDescriptor(MTP_Container_t * container, uint32_t property_id)
@@ -487,7 +490,7 @@ static MTP_State_t MTP_GetObjectInfo(MTP_t * mtp, MTP_Container_t * container, u
 
 	uint8_t * dst = container->data;
 	dst = MTP_Write32(dst, MTP_STORAGE_ID);
-	dst = MTP_Write16(dst, file->type);
+	dst = MTP_Write16(dst, file->mtp.type);
 	dst = MTP_Write16(dst, (file->write) ? MTP_OBJ_NO_PROTECTION : MTP_OBJ_READ_ONLY);
 	dst = MTP_Write32(dst, file->size);
 
@@ -612,20 +615,8 @@ static MTP_State_t MTP_RecieveObjectInfo(MTP_t * mtp, MTP_Container_t * containe
 	char name[MTP_STRING_MAX];
 	MTP_ReadString(container->data + 52, name);
 
-	uint32_t object_id = 0;
-	// Find a spare object id.
-	for (uint32_t i = 0; i < LENGTH(mtp->objects); i++)
+	if (MTP_FreeObjects(mtp) == 0)
 	{
-		if (mtp->objects[i] == NULL)
-		{
-			object_id = i + 1;
-			break;
-		}
-	}
-
-	if (object_id == 0)
-	{
-		// No space.
 		return MTP_SendResponse(container, MTP_RESP_STORE_FULL);
 	}
 
@@ -635,11 +626,13 @@ static MTP_State_t MTP_RecieveObjectInfo(MTP_t * mtp, MTP_Container_t * containe
 		MTP_File_t * file = mtp->new_file_callback(name, size);
 		if (file && file->write)
 		{
-			mtp->objects[object_id - 1] = file;
-			mtp->new_file = file; // This is where a subsequent send data will occurr.
+			uint32_t object_id = mtp->next_id++;
 
 			file->size = size;
-			file->type = obj_type;
+			file->mtp.type = obj_type;
+			file->mtp.id = object_id;
+
+			mtp->new_file = file; // This is where a subsequent send data will occurr.
 
 			uint32_t params[] = {
 				MTP_STORAGE_ID,
@@ -712,6 +705,8 @@ static MTP_State_t MTP_RecieveObject(MTP_t * mtp, MTP_Container_t * container, M
 		mtp->transaction.remaining = 0;
 		if (success)
 		{
+			// If this fails - it means we ran out of slots just as the data came in. Whoops!
+			success &= MTP_AddFileInternal(mtp, mtp->new_file);
 			mtp->new_file = NULL;
 		}
 

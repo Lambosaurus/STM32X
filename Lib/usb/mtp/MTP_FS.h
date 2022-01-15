@@ -14,7 +14,11 @@
  */
 
 typedef struct {
-	uint16_t type;
+	struct {
+		uint32_t id;
+		uint16_t type;
+	} mtp;
+
 	const char * name;
 	uint32_t size;
 	bool (*read)(uint8_t * bfr, uint32_t pos, uint32_t count);
@@ -25,6 +29,7 @@ typedef MTP_File_t * (*MTP_NewFileCallback_t)(const char * name, uint32_t size);
 
 typedef struct {
 	bool in_session;
+	uint32_t next_id;
 	MTP_File_t * objects[MTP_MAX_OBJECTS];
 	MTP_NewFileCallback_t new_file_callback;
 	struct {
@@ -41,9 +46,11 @@ typedef struct {
 
 void MTP_Init(MTP_t * mtp);
 bool MTP_AddFile(MTP_t * mtp, MTP_File_t * file);
+bool MTP_AddFileInternal(MTP_t * mtp, MTP_File_t * file);
 void MTP_RemoveFile(MTP_t * mtp, MTP_File_t * file);
 MTP_File_t * MTP_GetObjectById(MTP_t * mtp, uint32_t object_id);
 void MTP_OnNewFile(MTP_t * mtp, MTP_NewFileCallback_t callback);
+uint32_t MTP_FreeObjects(MTP_t * mtp);
 
 /*
  * EXTERN DECLARATIONS
