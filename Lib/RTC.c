@@ -148,8 +148,8 @@ void RTC_Read(DateTime_t * time)
 	time->hour 		= RTC_FromBCD((treg & (RTC_TR_HT | RTC_TR_HU)) >> 16);
 	time->minute 	= RTC_FromBCD((treg & (RTC_TR_MNT | RTC_TR_MNU)) >> 8);
 	time->second 	= RTC_FromBCD((treg & (RTC_TR_ST | RTC_TR_SU)));
-	time->year 		= RTC_FromBCD((dreg & (RTC_DR_YT | RTC_DR_YU)) >> 16U) + RTC_YEAR_MIN;
-	time->month 	= RTC_FromBCD((dreg & (RTC_DR_MT | RTC_DR_MU)) >> 8U);
+	time->year 		= RTC_FromBCD((dreg & (RTC_DR_YT | RTC_DR_YU)) >> 16) + RTC_YEAR_MIN;
+	time->month 	= RTC_FromBCD((dreg & (RTC_DR_MT | RTC_DR_MU)) >> 8);
 	time->day 		= RTC_FromBCD((dreg & (RTC_DR_DT | RTC_DR_DU)));
 }
 
@@ -161,8 +161,8 @@ void RTC_OnAlarm(RTC_Alarm_t alarm, DateTime_t * time, RTC_Mask_t mask, VoidFunc
 	if (time != NULL)
 	{
 		treg |=	(RTC_ByteToBcd2(time->hour)   << 16)
-			 | (RTC_ByteToBcd2(time->minute) << 8)
-			 | (RTC_ByteToBcd2(time->second));
+			 |  (RTC_ByteToBcd2(time->minute) << 8)
+			 |  (RTC_ByteToBcd2(time->second));
 	}
 	uint32_t ssreg = 0;
 	_RTC_WRITEPROTECTION_DISABLE();

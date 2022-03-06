@@ -4,6 +4,8 @@
 // Common includes
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
+
 
 // Include user board file.
 #include "Board.h"
