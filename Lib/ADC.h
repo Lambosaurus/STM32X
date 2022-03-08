@@ -14,24 +14,37 @@
  */
 
 #ifndef ADC_VREF
-#define ADC_VREF	3300
+#define ADC_VREF			3300
 #endif
-#define ADC_MAX		4095
+#define ADC_MAX				4095
+
 
 /*
  * PUBLIC TYPES
  */
 
+typedef void (*ADC_Callback_t)(uint16_t * samples, uint32_t size);
+
 /*
  * PUBLIC FUNCTIONS
  */
 
-// Initialisation
+// This initializes the ADC with the target frequency
 void ADC_Init(void);
 void ADC_Deinit(void);
 
+// Configuration
+uint32_t ADC_SetFrequency(uint32_t target);
+void ADC_SetOversampling(uint32_t ratio);
+
 // Reading
 uint32_t ADC_Read(uint32_t channel);
+
+#ifdef ADC_DMA_CH
+// Reading via DMA
+void ADC_StartDMA(uint32_t channel, uint16_t * buffer, uint32_t count, bool circular, ADC_Callback_t callback);
+void ADC_Stop(void);
+#endif // ADC_DMA_CH
 
 // Special channels
 int32_t ADC_ReadDieTemp(void);
