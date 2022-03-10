@@ -56,8 +56,6 @@
 #endif
 
 
-#define _ADC_CLEAR_FLAG(adcx, flags) 	(adcx->ISR |= flags)
-
 // There is a conversion time of 12.5 cycles. The .5 is wrapped into the constant.
 #define ADC_CLKS(sample_clks)		(sample_clks + 13)
 #define ADCx						ADC1
@@ -65,7 +63,6 @@
 /*
  * PRIVATE TYPES
  */
-
 
 /*
  * PRIVATE PROTOTYPES
@@ -75,10 +72,20 @@ static void ADC_Calibrate(void);
 static void ADC_WaitForFlag(uint32_t flag);
 static uint32_t ADC_SelectSampleTime(uint32_t desired, uint32_t * frequency);
 static void ADC_StopConversion(void);
+static void ADC_StopCallback(uint16_t * data, uint32_t count);
 
 /*
  * PRIVATE VARIABLES
  */
+
+typedef struct {
+	ADC_Callback_t callback;
+	ADC_TypeDef * Instance;
+} ADC_t;
+
+static ADC_t gADC = {
+	.Instance = ADC1
+};
 
 /*
  * PUBLIC FUNCTIONS
@@ -100,37 +107,22 @@ void ADC_Init(void)
 	{
 		ADCx->CR |= ADC_CR_ADVREGEN;
 	}
-	// Setup control register
-	MODIFY_REG( ADCx->CFGR1,
-		ADC_CFGR1_ALIGN
-		| ADC_CFGR1_SCANDIR
-		| ADC_CFGR1_EXTSEL
-		| ADC_CFGR1_EXTEN
-		| ADC_CFGR1_CONT
-		| ADC_CFGR1_DMACFG
-		| ADC_CFGR1_OVRMOD
-		| ADC_CFGR1_AUTDLY
-		| ADC_CFGR1_AUTOFF
-		| ADC_CFGR1_DISCEN
-		| ADC_CFGR1_RES,
 
-		ADC_DATAALIGN_RIGHT
-		| ADC_SCAN_DIRECTION_FORWARD
+	ADCx->CFGR1 = ADC_DATAALIGN_RIGHT
+		| ADC_SCANDIR( ADC_SCAN_DIRECTION_FORWARD )
 		| ADC_CONTINUOUS(DISABLE)
 		| ADC_DMACONTREQ(DISABLE)
 		| ADC_OVR_DATA_PRESERVED
 		| __HAL_ADC_CFGR1_AutoDelay(DISABLE)
 		| __HAL_ADC_CFGR1_AUTOFF(DISABLE)
-		| ADC_RESOLUTION_12B
-	);
-	// Disable oversampling
-	ADCx->CFGR2 &= ~ADC_CFGR2_OVSE;
+		| ADC_RESOLUTION_12B;
+
+	ADCx->CFGR2 = 0;
 	// Configure the default sampling rate
 	MODIFY_REG(ADCx->SMPR, ADC_SMPR_SMPR, ADC_SMPR_DEFAULT);
 
 	ADC_Calibrate();
-
-	ADCx->CR |= ADC_CR_ADEN;
+	__HAL_ADC_ENABLE(&gADC);
 	ADC_WaitForFlag(ADC_FLAG_RDY);
 }
 
@@ -175,7 +167,7 @@ uint32_t ADC_Read(uint32_t channel)
 {
 	_ADC_SELECT(ADCx, channel);
 
-	_ADC_CLEAR_FLAG(ADCx, (ADC_FLAG_EOC | ADC_FLAG_EOS | ADC_FLAG_OVR));
+	__HAL_ADC_CLEAR_FLAG(&gADC, (ADC_FLAG_EOC | ADC_FLAG_EOS | ADC_FLAG_OVR));
 	ADCx->CR |= ADC_CR_ADSTART;
 
 	ADC_WaitForFlag(ADC_FLAG_EOC);
@@ -188,27 +180,18 @@ void ADC_Deinit(void)
 	ADC_StopConversion();
 
 	// at this point, the ADC_CR_ADSTART must not be set.
-	ADCx->CR |= ADC_CR_ADDIS;
+	__HAL_ADC_DISABLE(&gADC);
 	while(ADCx->CR & ADC_CR_ADEN);
 
 	ADCx->IER = 0;
-	_ADC_CLEAR_FLAG(ADCx, ADC_FLAG_AWD | ADC_FLAG_EOCAL | ADC_FLAG_OVR | ADC_FLAG_EOS
-                               | ADC_FLAG_EOC | ADC_FLAG_EOSMP | ADC_FLAG_RDY);
+	__HAL_ADC_CLEAR_FLAG(&gADC, ADC_FLAG_ALL);
 
 	ADCx->CR &= ~ADC_CR_ADVREGEN;
 
-	ADCx->CFGR1 &= ~(ADC_CFGR1_AWDCH  | ADC_CFGR1_AWDEN  | ADC_CFGR1_AWDSGL |
-					   ADC_CFGR1_DISCEN | ADC_CFGR1_AUTOFF | ADC_CFGR1_AUTDLY |
-					   ADC_CFGR1_CONT   | ADC_CFGR1_OVRMOD | ADC_CFGR1_EXTEN  |
-					   ADC_CFGR1_EXTSEL | ADC_CFGR1_ALIGN  | ADC_CFGR1_RES    |
-					   ADC_CFGR1_SCANDIR| ADC_CFGR1_DMACFG | ADC_CFGR1_DMAEN);
-
-	ADCx->CFGR2 &= ~(ADC_CFGR2_TOVS  | ADC_CFGR2_OVSS  | ADC_CFGR2_OVSR |
-							   ADC_CFGR2_OVSE | ADC_CFGR2_CKMODE );
-
-	ADCx->SMPR &= ~(ADC_SMPR_SMPR);
-	ADCx->TR &= ~(ADC_TR_LT | ADC_TR_HT);
-
+	ADCx->CFGR1 = 0;
+	ADCx->CFGR2 = 0;
+	ADCx->SMPR = 0;
+	ADCx->TR = 0;
 
 	__HAL_RCC_ADC1_CLK_DISABLE();
 	CLK_DisableADCCLK();
@@ -250,22 +233,32 @@ uint32_t ADC_ReadVRef(void)
 
 void ADC_Start(uint32_t channel, uint16_t * buffer, uint32_t count, bool circular, ADC_Callback_t callback)
 {
+	// These flags can cause the previous ADC sample to be sent via DMA if not cleared.
+	__HAL_ADC_CLEAR_FLAG(&gADC, ADC_FLAG_ALL);
+
 	// Select the channel
 	_ADC_SELECT(ADCx, channel);
 
 	// Enable DMA, with optional circular mode.
 	MODIFY_REG( ADCx->CFGR1,
-				ADC_CFGR1_DMACFG | ADC_CFGR1_CONT,
-				ADC_CONTINUOUS(ENABLE) | ADC_DMACONTREQ(circular)
+				ADC_CFGR1_DMACFG | ADC_CFGR1_CONT | ADC_CFGR1_DMAEN,
+				ADC_CONTINUOUS(ENABLE) | ADC_DMACONTREQ(circular) | ADC_CFGR1_DMAEN
 			);
 
 	DMA_Flags_t flags = DMA_Dir_FromPeriph | DMA_MemSize_HalfWord | DMA_PeriphSize_Word;
 
-	if (circular) {
+	if (circular)
+	{
 		flags |= DMA_Mode_Circular;
+	}
+	else
+	{
+		gADC.callback = callback;
+		callback = ADC_StopCallback;
 	}
 
 	DMA_Init(ADC_DMA_CH, (void*)&ADCx->DR, buffer, count, flags, (DMA_Callback_t)callback);
+	ADCx->CR |= ADC_CR_ADSTART;
 }
 
 void ADC_Stop(void)
@@ -274,7 +267,7 @@ void ADC_Stop(void)
 
 	// Put it back in single shot mode.
 	MODIFY_REG( ADCx->CFGR1,
-				ADC_CFGR1_DMACFG | ADC_CFGR1_CONT,
+				ADC_CFGR1_DMACFG | ADC_CFGR1_CONT | ADC_CFGR1_DMAEN,
 				ADC_CONTINUOUS(DISABLE) | ADC_DMACONTREQ(DISABLE)
 			);
 
@@ -286,6 +279,15 @@ void ADC_Stop(void)
 /*
  * PRIVATE FUNCTIONS
  */
+
+static void ADC_StopCallback(uint16_t * data, uint32_t count)
+{
+	ADC_Stop();
+	if (gADC.callback)
+	{
+		gADC.callback(data, count);
+	}
+}
 
 static void ADC_StopConversion(void)
 {
@@ -301,7 +303,7 @@ static void ADC_StopConversion(void)
 
 static void ADC_WaitForFlag(uint32_t flag)
 {
-	while (!(ADCx->ISR & flag)) { }
+	while (!__HAL_ADC_GET_FLAG(&gADC, flag));
 }
 
 static void ADC_Calibrate(void)

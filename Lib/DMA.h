@@ -18,8 +18,12 @@ typedef void (*DMA_Callback_t)(void * bfr, uint32_t index);
 typedef struct {
 	DMA_Channel_TypeDef * Instance;
 	DMA_Callback_t callback;
-	uint8_t mem_size;
 	uint8_t index;
+	struct {
+		uint32_t size;
+		uint32_t length;
+		void * bfr;
+	} data;
 } DMA_t;
 
 

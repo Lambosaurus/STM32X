@@ -75,7 +75,8 @@ void DMA_Init(DMA_t * dma, void * peripheral, void * bfr, uint32_t length, DMA_F
 {
 	DMAx_Init(dma);
 
-	dma->index = (((uint32_t)dma->Instance - (uint32_t)DMA1_Channel1) / ((uint32_t)DMA1_Channel2 - (uint32_t)DMA1_Channel1)) << 2;
+	dma->callback = callback;
+	dma->index = (((uint32_t)dma->Instance - (uint32_t)DMA1_Channel1) / ((uint32_t)DMA1_Channel2 - (uint32_t)DMA1_Channel1));
 
 	MODIFY_REG( dma->Instance->CCR,
 		  DMA_CCR_PL    | DMA_CCR_MSIZE  | DMA_CCR_PSIZE
@@ -88,7 +89,10 @@ void DMA_Init(DMA_t * dma, void * peripheral, void * bfr, uint32_t length, DMA_F
 	dma->Instance->CNDTR = length;
 	dma->Instance->CPAR = (uint32_t)peripheral;
 	dma->Instance->CMAR = (uint32_t)bfr;
-	dma->mem_size = DMA_GetMemSize(flags);
+
+	dma->data.size = DMA_GetMemSize(flags) * length;
+	dma->data.length = length;
+	dma->data.bfr = bfr;
 
 	if (flags & DMA_Mode_Circular)
 	{
@@ -161,21 +165,19 @@ static void DMAx_Deinit(DMA_t * dma)
 static void DMA_IRQHandler(DMA_t * dma, uint32_t flag_it)
 {
 	uint32_t source_it = dma->Instance->CCR;
+	uint32_t flag_pos = dma->index << 2;
 
-	if ((flag_it & (DMA_FLAG_HT1 << dma->index)) && (source_it & DMA_IT_HT))
+	if ((flag_it & (DMA_FLAG_HT1 << flag_pos)) && (source_it & DMA_IT_HT))
 	{
 		// Clear half complete flag
-		DMAx->IFCR = DMA_ISR_HTIF1 << dma->index;
+		DMAx->IFCR = DMA_ISR_HTIF1 << flag_pos;
 
 		if (dma->callback)
 		{
-			uint32_t length = dma->Instance->CNDTR / 2;
-			void * bfr = (void*)(dma->Instance->CMAR) + (dma->mem_size * length);
-
-			dma->callback(bfr, length);
+			dma->callback(dma->data.bfr, dma->data.length / 2);
 		}
 	}
-	else if ((flag_it & (DMA_FLAG_TC1 << dma->index)) && (source_it & DMA_IT_TC))
+	else if ((flag_it & (DMA_FLAG_TC1 << flag_pos)) && (source_it & DMA_IT_TC))
 	{
 		bool circular = dma->Instance->CCR & DMA_CCR_CIRC;
 		if(!circular)
@@ -184,14 +186,17 @@ static void DMA_IRQHandler(DMA_t * dma, uint32_t flag_it)
 			__HAL_DMA_DISABLE_IT(dma, DMA_IT_TE | DMA_IT_HT | DMA_IT_TC);
 		}
 		// Clear the transfer complete flag
-		DMAx->IFCR = DMA_ISR_TCIF1 << dma->index;
+		DMAx->IFCR = DMA_ISR_TCIF1 << flag_pos;
 		if (dma->callback)
 		{
-			uint32_t length = dma->Instance->CNDTR;
-			if (circular) { length /= 2; }
-			void * bfr = (void*)(dma->Instance->CMAR);
-
-			dma->callback(bfr, length);
+			if (circular)
+			{
+				dma->callback(dma->data.bfr + (dma->data.size/2), dma->data.length / 2);
+			}
+			else
+			{
+				dma->callback(dma->data.bfr, dma->data.length);
+			}
 		}
 	}
 }
@@ -199,7 +204,6 @@ static void DMA_IRQHandler(DMA_t * dma, uint32_t flag_it)
 /*
  * INTERRUPT ROUTINES
  */
-
 #if defined(DMA_CH1_ENABLE)
 void DMA1_Channel1_IRQHandler(void)
 {
