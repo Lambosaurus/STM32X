@@ -6,8 +6,6 @@
 #include "../USB_CTL.h"
 #include "SCSI.h"
 
-#include <string.h>
-
 
 /*
  * PRIVATE DEFINITIONS

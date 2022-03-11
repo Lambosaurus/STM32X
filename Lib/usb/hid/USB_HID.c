@@ -7,7 +7,6 @@
 
 #include "HID_Defs.h"
 #include "Core.h"
-#include <string.h>
 
 /*
  * PRIVATE DEFINITIONS

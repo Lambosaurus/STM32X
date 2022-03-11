@@ -8,7 +8,6 @@
 
 #ifdef USB_CLASS_CDC
 #include "usb/cdc/USB_CDC.h"
-#include <string.h>
 #endif
 #ifdef USB_CLASS_MSC
 #include "usb/msc/USB_MSC.h"
