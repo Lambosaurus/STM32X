@@ -72,14 +72,12 @@ static void ADC_Calibrate(void);
 static void ADC_WaitForFlag(uint32_t flag);
 static uint32_t ADC_SelectSampleTime(uint32_t desired, uint32_t * frequency);
 static void ADC_StopConversion(void);
-static void ADC_StopCallback(uint16_t * data, uint32_t count);
 
 /*
  * PRIVATE VARIABLES
  */
 
 typedef struct {
-	ADC_Callback_t callback;
 	ADC_TypeDef * Instance;
 } ADC_t;
 
@@ -126,7 +124,7 @@ void ADC_Init(void)
 	ADC_WaitForFlag(ADC_FLAG_RDY);
 }
 
-uint32_t ADC_SetFrequency(uint32_t target)
+uint32_t ADC_SetFreq(uint32_t target)
 {
 	uint32_t actual;
 	uint32_t smpr = ADC_SelectSampleTime(target, &actual);
@@ -165,9 +163,16 @@ void ADC_SetOversampling(uint32_t ratio)
 
 uint32_t ADC_Read(uint32_t channel)
 {
+	__HAL_ADC_CLEAR_FLAG(&gADC, (ADC_FLAG_EOC | ADC_FLAG_EOS | ADC_FLAG_OVR));
+
 	_ADC_SELECT(ADCx, channel);
 
-	__HAL_ADC_CLEAR_FLAG(&gADC, (ADC_FLAG_EOC | ADC_FLAG_EOS | ADC_FLAG_OVR));
+	// Put it back in single shot mode.
+	MODIFY_REG( ADCx->CFGR1,
+				ADC_CFGR1_DMACFG | ADC_CFGR1_CONT | ADC_CFGR1_DMAEN,
+				ADC_CONTINUOUS(DISABLE) | ADC_DMACONTREQ(DISABLE)
+			);
+
 	ADCx->CR |= ADC_CR_ADSTART;
 
 	ADC_WaitForFlag(ADC_FLAG_EOC);
@@ -251,11 +256,6 @@ void ADC_Start(uint32_t channel, uint16_t * buffer, uint32_t count, bool circula
 	{
 		flags |= DMA_Mode_Circular;
 	}
-	else
-	{
-		gADC.callback = callback;
-		callback = ADC_StopCallback;
-	}
 
 	DMA_Init(ADC_DMA_CH, (void*)&ADCx->DR, buffer, count, flags, (DMA_Callback_t)callback);
 	ADCx->CR |= ADC_CR_ADSTART;
@@ -264,13 +264,6 @@ void ADC_Start(uint32_t channel, uint16_t * buffer, uint32_t count, bool circula
 void ADC_Stop(void)
 {
 	ADC_StopConversion();
-
-	// Put it back in single shot mode.
-	MODIFY_REG( ADCx->CFGR1,
-				ADC_CFGR1_DMACFG | ADC_CFGR1_CONT | ADC_CFGR1_DMAEN,
-				ADC_CONTINUOUS(DISABLE) | ADC_DMACONTREQ(DISABLE)
-			);
-
 	DMA_Deinit(ADC_DMA_CH);
 }
 
@@ -279,15 +272,6 @@ void ADC_Stop(void)
 /*
  * PRIVATE FUNCTIONS
  */
-
-static void ADC_StopCallback(uint16_t * data, uint32_t count)
-{
-	ADC_Stop();
-	if (gADC.callback)
-	{
-		gADC.callback(data, count);
-	}
-}
 
 static void ADC_StopConversion(void)
 {
@@ -312,6 +296,18 @@ static void ADC_Calibrate(void)
 	ADCx->CR |= ADC_CR_ADCAL;
 	while(ADCx->CR & ADC_CR_ADCAL);
 }
+
+/*
+ * This creates frequencies of:
+	285714
+	250000
+	200000
+	160000
+	125000
+	76923
+	43478
+	23121
+ */
 
 static uint32_t ADC_SelectSampleTime(uint32_t desired, uint32_t * frequency)
 {

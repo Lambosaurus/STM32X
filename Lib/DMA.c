@@ -196,6 +196,9 @@ static void DMA_IRQHandler(DMA_t * dma, uint32_t flag_it)
 			else
 			{
 				dma->callback(dma->data.bfr, dma->data.length);
+
+				// DMA should be re-initialised after a single shot.
+				DMA_Deinit(ADC_DMA_CH);
 			}
 		}
 	}

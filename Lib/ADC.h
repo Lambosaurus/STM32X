@@ -34,7 +34,7 @@ void ADC_Init(void);
 void ADC_Deinit(void);
 
 // Configuration
-uint32_t ADC_SetFrequency(uint32_t target);
+uint32_t ADC_SetFreq(uint32_t target);
 void ADC_SetOversampling(uint32_t ratio);
 
 // Reading
