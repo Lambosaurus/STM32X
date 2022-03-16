@@ -77,7 +77,7 @@ while (1)
 Timers can also be used to generate PWM.
 Timer channels can only be routed to specific GPIO. Check your datasheet.
 
-The GPIO will be high while the timer value is less than the channels pulse value. Note that that means for 100% duty cycle, the pulse value must exceed the reload value.
+The GPIO will be high while the timer value is less than the channels pulse value. Note for 100% duty cycle, the pulse value must exceed the reload value.
 
 ```c
 // Set up a timer with a reload frequency of 10KHz, with an 8 bit resolution.
