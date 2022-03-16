@@ -27,7 +27,7 @@ if (   I2C_Write(I2C_1, 0x44, tx, sizeof(tx))
 All I2C operations may fail - usually for the following reasons:
 * The bus is not "Idle". One of the SCL or SDA lines are not in the idle (high) state. Check your pullups.
 * The device did not acknowledge one of the written bytes, either because it was an invalid operation, or the device is not present on the bus.
-* A device attempted to stall the transaction by clock stretching for an extended ammount of time. This is less likely.
+* A device attempted to stall the transaction by clock stretching for an extended ammount of time.
 
 Most realistic reads require a write to set up the read address. Because of this a write following by a repeated read is provided. The following code is functionally equivilent to the above - but faster.
 
@@ -59,6 +59,11 @@ for (uint8_t address = 0; address < 0x7F; address++)
 }
 ```
 
+## I2C Timeouts
+
+Because I2C supports clock stretching, all I2C transfers have a timeout. This timeout is implemented per byte, and can be overidden using the `I2C_TIMEOUT` definiton.
+Some devices may require extended clock stretching, and so this timeout may need to be increased.
+
 # Board
 
 The module is dependant on  definitions within `Board.h`
@@ -70,4 +75,5 @@ The following template can be used. Commented out definitions are optional.
 #define I2C1_PINS			(GPIO_PIN_6 | GPIO_PIN_7)
 #define I2C1_AF			    GPIO_AF1_I2C1
 //#define USE_I2C_FASTMODEPLUS
+//#define I2C_TIMEOUT       10
 ```

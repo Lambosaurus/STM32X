@@ -1,6 +1,7 @@
 
 #include "ADC.h"
 #include "CLK.h"
+#include "US.h"
 
 /*
  * PRIVATE DEFINITIONS
@@ -129,6 +130,7 @@ uint32_t AIN_AinToMv(uint32_t ain)
 int32_t ADC_ReadDieTemp(void)
 {
 	ADC->CCR |= ADC_CCR_TSEN;
+	US_Delay(10);
 	int32_t ain = ADC_Read(ADC_CHANNEL_TEMPSENSOR);
 	ADC->CCR &= ~ADC_CCR_TSEN;
 
@@ -140,6 +142,7 @@ int32_t ADC_ReadDieTemp(void)
 uint32_t ADC_ReadVRef(void)
 {
 	ADC->CCR |= ADC_CCR_VREFEN;
+	US_Delay(10);
 	int32_t ain = ADC_Read(ADC_CHANNEL_VREFINT);
 	ADC->CCR &= ~ADC_CCR_VREFEN;
 

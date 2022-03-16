@@ -71,7 +71,6 @@ static uint16_t USB_CTL_GetSerialDescriptor(uint8_t * data);
 
 static void USB_CTL_SendStatus(void);
 static void USB_CTL_ReceiveStatus(void);
-static void USB_CTL_Error(void);
 
 static void USB_CTL_DataOut(uint32_t count);
 static void USB_CTL_DataIn(uint32_t count);
@@ -183,6 +182,13 @@ void USB_CTL_Receive(uint8_t * data, uint16_t size, VoidFunction_t callback)
 	gCTL.ctl_state = CTL_STATE_DATA_OUT;
 	USB_EP_Read(CTL_OUT_EP, data, size);
 }
+
+void USB_CTL_Error(void)
+{
+	USB_EP_Stall(CTL_IN_EP);
+	USB_EP_Stall(CTL_OUT_EP);
+}
+
 
 /*
  * PRIVATE FUNCTIONS
@@ -618,13 +624,6 @@ static uint16_t USB_CTL_GetLangIdDescriptor(uint8_t * data)
 	data[3] = HIBYTE(USB_LANGID);
 	return 4;
 }
-
-static void USB_CTL_Error(void)
-{
-	USB_EP_Stall(CTL_IN_EP);
-	USB_EP_Stall(CTL_OUT_EP);
-}
-
 
 static void USB_CTL_DataOut(uint32_t count)
 {

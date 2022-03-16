@@ -94,6 +94,6 @@ extern TIM_t * TIM_21;
 extern TIM_t * TIM_22;
 #endif
 
-#include "TIM.inl"
+#include "TIM.inl.h"
 
 #endif //TIM_H

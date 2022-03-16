@@ -51,6 +51,6 @@ void CORE_OnTick(VoidFunction_t callback);
  * EXTERN DECLARATIONS
  */
 
-#include "Core.inl"
+#include "Core.inl.h"
 
 #endif //CORE_H

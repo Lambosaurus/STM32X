@@ -11,7 +11,7 @@
 // Filter configuration
 #define I2C_USE_ANALOGFILTER
 #define I2C_DIGITALFILTER_SIZE	0
-#define I2C_SCL_DUTY_PCT 33
+#define I2C_SCL_DUTY_PCT 60
 
 #ifdef I2C_USE_ANALOGFILTER
 // This can probably be calculated but it seems to match what ST use
@@ -29,8 +29,9 @@
 
 #define NS_TO_CYCLES(clk, ns)		(clk/(1000000000/ns))
 
-#define I2C_BUSY_TIMEOUT			10
-#define I2C_XFER_TIMEOUT			5
+#ifndef I2C_TIMEOUT
+#define I2C_TIMEOUT					5
+#endif
 
 #define I2C_READ_MODE				I2C_CR2_RD_WRN
 #define I2C_WRITE_MODE				0U
@@ -247,7 +248,7 @@ static bool I2C_WaitForIdle(I2C_t * i2c)
 	uint32_t start = CORE_GetTick();
     while (_I2C_GET_FLAGS(i2c) & I2C_FLAG_BUSY)
     {
-    	if (CORE_GetTick() - start > I2C_BUSY_TIMEOUT)
+    	if (CORE_GetTick() - start > I2C_TIMEOUT)
     	{
     		return false;
     	}
@@ -258,7 +259,7 @@ static bool I2C_WaitForIdle(I2C_t * i2c)
 static bool I2C_WaitForFlag(I2C_t * i2c, uint32_t flag)
 {
 	uint32_t start = CORE_GetTick();
-	while (CORE_GetTick() - start < I2C_XFER_TIMEOUT)
+	while (CORE_GetTick() - start < I2C_TIMEOUT)
 	{
 		if (_I2C_GET_FLAGS(i2c) & flag)
 		{
@@ -276,7 +277,7 @@ static bool I2C_WaitForRXNE(I2C_t * i2c)
 {
 	uint32_t start = CORE_GetTick();
 
-	while (CORE_GetTick() - start < I2C_XFER_TIMEOUT)
+	while (CORE_GetTick() - start < I2C_TIMEOUT)
 	{
 		uint32_t flags = _I2C_GET_FLAGS(i2c);
 		if (flags & I2C_FLAG_RXNE)
@@ -314,7 +315,7 @@ static bool I2C_IsAcknowledgeFailed(I2C_t * i2c)
   if (_I2C_GET_FLAGS(i2c) & I2C_FLAG_AF)
   {
     uint32_t start = CORE_GetTick();
-    while (CORE_GetTick() - start < I2C_XFER_TIMEOUT)
+    while (CORE_GetTick() - start < I2C_TIMEOUT)
     {
     	if (_I2C_GET_FLAGS(i2c) & I2C_FLAG_STOPF)
     	{

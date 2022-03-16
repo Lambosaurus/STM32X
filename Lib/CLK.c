@@ -41,7 +41,7 @@
 #if ((CLK_SYSCLK_FREQ != CLK_PLLSRC_FREQ) && !(CLK_SYSCLK_SRC == RCC_SYSCLKSOURCE_MSI))
 
 #define CLK_USE_PLL
-#include "CLK_PLL.inl"
+#include "CLK_PLL.inl.h"
 #undef 	CLK_SYSCLK_SRC
 #define CLK_SYSCLK_SRC			RCC_SYSCLKSOURCE_PLLCLK
 

@@ -62,7 +62,11 @@ void SPI_Init(SPI_t * spi, uint32_t bitrate, SPI_Mode_t mode)
 						| (SPI_NSS_SOFT & SPI_CR1_SSM) | prescalar | SPI_FIRSTBIT_MSB | SPI_CRCCALCULATION_DISABLE;
 
 	spi->Instance->CR2 = ((SPI_NSS_SOFT >> 16u) & SPI_CR2_SSOE) | SPI_TIMODE_DISABLE;
+
+#ifdef SPI_I2SCFGR_I2SMOD
+	// This register is only defined on some cores.
 	spi->Instance->I2SCFGR &= ~SPI_I2SCFGR_I2SMOD;
+#endif
 
 	__HAL_SPI_ENABLE(spi);
 }
