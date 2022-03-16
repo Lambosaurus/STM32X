@@ -297,18 +297,6 @@ static void ADC_Calibrate(void)
 	while(ADCx->CR & ADC_CR_ADCAL);
 }
 
-/*
- * This creates frequencies of:
-	285714
-	250000
-	200000
-	160000
-	125000
-	76923
-	43478
-	23121
- */
-
 static uint32_t ADC_SelectSampleTime(uint32_t desired, uint32_t * frequency)
 {
 #if defined(STM32L0)
