@@ -94,6 +94,6 @@ static inline uint32_t GPIO_ReadPort(GPIO_t * gpio, uint32_t pins);
  * EXTERN DECLARATIONS
  */
 
-#include "GPIO.inl"
+#include "GPIO.inl.h"
 
 #endif //GPIO_H
