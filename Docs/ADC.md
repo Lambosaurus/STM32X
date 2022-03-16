@@ -57,7 +57,7 @@ ADC_SetOversampling(2);
 
 When configuring the frequency, note that only a specific list of frequencies are available. In the STM32L0 these are:
 ```  
-    285714 hz
+	285714 hz
 	250000 hz
 	200000 hz
 	160000 hz
@@ -73,36 +73,60 @@ These are dependant on the ADC clocking configuration, so its recommended to che
 
 The ADC may be run in continous mode if a DMA channel is allocated. This can be used in a one-shot or circular mode.
 
-```C
-ADC_Init();
-ADC_SetFreq(23121);
+See [DMA](DMA.md) for notes on enabling DMA channels.
 
-// When configured in one shot mode, the ADC will be automatically deinitialised when completed
-// The User_Callback will be executed when the sample is complete.
-uint16_t buffer[100];
-ADC_Start(ADC_CHANNEL_0, buffer, LENGTH(buffer), false, User_Callback);
+### **One-shot mode**:
 
-while (1)
-{
-    CORE_Idle();
-}
-
-```
+In one-shot mode, the callback will be called when the buffer is filled. On completion, the ADC will be automatically stopped.
 
 ```C
-ADC_Init();
-ADC_SetFreq(23121);
-
-// When configured in circular mode, the sampling will run continously until ADC_Stop() is called.
-// The User_Callback will be called when the buffer is half full.
-uint16_t buffer[100];
-ADC_Start(ADC_CHANNEL_0, buffer, LENGTH(buffer), true, User_Callback);
-
-while (1)
+void User_Callback(uint16_t * buffer, uint32_t count)
 {
-    CORE_Idle();
+    // This will be called once with 100 samples once the sample is complete.
+}
+
+void main()
+{
+    CORE_Init();
+    ADC_Init();
+    ADC_SetFreq(23121);
+    
+    // The User_Callback will be executed when the sample is complete.
+    uint16_t buffer[100];
+    ADC_Start(ADC_CHANNEL_0, buffer, LENGTH(buffer), false, User_Callback);
+
+    while (1) { CORE_Idle(); }
 }
 ```
+
+### **Circular mode**:
+
+In circular mode, the callback will be called recurringly until the `ADC_Stop()` is called. The callback will be called when the buffer is half full.
+
+```C
+void User_Callback(uint16_t * buffer, uint32_t count)
+{
+    // This will be a recurring call of 50 samples until ADC_Stop() is called.
+}
+
+void main()
+{
+    CORE_Init();
+    ADC_Init();
+    ADC_SetFreq(23121);
+    
+    // The User_Callback will be executed periodically
+    uint16_t buffer[100];
+    ADC_Start(ADC_CHANNEL_0, buffer, LENGTH(buffer), true, User_Callback);
+    
+    CORE_Delay(1000);
+    // A circular transfer must be manually stopped.
+    ADC_Stop();
+    
+    while (1) { CORE_Idle(); }
+}
+```
+
 
 # Board
 
