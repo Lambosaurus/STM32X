@@ -13,7 +13,6 @@ DMA channels are linked to specific peripherals. See the datasheet for more info
 # Board
 
 The module is dependant on definitions within `Board.h`
-The following template sections are optional depending on your clock requirements.
 
 ```C
 // Enable DMA channels.
