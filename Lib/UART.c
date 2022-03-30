@@ -3,7 +3,6 @@
 #include "Core.h"
 #include "GPIO.h"
 #include "CLK.h"
-#include <string.h>
 
 /*
  * PRIVATE DEFINITIONS

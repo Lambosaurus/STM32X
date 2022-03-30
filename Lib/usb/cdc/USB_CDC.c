@@ -5,7 +5,6 @@
 #include "../USB_EP.h"
 #include "../USB_CTL.h"
 #include "Core.h"
-#include <string.h>
 
 /*
  * PRIVATE DEFINITIONS

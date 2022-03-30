@@ -47,6 +47,6 @@ static inline uint32_t CLK_GetLSOFreq(void);
  * EXTERN DECLARATIONS
  */
 
-#include "CLK.inl"
+#include "CLK.inl.h"
 
 #endif //CLK_H

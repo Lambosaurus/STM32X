@@ -1,5 +1,5 @@
 # GPIO
-This module controls the GPIO.
+This module controls the processors GPIO blocks to control the pins
 
 # Usage
 
@@ -12,7 +12,7 @@ Note that `GPIO_State_t` is defined as `bool`. `GPIO_PIN_SET` and `true` can be 
 Below is a basic blinky example, demonstrating 1Hz blink on PA0.
 
 ```C
-// Note that the initial state of the pin is as as true/set
+// Note that the initial state of the pin is set here
 GPIO_EnableOutput(GPIOA, GPIO_PIN_0, true);
 
 while (1)
@@ -46,10 +46,10 @@ bool state = GPIO_Read(GPIOA, GPIO_PIN_0);
 
 ## Analog / Deinit:
 
-Note that all GPIO are defaulted to Analog mode during `CORE_Init()`.
+Note that all GPIO are defaulted to Analog mode during [CORE_Init()](CORE.md)
 
 ```c
-GPIO_EnableOutput(GPIOA, GPIO_PIN_0, GPIO_PIN_SET);
+GPIO_EnableOutput(GPIOA, GPIO_PIN_0, true);
 ...
 // Return GPIO to high-z once operation is completed.
 GPIO_Deinit(GPIOA, GPIO_PIN_0);
@@ -59,7 +59,7 @@ It is reccommended to deinit no-longer used pins:
 * To prevent power leaking into unpowered devices
 * To minimise noise and power consumption caused by floating pins
 
-Some analog peripherals will require their affected pins to be in this mode.
+Some analog peripherals will require their affected pins to be in this mode, such as [ADC](ADC.md) and [COMP](COMP.md).
 
 ## Combining pins:
 
@@ -74,7 +74,7 @@ This is reccommended where reasonable on all functions, with the exception of `G
 
 ## Interrupts:
 
-Interrupts occurr on a per channel basis. Each pin is on a channel corresponding to its pin number, ie, `GPIO_PIN_3` is on channel 3, and so on. Each channel must be enabled in `Board.h` individually.
+Interrupts occurr on a per channel basis. Each pin is on a channel corresponding to its pin number, ie, `GPIO_PIN_3` is on channel 3, and so on. Take care to enable each channel in `Board.h`, using `#define GPIO_IRQx_ENABLE`.
 
 ```c
 // Note that the pin must still be configured as an input before enabling the interrupt.

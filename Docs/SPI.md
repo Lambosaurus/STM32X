@@ -30,11 +30,11 @@ SPI_Read(SPI_1, &rx, sizeof(rx));
 # Board
 
 The module is dependant on definitions within `Board.h`
-The following template can be used. Commented out definitions are optional.
+The following template can be used.
 
 ```C
 // SPI configuration
-//#define SPI1_GPIO		    GPIOB
-//#define SPI1_PINS		    (GPIO_PIN_3 | GPIO_PIN_4 | GPIO_PIN_5)
-//#define SPI1_AF			GPIO_AF0_SPI1
+#define SPI1_GPIO		    GPIOB
+#define SPI1_PINS		    (GPIO_PIN_3 | GPIO_PIN_4 | GPIO_PIN_5)
+#define SPI1_AF			    GPIO_AF0_SPI1
 ```

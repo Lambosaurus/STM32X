@@ -1,6 +1,5 @@
 
 #include "EEPROM.h"
-#include <string.h>
 
 #ifdef DATA_EEPROM_BASE
 
