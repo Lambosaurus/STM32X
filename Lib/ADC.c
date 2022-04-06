@@ -140,7 +140,7 @@ void ADC_SetOversampling(uint32_t ratio)
 		uint32_t osr = 0;
 		while (ratio > 2)
 		{
-			ratio <<= 1;
+			ratio >>= 1;
 			osr++;
 		}
 
