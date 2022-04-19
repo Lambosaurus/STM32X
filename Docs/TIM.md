@@ -3,6 +3,8 @@ This module enables the timer modules.
 
 This enables a wide variety of functionaly: such as timekeeping, interrupt generation, and PWM.
 
+The header is available [here](../Lib/TIM.h).
+
 # Usage
 
 ## Read the datasheet:

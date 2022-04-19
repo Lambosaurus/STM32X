@@ -4,6 +4,8 @@ The bus is always run with 29 bit addresses.
 
 Note that the use of an external oscillator is reccommended for bus reliability.
 
+The header is available [here](../Lib/CAN.h).
+
 # Usage
 
 The CAN bitrate will be automatically converted into time quanta.
@@ -37,6 +39,7 @@ while (1)
 
 Up to `FILTER_BANK_COUNT` CAN filters can be enabled
 ```C
+// Arguments are: index, id_mask, id_match 
 CAN_EnableFilter(0, 0x00F00000, 0x00100000);
 CAN_EnableFilter(1, 0x00F00000, 0x00200000);
 ```
@@ -50,6 +53,7 @@ The following template can be used. Commented out settings are optional.
 // CAN configuration
 #define CAN_GPIO		GPIOA
 #define CAN_PINS		(GPIO_PIN_8 | GPIO_PIN_9)
+#define CAN_AF          GPIO_AF4_CAN
 
 // This will enable both FIFO's, to increase RX capacity.
 // Odd numbered filters will be routed to the second FIFO.

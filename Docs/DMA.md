@@ -4,6 +4,8 @@ This module provides control for the DMA controllers.
 This module is primarially designed for use in other modules, such as the [ADC](ADC.md) module.
 Modules requiring DMA will only need the appropriate DMA channel defined in the Board file, and the rest is done internally.
 
+The header is available [here](../Lib/DMA.h).
+
 # Usage
 Usage of the module functions are **NOT** expected of the user in normal circumstances. It is primarially for internal use of other libraries.
 

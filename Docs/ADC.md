@@ -1,7 +1,7 @@
 # ADC
 This module enables usage of the processors ADC converter.
 
-This module is not very flexible, and will be subject to review in the future.
+The header is available [here](../Lib/ADC.h).
 
 # Usage
 
