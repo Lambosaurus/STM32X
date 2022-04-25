@@ -5,6 +5,8 @@ The intent of this is so that other modules can rely on a standard interface for
 
 The capabilities of this module are dependant on whether you are willing to dedicate a timer to it.
 
+The header is available [here](../Lib/US.h).
+
 # Usage
 
 `US_Init()` should not be called by the user. It will be initialised within `CORE_Init()`, see [CORE](CORE.md) for more info.

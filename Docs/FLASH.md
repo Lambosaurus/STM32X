@@ -3,6 +3,8 @@ This module enables reading and writing to the chips FLASH. This can be used for
 
 This can only be erased in pages, so take care to understand how this will affect your application. If you are looking to store settings, first check if you could instead use the [EEPROM](EEPROM.md) module.
 
+The header is available [here](../Lib/FLASH.h).
+
 # Usage
 
 Take care when writing to flash for the following reasons:

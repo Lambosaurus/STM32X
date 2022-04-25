@@ -1,7 +1,7 @@
 # ADC
 This module enables usage of the processors ADC converter.
 
-This module is not very flexible, and will be subject to review in the future.
+The header is available [here](../Lib/ADC.h).
 
 # Usage
 
@@ -26,7 +26,7 @@ uint32_t mv = AIN_AinToMv(ain);
 // The value is millivolts at the input of a 47K/10K divider, as below:
 // Input -> 47K -> Pin -> 10K -> GND
 // The resistances do not have to be literal - just in ratio.
-uint32_t mvi = AIN_AinToDivider(ain, 47, 10);
+uint32_t mvi = AIN_AinToDivider(ain, 10, 47);
 ```
 
 The internal channels are automatically configured with the following helpers

@@ -3,6 +3,8 @@ This module enables the SPI module in master mode.
 
 Slave mode is not yet supported.
 
+The header is available [here](../Lib/SPI.h).
+
 # Usage
 
 Arbitrary SPI bitrates are not supported by the hardware, and usually have to be powers of two of PCLK. This module will select the highest bitrate that does not exceed your specified bitrate.

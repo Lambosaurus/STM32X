@@ -3,6 +3,8 @@ This provides the functionality of the USB peripheral.
 
 The USB classes are provided via this module
 
+The header is available [here](../Lib/USB.h).
+
 # Usage
 
 The bulk of the USB is done under interrupt.

@@ -1,6 +1,8 @@
 # COMP
 This module enables usage of the integrated analog comparators.
 
+The header is available [here](../Lib/COMP.h).
+
 # Usage
 
 ## Basic:

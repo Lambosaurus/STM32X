@@ -5,6 +5,8 @@ This works 'out of the box' on windows using the standard drivers. A variety of 
 
 Multiple reports are not supported.
 
+The header is available [here](../../Lib/usb/hid/USB_HID.h).
+
 # Usage
 
 The following example enumerates as a mouse with a constant movement:

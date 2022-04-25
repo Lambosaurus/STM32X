@@ -1,6 +1,8 @@
 # GPIO
 This module controls the processors GPIO blocks to control the pins
 
+The header is available [here](../Lib/GPIO.h).
+
 # Usage
 
 `GPIO_Init()` may be used directly, but using the alternative initialisers is reccommended.

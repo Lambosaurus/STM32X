@@ -3,6 +3,8 @@ This module enables the Read Time Clock.
 
 Even when date and time tracking is not required, this module is useful for enabling wakeups from STOP mode - which is a requirement for lower power.
 
+The header is available [here](../Lib/RTC.h).
+
 # Usage
 
 ## Basic usage:

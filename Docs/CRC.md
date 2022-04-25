@@ -2,6 +2,8 @@
 This module provides access to the CRC unit.
 This can compute a 32 bit CRC in only 4 bus cycles
 
+The header is available [here](../Lib/CRC.h).
+
 # Usage
 
 No initialisation of this module is required.

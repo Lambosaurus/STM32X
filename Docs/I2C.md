@@ -3,6 +3,8 @@ This module enables master operation of an I2C bus.
 
 Slave operation is not yet implemented.
 
+The header is available [here](../Lib/I2C.h).
+
 # Usage
 
 The I2C frequency can be arbitrary, but the `I2C_Mode_t` enum is provided for convenience.

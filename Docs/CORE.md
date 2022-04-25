@@ -3,6 +3,8 @@ This module provides control of the processors power states, and sets up the sys
 
 `CORE_Init()` should **always** be the first function run.
 
+The header is available [here](../Lib/Core.h).
+
 # Usage
 
 ## Init:

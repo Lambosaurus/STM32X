@@ -29,7 +29,6 @@ typedef void (*ADC_Callback_t)(uint16_t * samples, uint32_t size);
  * PUBLIC FUNCTIONS
  */
 
-// This initializes the ADC with the target frequency
 void ADC_Init(void);
 void ADC_Deinit(void);
 

@@ -3,6 +3,8 @@ This module provides helpers for managing the processors clocks.
 
 The users primarially interaction with this module will be configuring the clocks via the `Board.h` file.
 
+The header is available [here](../Lib/CLK.h).
+
 # Usage
 
 ## Functions
