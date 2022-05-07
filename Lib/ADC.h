@@ -34,7 +34,10 @@ void ADC_Deinit(void);
 
 // Configuration
 uint32_t ADC_SetFreq(uint32_t target);
+
+#ifdef STM32L0
 void ADC_SetOversampling(uint32_t ratio);
+#endif
 
 // Reading
 uint32_t ADC_Read(uint32_t channel);
