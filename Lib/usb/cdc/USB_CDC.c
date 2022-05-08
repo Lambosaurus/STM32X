@@ -210,6 +210,11 @@ void USB_CDC_Write(const uint8_t * data, uint32_t count)
 	}
 }
 
+void USB_CDC_WriteStr(const char * str)
+{
+	USB_CDC_Write((const uint8_t *)str, strlen(str));
+}
+
 uint32_t USB_CDC_ReadReady(void)
 {
 	// Assume these reads are atomic
