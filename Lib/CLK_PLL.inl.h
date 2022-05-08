@@ -25,12 +25,28 @@
 #define CLK_PLL_MUL_CFG			RCC_PLL_MUL3
 #elif (CLK_PLL_MUL == 4)
 #define CLK_PLL_MUL_CFG			RCC_PLL_MUL4
+#elif (CLK_PLL_MUL == 5)
+#define CLK_PLL_MUL_CFG			RCC_PLL_MUL5
 #elif (CLK_PLL_MUL == 6)
 #define CLK_PLL_MUL_CFG			RCC_PLL_MUL6
+#elif (CLK_PLL_MUL == 7)
+#define CLK_PLL_MUL_CFG			RCC_PLL_MUL7
 #elif (CLK_PLL_MUL == 8)
 #define CLK_PLL_MUL_CFG			RCC_PLL_MUL8
+#elif (CLK_PLL_MUL == 9)
+#define CLK_PLL_MUL_CFG			RCC_PLL_MUL9
+#elif (CLK_PLL_MUL == 10)
+#define CLK_PLL_MUL_CFG			RCC_PLL_MUL10
+#elif (CLK_PLL_MUL == 11)
+#define CLK_PLL_MUL_CFG			RCC_PLL_MUL11
 #elif (CLK_PLL_MUL == 12)
 #define CLK_PLL_MUL_CFG			RCC_PLL_MUL12
+#elif (CLK_PLL_MUL == 13)
+#define CLK_PLL_MUL_CFG			RCC_PLL_MUL13
+#elif (CLK_PLL_MUL == 14)
+#define CLK_PLL_MUL_CFG			RCC_PLL_MUL14
+#elif (CLK_PLL_MUL == 15)
+#define CLK_PLL_MUL_CFG			RCC_PLL_MUL15
 #elif (CLK_PLL_MUL == 16)
 #define CLK_PLL_MUL_CFG			RCC_PLL_MUL16
 #elif (CLK_PLL_MUL == 32)
@@ -41,6 +57,7 @@
 #error "Unavailable PLL multiplier"
 #endif
 
+
 #if (CLK_PLL_DIV == 1)
 #define CLK_PLL_DIV_CFG			RCC_PLL_DIV1
 #elif (CLK_PLL_DIV == 2)
@@ -49,6 +66,14 @@
 #define CLK_PLL_DIV_CFG			RCC_PLL_DIV3
 #elif (CLK_PLL_DIV == 4)
 #define CLK_PLL_DIV_CFG			RCC_PLL_DIV4
+#elif (CLK_PLL_DIV == 5)
+#define CLK_PLL_DIV_CFG			RCC_PLL_DIV5
+#elif (CLK_PLL_DIV == 6)
+#define CLK_PLL_DIV_CFG			RCC_PLL_DIV6
+#elif (CLK_PLL_DIV == 7)
+#define CLK_PLL_DIV_CFG			RCC_PLL_DIV7
+#elif (CLK_PLL_DIV == 8)
+#define CLK_PLL_DIV_CFG			RCC_PLL_DIV8
 #else
 #error "Unavailable PLL divider"
 #endif

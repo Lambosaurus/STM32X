@@ -177,7 +177,7 @@ bool CAN_Read(CANMsg_t * msg)
 		return true;
 	}
 #ifdef CAN_DUAL_FIFO
-	if (_CAN_RX_FIFO1_COUNT())
+	if (_CAN_RX_FIFO1_COUNT(CAN))
 	{
 		CAN_ReadMailbox(&CAN->sFIFOMailBox[CAN_RX_FIFO1], msg);
 
