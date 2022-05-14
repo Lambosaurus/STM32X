@@ -15,6 +15,8 @@
  * PUBLIC DEFINITIONS
  */
 
+#define CAN_MAILBOX_COUNT	3
+
 /*
  * PUBLIC TYPES
  */
@@ -37,9 +39,10 @@ void CAN_Deinit(void);
 
 // Transmit
 bool CAN_Write(const CAN_Msg_t * msg);
+uint32_t CAN_WriteFree(void);
 
 // Receive
-uint8_t CAN_ReadCount(void);
+uint32_t CAN_ReadCount(void);
 bool CAN_Read(CAN_Msg_t * msg);
 
 

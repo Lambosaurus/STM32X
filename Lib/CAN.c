@@ -144,21 +144,28 @@ void CAN_Deinit(void)
 bool CAN_Write(const CAN_Msg_t * msg)
 {
 	uint32_t tsr = CAN->TSR;
-
 	if ((tsr & (CAN_TSR_TME0 | CAN_TSR_TME1 | CAN_TSR_TME2)) == 0)
 	{
 		// All Tx mailboxes are full.
 		return false;
 	}
-
 	uint32_t free_mailbox = (tsr & CAN_TSR_CODE) >> CAN_TSR_CODE_Pos;
 	CAN_WriteMailbox(&CAN->sTxMailBox[free_mailbox], msg);
 
 	return true;
 }
 
+uint32_t CAN_WriteFree(void)
+{
+	uint32_t count = 0;
+	uint32_t tsr = CAN->TSR;
+	if (tsr & CAN_TSR_TME0) { count++; }
+	if (tsr & CAN_TSR_TME1) { count++; }
+	if (tsr & CAN_TSR_TME2) { count++; }
+	return count;
+}
 
-uint8_t CAN_ReadCount()
+uint32_t CAN_ReadCount()
 {
 #ifdef CAN_DUAL_FIFO
 	return _CAN_RX_FIFO0_COUNT(CAN) + _CAN_RX_FIFO1_COUNT(CAN);
