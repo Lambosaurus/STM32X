@@ -38,8 +38,8 @@
 
 static void CANx_Init(void);
 static void CANx_Deinit(void);
-static void CAN_ReadMailbox(CAN_FIFOMailBox_TypeDef * mailbox, CANMsg_t * msg);
-static void CAN_WriteMailbox(CAN_TxMailBox_TypeDef * mailbox, const CANMsg_t * msg);
+static void CAN_ReadMailbox(CAN_FIFOMailBox_TypeDef * mailbox, CAN_Msg_t * msg);
+static void CAN_WriteMailbox(CAN_TxMailBox_TypeDef * mailbox, const CAN_Msg_t * msg);
 #ifdef AUTO_CALC_TQ
 static uint32_t CAN_SelectNominalBitTime(uint32_t base_freq, uint32_t bitrate);
 #endif
@@ -141,7 +141,7 @@ void CAN_Deinit(void)
 	CANx_Deinit();
 }
 
-bool CAN_Write(const CANMsg_t * msg)
+bool CAN_Write(const CAN_Msg_t * msg)
 {
 	uint32_t tsr = CAN->TSR;
 
@@ -166,7 +166,7 @@ uint8_t CAN_ReadCount()
 	return _CAN_RX_FIFO0_COUNT(CAN);
 }
 
-bool CAN_Read(CANMsg_t * msg)
+bool CAN_Read(CAN_Msg_t * msg)
 {
 	if (_CAN_RX_FIFO0_COUNT(CAN))
 	{
@@ -222,10 +222,11 @@ static uint32_t CAN_SelectNominalBitTime(uint32_t base_freq, uint32_t bitrate)
 }
 #endif
 
-static void CAN_ReadMailbox(CAN_FIFOMailBox_TypeDef * mailbox, CANMsg_t * msg)
+static void CAN_ReadMailbox(CAN_FIFOMailBox_TypeDef * mailbox, CAN_Msg_t * msg)
 {
 	uint32_t rir = mailbox->RIR;
-	if (rir & CAN_RI0R_IDE)
+	msg->ext = rir & CAN_RI0R_IDE;
+	if (msg->ext)
 	{
 		// Extended IDE
 		msg->id = (rir & (CAN_RI0R_EXID | CAN_RI0R_STID)) >> CAN_RI0R_EXID_Pos;
@@ -244,10 +245,19 @@ static void CAN_ReadMailbox(CAN_FIFOMailBox_TypeDef * mailbox, CANMsg_t * msg)
 	data[1] = mailbox->RDHR;
 }
 
-static void CAN_WriteMailbox(CAN_TxMailBox_TypeDef * mailbox, const CANMsg_t * msg)
+static void CAN_WriteMailbox(CAN_TxMailBox_TypeDef * mailbox, const CAN_Msg_t * msg)
 {
-	// Only support std ide.
-	mailbox->TIR = (msg->id << CAN_TI0R_EXID_Pos) | CAN_TI0R_IDE;
+	if (msg->ext)
+	{
+		// Extended IDE
+		mailbox->TIR = (msg->id << CAN_TI0R_EXID_Pos) | CAN_TI0R_IDE;
+	}
+	else
+	{
+		// Standard IDE
+		mailbox->TIR = (msg->id << CAN_TI0R_STID_Pos);
+	}
+
 	mailbox->TDTR = msg->len;
 
 	// Note: we rely on the packing alignment of the CANMsg_t for this to work.

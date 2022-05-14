@@ -23,7 +23,8 @@ typedef struct {
 	uint32_t id;
 	uint8_t data[8];
 	uint8_t len;
-} CANMsg_t;
+	bool ext;
+} CAN_Msg_t;
 
 /*
  * PUBLIC FUNCTIONS
@@ -35,11 +36,11 @@ void CAN_EnableFilter(uint32_t bank, uint32_t id, uint32_t mask);
 void CAN_Deinit(void);
 
 // Transmit
-bool CAN_Write(const CANMsg_t * msg);
+bool CAN_Write(const CAN_Msg_t * msg);
 
 // Receive
 uint8_t CAN_ReadCount(void);
-bool CAN_Read(CANMsg_t * msg);
+bool CAN_Read(CAN_Msg_t * msg);
 
 
 #endif
