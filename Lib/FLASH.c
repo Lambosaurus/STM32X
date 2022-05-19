@@ -26,6 +26,14 @@
 #define _FLASH_CR_LOCK				FLASH_CR_LOCK
 #define _FLASH_CR_ERASE				FLASH_CR_PER
 
+#elif defined(STM32G0)
+
+#define _FLASH_SET_CR(bit)			(FLASH->CR |= bit)
+#define _FLASH_CLR_CR(bit)			(FLASH->CR &= ~bit)
+#define _FLASH_CR_PROG				FLASH_CR_PG
+#define _FLASH_CR_LOCK				FLASH_CR_LOCK
+#define _FLASH_CR_ERASE				FLASH_CR_PER
+
 #endif
 
 
