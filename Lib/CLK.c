@@ -8,24 +8,48 @@
 
 // Define HSI frequency
 #if defined(STM32L0)
-#define CLK_HSI_FREQ			16000000
+#define CLK_HSI_FREQ						16000000
 
-#define __HAL_RCC_HSI_ENABLE()		__HAL_RCC_HSI_CONFIG(RCC_HSI_ON)
-#define __HAL_RCC_HSI_DISABLE()		__HAL_RCC_HSI_CONFIG(RCC_HSI_OFF)
+#define __HAL_RCC_HSI_ENABLE()				__HAL_RCC_HSI_CONFIG(RCC_HSI_ON)
+#define __HAL_RCC_HSI_DISABLE()				__HAL_RCC_HSI_CONFIG(RCC_HSI_OFF)
 #define __CLK_PLL_CONFIG(src, mul, div)		__HAL_RCC_PLL_CONFIG(src, mul, div)
 
+#define _PWR_IS_DBP_SET()					(PWR->CR & PWR_CR_DBP)
+#define _PWR_SET_DBP()						(PWR->CR |= PWR_CR_DBP)
+
 #elif defined(STM32F0)
-#define CLK_HSI_FREQ			8000000
+#define CLK_HSI_FREQ						8000000
 #define __CLK_PLL_CONFIG(src, mul, prediv)	__HAL_RCC_PLL_CONFIG(src, prediv, mul)
 
-#define RCC_PLL_DIV1			RCC_PREDIV_DIV1
-#define RCC_PLL_DIV2			RCC_PREDIV_DIV2
-#define RCC_PLL_DIV3			RCC_PREDIV_DIV3
-#define RCC_PLL_DIV4			RCC_PREDIV_DIV4
-#define RCC_PLL_DIV5			RCC_PREDIV_DIV5
-#define RCC_PLL_DIV6			RCC_PREDIV_DIV6
-#define RCC_PLL_DIV7			RCC_PREDIV_DIV7
-#define RCC_PLL_DIV8			RCC_PREDIV_DIV8
+#define RCC_PLL_DIV1						RCC_PREDIV_DIV1
+#define RCC_PLL_DIV2						RCC_PREDIV_DIV2
+#define RCC_PLL_DIV3						RCC_PREDIV_DIV3
+#define RCC_PLL_DIV4						RCC_PREDIV_DIV4
+#define RCC_PLL_DIV5						RCC_PREDIV_DIV5
+#define RCC_PLL_DIV6						RCC_PREDIV_DIV6
+#define RCC_PLL_DIV7						RCC_PREDIV_DIV7
+#define RCC_PLL_DIV8						RCC_PREDIV_DIV8
+
+#define _PWR_IS_DBP_SET()					(PWR->CR & PWR_CR_DBP)
+#define _PWR_SET_DBP()						(PWR->CR |= PWR_CR_DBP)
+
+#elif defined(STM32G0)
+#define CLK_HSI_FREQ						16000000
+
+#if defined(CLK_HSE_FREQ) && CLK_HSE_FREQ > 16000000
+#error "Changes required change RCC_PLLM to keep the PLL input in a 4-16MHz range"
+#endif
+
+#define __CLK_PLL_CONFIG(src, mul, div)		__HAL_RCC_PLL_CONFIG(src, RCC_PLLM_DIV2, mul, div, RCC_PLLQ_DIV2, RCC_PLLR_DIV2)
+// Todo: use this style of PLL config for other
+#define RCC_PLL_MULX_IS_VALID(x)			(x >= 8 && x <= 86)
+#define RCC_PLL_MULX(x)						(x)
+
+#define RCC_PLL_DIVX_IS_VALID(x)			(x >= 2 && x <= 32)
+#define RCC_PLL_DIVX(x)						((x - 1) * RCC_PLLCFGR_PLLP_0)
+
+#define _PWR_IS_DBP_SET()					(PWR->CR1 & PWR_CR1_DBP)
+#define _PWR_SET_DBP()						(PWR->CR1 |= PWR_CR1_DBP)
 
 #endif
 
@@ -213,7 +237,7 @@ void CLK_DisableLSO(void)
 void CLK_EnableADCCLK(void)
 {
 	// ADC CLK is driven off the HSI on STM32L0
-#if defined(STM32L0) && !defined(CLK_USE_HSI)
+#if (defined(STM32L0) || defined(STM32G0)) && !defined(CLK_USE_HSI)
 	__HAL_RCC_HSI_ENABLE();
 	while(__HAL_RCC_GET_FLAG(RCC_FLAG_HSIRDY) == 0);
 #endif
@@ -221,7 +245,7 @@ void CLK_EnableADCCLK(void)
 
 void CLK_DisableADCCLK(void)
 {
-#if defined(STM32L0) && !defined(CLK_USE_HSI)
+#if (defined(STM32L0) || defined(STM32G0)) && !defined(CLK_USE_HSI)
 	__HAL_RCC_HSI_DISABLE();
 #endif
 }
@@ -243,11 +267,11 @@ static void CLK_ResetBackupDomain(void)
 
 static void CLK_AccessBackupDomain(void)
 {
-	if (HAL_IS_BIT_CLR(PWR->CR, PWR_CR_DBP))
+	// Get access to backup domain
+	if (!_PWR_IS_DBP_SET())
 	{
-		// Get access to backup domain
-		SET_BIT(PWR->CR, PWR_CR_DBP);
-		while(HAL_IS_BIT_CLR(PWR->CR, PWR_CR_DBP));
+		_PWR_SET_DBP();
+		while (!_PWR_IS_DBP_SET());
 	}
 }
 

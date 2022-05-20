@@ -3,6 +3,7 @@
 
 #define STM32L0
 //#define STM32F0
+//#define STM32G0
 
 // Core config
 //#define CORE_USE_TICK_IRQ
@@ -12,6 +13,7 @@
 //#define CLK_USE_LSE
 //#define CLK_LSE_BYPASS
 //#define CLK_LSE_FREQ		32768
+//#define CLK_SYSCLK_FREQ	32000000
 
 // RTC config
 //#define RTC_USE_IRQS

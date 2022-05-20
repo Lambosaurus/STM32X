@@ -15,12 +15,19 @@
 #endif
 
 
+#if defined(STM32G0)
+#define USART_CR1_RXNEIE				USART_CR1_RXNEIE_RXFNEIE
+#define USART_CR1_TXEIE					USART_CR1_TXEIE_TXFNFIE
+#define USART_ISR_RXNE					USART_ISR_RXNE_RXFNE
+#define USART_ISR_TXE					USART_ISR_TXE_TXFNF
+#endif
+
+
 #define __UART_RX_ENABLE(uart) 	(uart->Instance->CR1 |= USART_CR1_RXNEIE)
 #define __UART_RX_DISABLE(uart) (uart->Instance->CR1 &= ~USART_CR1_RXNEIE)
 #define __UART_TX_ENABLE(uart) 	(uart->Instance->CR1 |= USART_CR1_TXEIE)
 #define __UART_TX_DISABLE(uart) (uart->Instance->CR1 &= ~USART_CR1_TXEIE)
 #define __UART_TX_BUSY(uart)	(!(uart->Instance->ISR & USART_ISR_TC))
-
 #define __UART_CLEAR_FLAGS(uart, flags) (uart->Instance->ICR |= flags)
 
 /*
@@ -110,12 +117,20 @@ void UART_Init(UART_t * uart, uint32_t baud, UART_Mode_t mode)
 #ifdef UARTLP_GPIO
 	if (UART_INSTANCE_LOWPOWER(uart))
 	{
+#if defined(STM32G0)
+		uart->Instance->BRR = UART_DIV_LPUART(pclk, baud, UART_PRESCALER_DIV2);
+#else
 		uart->Instance->BRR = UART_DIV_LPUART(pclk, baud);
+#endif
 	}
 	else
 #endif
 	{
+#if defined(STM32G0)
+		uart->Instance->BRR = UART_DIV_SAMPLING16(pclk, baud, UART_PRESCALER_DIV2);
+#else
 		uart->Instance->BRR = UART_DIV_SAMPLING16(pclk, baud);
+#endif
 	}
 	__HAL_UART_ENABLE(uart);
 
