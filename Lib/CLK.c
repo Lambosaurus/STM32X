@@ -17,6 +17,8 @@
 #define _PWR_IS_DBP_SET()					(PWR->CR & PWR_CR_DBP)
 #define _PWR_SET_DBP()						(PWR->CR |= PWR_CR_DBP)
 
+#define FLASH_LATENCY						FLASH_LATENCY_1
+
 #elif defined(STM32F0)
 #define CLK_HSI_FREQ						8000000
 #define __CLK_PLL_CONFIG(src, mul, prediv)	__HAL_RCC_PLL_CONFIG(src, prediv, mul)
@@ -33,6 +35,8 @@
 #define _PWR_IS_DBP_SET()					(PWR->CR & PWR_CR_DBP)
 #define _PWR_SET_DBP()						(PWR->CR |= PWR_CR_DBP)
 
+#define FLASH_LATENCY						FLASH_LATENCY_1
+
 #elif defined(STM32G0)
 #define CLK_HSI_FREQ						16000000
 
@@ -40,7 +44,7 @@
 #error "Changes required change RCC_PLLM to keep the PLL input in a 4-16MHz range"
 #endif
 
-#define __CLK_PLL_CONFIG(src, mul, div)		__HAL_RCC_PLL_CONFIG(src, RCC_PLLM_DIV2, mul, div, RCC_PLLQ_DIV2, RCC_PLLR_DIV2)
+#define __CLK_PLL_CONFIG(src, mul, div)		__HAL_RCC_PLL_CONFIG(src, RCC_PLLM_DIV1, mul, div, RCC_PLLQ_DIV2, RCC_PLLR_DIV2)
 // Todo: use this style of PLL config for other
 #define RCC_PLL_MULX_IS_VALID(x)			(x >= 8 && x <= 86)
 #define RCC_PLL_MULX(x)						(x)
@@ -50,6 +54,8 @@
 
 #define _PWR_IS_DBP_SET()					(PWR->CR1 & PWR_CR1_DBP)
 #define _PWR_SET_DBP()						(PWR->CR1 |= PWR_CR1_DBP)
+
+#define FLASH_LATENCY						FLASH_LATENCY_2
 
 #endif
 
@@ -110,7 +116,7 @@ static void CLK_AccessBackupDomain(void);
 
 void CLK_InitSYSCLK(void)
 {
-	__HAL_FLASH_SET_LATENCY(FLASH_LATENCY_1);
+	__HAL_FLASH_SET_LATENCY(FLASH_LATENCY);
 
 	/*
 	 * ENABLE OSCILLATORS
@@ -139,6 +145,9 @@ void CLK_InitSYSCLK(void)
 	while(__HAL_RCC_GET_FLAG(RCC_FLAG_PLLRDY) != 0U);
 	__CLK_PLL_CONFIG(CLK_PLL_SRC, CLK_PLL_MUL_CFG, CLK_PLL_DIV_CFG);
 	__HAL_RCC_PLL_ENABLE();
+#if defined(STM32G0)
+	__HAL_RCC_PLLCLKOUT_ENABLE(RCC_PLLRCLK);
+#endif
 	while(__HAL_RCC_GET_FLAG(RCC_FLAG_PLLRDY) == 0U);
 #endif
 

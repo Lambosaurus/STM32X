@@ -2,6 +2,9 @@
 #include "RTC.h"
 #include "CLK.h"
 
+// TODO: Implement this later.
+#if !defined(STM32G0)
+
 /*
  * PRIVATE DEFINITIONS
  */
@@ -14,6 +17,9 @@
 #define _RTC_GET_FLAG(flag)   	(RTC->ISR & (flag))
 #define _RTC_CLEAR_FLAG(flag)   (RTC->ISR) = (~((flag) | RTC_ISR_INIT) | (RTC->ISR & RTC_ISR_INIT))
 
+#if defined(STM32G0)
+#define RTC_IRQn						RTC_TAMP_IRQn
+#endif
 
 /*
  * PRIVATE TYPES
@@ -337,3 +343,6 @@ void RTC_IRQHandler(void)
 	}
 }
 #endif
+
+#endif //!defined(STM32G0)
+

@@ -8,9 +8,10 @@
 #define DMAx	DMA1
 
 #if defined(STM32G0)
-#define DMA1_Channel4_Plus_IRQn		DMA1_Ch4_5_DMAMUX1_OVR_IRQn
+#define DMA1_Channel4_Plus_IRQn			DMA1_Ch4_5_DMAMUX1_OVR_IRQn
+#define DMA1_Channel4_5_6_7_IRQHandler	DMA1_Ch4_5_DMAMUX1_OVR_IRQHandler
 #else
-#define DMA1_Channel4_Plus_IRQn		DMA1_Channel4_5_6_7_IRQn
+#define DMA1_Channel4_Plus_IRQn			DMA1_Channel4_5_6_7_IRQn
 #endif
 
 /*

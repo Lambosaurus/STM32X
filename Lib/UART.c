@@ -118,7 +118,7 @@ void UART_Init(UART_t * uart, uint32_t baud, UART_Mode_t mode)
 	if (UART_INSTANCE_LOWPOWER(uart))
 	{
 #if defined(STM32G0)
-		uart->Instance->BRR = UART_DIV_LPUART(pclk, baud, UART_PRESCALER_DIV2);
+		uart->Instance->BRR = UART_DIV_LPUART(pclk, baud, UART_PRESCALER_DIV1);
 #else
 		uart->Instance->BRR = UART_DIV_LPUART(pclk, baud);
 #endif
@@ -127,7 +127,7 @@ void UART_Init(UART_t * uart, uint32_t baud, UART_Mode_t mode)
 #endif
 	{
 #if defined(STM32G0)
-		uart->Instance->BRR = UART_DIV_SAMPLING16(pclk, baud, UART_PRESCALER_DIV2);
+		uart->Instance->BRR = UART_DIV_SAMPLING16(pclk, baud, UART_PRESCALER_DIV1);
 #else
 		uart->Instance->BRR = UART_DIV_SAMPLING16(pclk, baud);
 #endif

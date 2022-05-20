@@ -28,6 +28,9 @@
 #define _PWR_SET_PWR_REGULATOR(x)	(MODIFY_REG(PWR->CR1, PWR_CR1_LPR, x))
 #define RCC_CSR_PORRSTF 		RCC_CSR_PWRRSTF
 
+#define CORE_VOLTAGE_RANGE		PWR_REGULATOR_VOLTAGE_SCALE1
+#define __HAL_PWR_VOLTAGESCALING_CONFIG	HAL_PWREx_ControlVoltageScaling
+
 #endif
 
 #define CORE_SYSTICK_FREQ	1000
@@ -68,11 +71,11 @@ void CORE_Init(void)
 #endif
 	__HAL_RCC_SYSCFG_CLK_ENABLE();
 	__HAL_RCC_PWR_CLK_ENABLE();
-#ifdef STM32L0
-#ifndef USB_ENABLE
+#if defined(STM32L0) && !defined(USB_ENABLE)
 	// This seems to disrupt USB. Future investigation needed.
 	SET_BIT(PWR->CR, PWR_CR_ULP | PWR_CR_FWU); // Enable Ultra low power mode & Fast wakeup
 #endif
+#ifdef __HAL_PWR_VOLTAGESCALING_CONFIG
 	__HAL_PWR_VOLTAGESCALING_CONFIG(CORE_VOLTAGE_RANGE);
 #endif
 
