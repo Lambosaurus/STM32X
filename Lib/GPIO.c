@@ -17,6 +17,10 @@
 #elif defined(STM32G0)
 #define GPIO_OSPEEDER_OSPEED0	GPIO_OSPEEDR_OSPEED0
 
+#define IMR						IMR1
+#define RTSR					RTSR1
+#define FTSR					FTSR1
+
 #endif
 
 /*
@@ -132,8 +136,14 @@ static void GPIO_ConfigInterrupt( GPIO_t * gpio, int n, GPIO_IT_Dir_t dir)
 		// Assign the EXTI channel to the given GPIO.
 		__HAL_RCC_SYSCFG_CLK_ENABLE();
 		uint32_t gpio_index = GPIO_GET_INDEX(gpio);
+
+#if defined(STM32G0)
+		uint32_t offset = (n & 0x3) * 8;
+		MODIFY_REG(EXTI->EXTICR[n >> 2], 0xF << offset, gpio_index << offset);
+#else
 		uint32_t offset = (n & 0x3) * 4;
 		MODIFY_REG(SYSCFG->EXTICR[n >> 2], 0xF << offset, gpio_index << offset);
+#endif
 
 		// Configure the EXTI channel
 		SET_BIT(EXTI->IMR, pin);
