@@ -14,7 +14,7 @@
  * PUBLIC DEFINITIONS
  */
 
-#ifdef STM32L0
+#ifdef RTC_CR_ALRBE
 #define RTC_ALARMB_ENABLE
 #endif
 #ifdef RTC_CR_WUTE
