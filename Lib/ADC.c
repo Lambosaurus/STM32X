@@ -117,6 +117,8 @@ void ADC_Init(void)
 	if (HAL_IS_BIT_CLR(ADCx->CR, ADC_CR_ADVREGEN))
 	{
 		ADCx->CR |= ADC_CR_ADVREGEN;
+		// Wait for regulator stability.
+		US_Delay(20);
 	}
 #endif
 
