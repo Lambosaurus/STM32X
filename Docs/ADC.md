@@ -6,19 +6,20 @@ The header is available [here](../Lib/ADC.h).
 # Usage
 
 `ADC_Read()` can be used to do an immediate blocking read of a specified ADC channel.
+Note that the ST CUBE ADC channel definitons should no longer be used. Use the enumeration found in `ADC.h`.
 
 Refer to the datasheet for how the ADC channels map to the pins. Note that these pins must be left in analog mode. See [GPIO](GPIO.md) for more info.
 
 ```C
 ADC_Init();
 // ain will be in the range of 0 to ADC_MAX
-uint32_t ain = ADC_Read(ADC_CHANNEL_0);
+uint32_t ain = ADC_Read(ADC_Channel_0);
 ```
 
 Helper functions are available to turn adc values into millivolts
 ```C
 ADC_Init();
-uint32_t ain = ADC_Read(ADC_CHANNEL_0);
+uint32_t ain = ADC_Read(ADC_Channel_0);
 
 // The value in millivolts directly at the pin.
 uint32_t mv = AIN_AinToMv(ain);
@@ -93,7 +94,7 @@ void main()
     
     // The User_Callback will be executed when the sample is complete.
     uint16_t buffer[100];
-    ADC_Start(ADC_CHANNEL_0, buffer, LENGTH(buffer), false, User_Callback);
+    ADC_Start(ADC_Channel_0, buffer, LENGTH(buffer), false, User_Callback);
 
     while (1) { CORE_Idle(); }
 }
@@ -117,7 +118,7 @@ void main()
     
     // The User_Callback will be executed periodically
     uint16_t buffer[100];
-    ADC_Start(ADC_CHANNEL_0, buffer, LENGTH(buffer), true, User_Callback);
+    ADC_Start(ADC_Channel_0, buffer, LENGTH(buffer), true, User_Callback);
     
     CORE_Delay(1000);
     // A circular transfer must be manually stopped.
