@@ -10,9 +10,10 @@
 #if defined(STM32G0)
 #define DMA1_Channel4_Plus_IRQn			DMA1_Ch4_5_DMAMUX1_OVR_IRQn
 #define DMA1_Channel4_5_6_7_IRQHandler	DMA1_Ch4_5_DMAMUX1_OVR_IRQHandler
-#else
+#elif !defined(STM32WL)
 #define DMA1_Channel4_Plus_IRQn			DMA1_Channel4_5_6_7_IRQn
 #endif
+
 
 /*
  * PRIVATE TYPES
@@ -143,6 +144,9 @@ static uint32_t DMA_GetMemSize(DMA_Flags_t flags)
 
 static void DMAx_EnableIRQn(int n)
 {
+#if defined(STM32WL)
+	  HAL_NVIC_EnableIRQ((DMA1_Channel1_IRQn - 1) + n);
+#else
 	if (n <= 1)
 	{
 		HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
@@ -155,6 +159,7 @@ static void DMAx_EnableIRQn(int n)
 	{
 		HAL_NVIC_EnableIRQ(DMA1_Channel4_Plus_IRQn);
 	}
+#endif
 }
 
 
@@ -214,6 +219,7 @@ static void DMA_IRQHandler(DMA_t * dma, uint32_t flag_it)
 /*
  * INTERRUPT ROUTINES
  */
+
 #if defined(DMA_CH1_ENABLE)
 void DMA1_Channel1_IRQHandler(void)
 {
@@ -221,6 +227,58 @@ void DMA1_Channel1_IRQHandler(void)
 	DMA_IRQHandler(DMA_CH1, flag_it);
 }
 #endif //defined(DMA_CH1_ENABLE)
+
+#if defined(STM32WL)
+
+#if defined(DMA_CH2_ENABLE)
+void DMA1_Channel2_IRQHandler(void)
+{
+	uint32_t flag_it = DMAx->ISR;
+	DMA_IRQHandler(DMA_CH2, flag_it);
+}
+#endif //defined(DMA_CH2_ENABLE)
+
+#if defined(DMA_CH3_ENABLE)
+void DMA1_Channel3_IRQHandler(void)
+{
+	uint32_t flag_it = DMAx->ISR;
+	DMA_IRQHandler(DMA_CH3, flag_it);
+}
+#endif //defined(DMA_CH3_ENABLE)
+
+#if defined(DMA_CH4_ENABLE)
+void DMA1_Channel4_IRQHandler(void)
+{
+	uint32_t flag_it = DMAx->ISR;
+	DMA_IRQHandler(DMA_CH4, flag_it);
+}
+#endif //defined(DMA_CH4_ENABLE)
+
+#if defined(DMA_CH5_ENABLE)
+void DMA1_Channel5_IRQHandler(void)
+{
+	uint32_t flag_it = DMAx->ISR;
+	DMA_IRQHandler(DMA_CH5, flag_it);
+}
+#endif //defined(DMA_CH5_ENABLE)
+
+#if defined(DMA_CH6_ENABLE)
+void DMA1_Channel6_IRQHandler(void)
+{
+	uint32_t flag_it = DMAx->ISR;
+	DMA_IRQHandler(DMA_CH6, flag_it);
+}
+#endif //defined(DMA_CH6_ENABLE)
+
+#if defined(DMA_CH7_ENABLE)
+void DMA1_Channel7_IRQHandler(void)
+{
+	uint32_t flag_it = DMAx->ISR;
+	DMA_IRQHandler(DMA_CH7, flag_it);
+}
+#endif //defined(DMA_CH7_ENABLE)
+
+#else //!STM32WL
 
 #if defined(DMA_CH2_ENABLE) || defined(DMA_CH3_ENABLE)
 void DMA1_Channel2_3_IRQHandler(void)
@@ -254,3 +312,4 @@ void DMA1_Channel4_5_6_7_IRQHandler(void)
 }
 #endif
 
+#endif

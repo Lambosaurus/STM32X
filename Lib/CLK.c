@@ -37,7 +37,7 @@
 
 #define FLASH_LATENCY						FLASH_LATENCY_1
 
-#elif defined(STM32G0)
+#elif defined(STM32G0) || defined(STM32WL)
 #define CLK_HSI_FREQ						16000000
 
 #if defined(CLK_HSE_FREQ) && CLK_HSE_FREQ > 16000000

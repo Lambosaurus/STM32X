@@ -12,7 +12,7 @@
 #define _RTC_WRITEPROTECTION_ENABLE() 		(RTC->WPR = 0xFF)
 #define _RTC_WRITEPROTECTION_DISABLE() 		do { RTC->WPR = 0xCA; RTC->WPR = 0x53; } while(0)
 
-#if defined(STM32G0)
+#if defined(STM32G0) || defined(STM32WL)
 
 #define RTC_IRQn							RTC_TAMP_IRQn
 #define RTC_IRQHandler						RTC_TAMP_IRQHandler
@@ -109,7 +109,9 @@ void RTC_Init(void)
 
 void RTC_Deinit(void)
 {
+#ifdef RTC_USE_IRQS
 	HAL_NVIC_DisableIRQ(RTC_IRQn);
+#endif
 	_RTC_WRITEPROTECTION_DISABLE();
 	RTC_EnterInit();
 

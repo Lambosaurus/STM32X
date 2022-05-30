@@ -17,6 +17,8 @@
 #include "stm32f0xx_hal.h"
 #elif defined(STM32G0)
 #include "stm32g0xx_hal.h"
+#elif defined(STM32WL)
+#include "stm32wlxx_hal.h"
 #else
 #error "STM family not defined"
 #endif

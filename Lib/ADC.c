@@ -17,6 +17,7 @@
 #define ADC_CLOCK_FREQ				(16000000 / 4) // 16MHz HSI div 4.
 #define ADC_SMPR_DEFAULT			ADC_SAMPLETIME_79CYCLES_5 // Gives ~ 20us sample time
 #define _ADC_SELECT(adc, channel) 	(adc->CHSELR = channel & ADC_CHANNEL_MASK)
+#define ADC_COMMON					ADC
 
 #define TS_CAL1_AIN					(*((uint16_t*)0x1FF8007A))
 #define TS_CAL2_AIN					(*((uint16_t*)0x1FF8007E))
@@ -31,13 +32,14 @@
 #define _ADC_CLOCK_PRESCALER(adcx, prescalar)         \
   do{                                                     \
 		adcx->CFGR2 &= ~(ADC_CFGR2_CKMODE);                \
-		MODIFY_REG(ADC->CCR, ADC_CCR_PRESC, prescalar);   \
+		MODIFY_REG(ADC_COMMON->CCR, ADC_CCR_PRESC, prescalar);   \
   } while(0)
 
 #define ADC_CFGR1_CONTINUOUS		ADC_CONTINUOUS
 #define ADC_CFGR1_DMACONTREQ		ADC_DMACONTREQ
 #define ADC_CFGR1_AUTOOFF			__HAL_ADC_CFGR1_AUTOFF
 #define ADC_CFGR1_AUTOWAIT			__HAL_ADC_CFGR1_AutoDelay
+
 
 #elif defined(STM32F0)
 
@@ -46,6 +48,7 @@
 #define ADC_CLOCK_FREQ				14000000 // ADC Asynchronous clock is 14MHz
 #define ADC_SMPR_DEFAULT			ADC_SAMPLETIME_239CYCLES_5 // Gives about 17us sample time.
 #define _ADC_SELECT(adc, channel)	(adc->CHSELR = ADC_CHSELR_CHANNEL(channel))
+#define ADC_COMMON					ADC
 
 #define TS_CAL1_AIN					(*((uint16_t*)0x1FFFF7B8))
 #define TS_CAL2_AIN					(*((uint16_t*)0x1FFFF7C2))
@@ -61,7 +64,7 @@
 
 #define ADC_FLAG_ALL				(ADC_FLAG_AWD | ADC_FLAG_OVR | ADC_FLAG_EOS | ADC_FLAG_RDY | ADC_FLAG_EOC | ADC_FLAG_EOSMP)
 
-#elif defined(STM32G0)
+#elif defined(STM32G0) || defined(STM32WL)
 
 #define ADC_CLOCK_PRESCALAR			ADC_CLOCK_ASYNC_DIV4
 #define ADC_CLOCK_FREQ				(16000000 / 4) // 16MHz HSI div 4.
@@ -86,6 +89,12 @@
 
 #define __HAL_ADC_ENABLE(adc)		((adc)->Instance->CR |= ADC_CR_ADEN)
 #define __HAL_ADC_DISABLE(adc)		((adc)->Instance->CR |= ADC_CR_ADDIS)
+
+#if defined(STM32WL)
+#define ADC1						ADC
+#else
+#define ADC_COMMON					ADC
+#endif
 
 #endif
 
@@ -134,7 +143,7 @@ void ADC_Init(void)
 
 #if ADC_CCR_LFMEN && !defined(STM32G0)
 	// Disable the low power mode
-	MODIFY_REG(ADC->CCR, ADC_CCR_LFMEN, __HAL_ADC_CCR_LOWFREQUENCY(DISABLE));
+	MODIFY_REG(ADC_COMMON->CCR, ADC_CCR_LFMEN, __HAL_ADC_CCR_LOWFREQUENCY(DISABLE));
 #endif
 
 #ifdef ADC_CR_ADVREGEN
@@ -239,7 +248,7 @@ void ADC_Deinit(void)
 	ADCx->CFGR1 = 0;
 	ADCx->CFGR2 = 0;
 	ADCx->SMPR = 0;
-#if !defined(STM32G0)
+#if !(defined(STM32G0) || defined(STM32WL))
 	ADCx->TR = 0;
 #endif
 
@@ -259,10 +268,10 @@ uint32_t AIN_AinToMv(uint32_t ain)
 
 int32_t ADC_ReadDieTemp(void)
 {
-	ADC->CCR |= ADC_CCR_TSEN;
+	ADC_COMMON->CCR |= ADC_CCR_TSEN;
 	US_Delay(10);
 	int32_t ain = ADC_Read(ADC_CHANNEL_TEMPSENSOR);
-	ADC->CCR &= ~ADC_CCR_TSEN;
+	ADC_COMMON->CCR &= ~ADC_CCR_TSEN;
 
 	// The temp sensor is not ratiometric, so the vref must be adjusted for.
 	ain = ain * ADC_VREF / TS_CAL_VREF;
@@ -271,10 +280,10 @@ int32_t ADC_ReadDieTemp(void)
 
 uint32_t ADC_ReadVRef(void)
 {
-	ADC->CCR |= ADC_CCR_VREFEN;
+	ADC_COMMON->CCR |= ADC_CCR_VREFEN;
 	US_Delay(10);
 	int32_t ain = ADC_Read(ADC_CHANNEL_VREFINT);
-	ADC->CCR &= ~ADC_CCR_VREFEN;
+	ADC_COMMON->CCR &= ~ADC_CCR_VREFEN;
 
 	return (VF_CAL_VREF * (uint32_t)VF_CAL_AIN) / ain;
 }
@@ -344,7 +353,7 @@ static void ADC_Calibrate(void)
 
 static uint32_t ADC_SelectSampleTime(uint32_t desired, uint32_t * frequency)
 {
-#if defined(STM32L0) || defined(STM32G0)
+#if defined(STM32L0) || defined(STM32G0) || defined(STM32WL)
 	const uint16_t sample_times[] = {
 		// STM32L0 has 12.5 cycle conversion time.
 		ADC_CLKS(1), 	// ADC_SAMPLETIME_1CYCLE_5

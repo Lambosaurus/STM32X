@@ -11,7 +11,7 @@
 
 // The multiplier can be overridden by the user.
 #ifndef CLK_PLL_MUL
-#if defined(STM32G0)
+#if defined(STM32G0) || defined(STM32WL)
 #define CLK_PLL_MUL				8
 #else
 #define CLK_PLL_MUL				4
