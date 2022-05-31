@@ -69,12 +69,16 @@ void CORE_Init(void)
 {
 #if defined(STM32L0)
 	__HAL_FLASH_PREREAD_BUFFER_ENABLE();
-
 #elif defined(STM32F0)
 	__HAL_FLASH_PREFETCH_BUFFER_ENABLE();
+#elif defined(STM32WL)
+	__HAL_FLASH_PREFETCH_BUFFER_ENABLE();
+	__HAL_FLASH_INSTRUCTION_CACHE_ENABLE();
 #endif
+#if !defined(STM32WL)
 	__HAL_RCC_SYSCFG_CLK_ENABLE();
 	__HAL_RCC_PWR_CLK_ENABLE();
+#endif
 #if defined(STM32L0) && !defined(USB_ENABLE)
 	// This seems to disrupt USB. Future investigation needed.
 	SET_BIT(PWR->CR, PWR_CR_ULP | PWR_CR_FWU); // Enable Ultra low power mode & Fast wakeup

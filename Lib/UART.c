@@ -117,7 +117,7 @@ void UART_Init(UART_t * uart, uint32_t baud, UART_Mode_t mode)
 #ifdef UARTLP_GPIO
 	if (UART_INSTANCE_LOWPOWER(uart))
 	{
-#if defined(STM32G0)
+#if defined(STM32G0) || defined(STM32WL)
 		uart->Instance->BRR = UART_DIV_LPUART(pclk, baud, UART_PRESCALER_DIV1);
 #else
 		uart->Instance->BRR = UART_DIV_LPUART(pclk, baud);

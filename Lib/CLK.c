@@ -40,22 +40,22 @@
 #elif defined(STM32G0) || defined(STM32WL)
 #define CLK_HSI_FREQ						16000000
 
-#if defined(CLK_HSE_FREQ) && CLK_HSE_FREQ > 16000000
-#error "Changes required change RCC_PLLM to keep the PLL input in a 4-16MHz range"
-#endif
-
-#define __CLK_PLL_CONFIG(src, mul, div)		__HAL_RCC_PLL_CONFIG(src, RCC_PLLM_DIV1, mul, div, RCC_PLLQ_DIV2, RCC_PLLR_DIV2)
+#define __CLK_PLL_CONFIG(src, mul, div)		__HAL_RCC_PLL_CONFIG(src, RCC_PLLM_DIV1, mul, RCC_PLLP_DIV2, RCC_PLLQ_DIV2, div)
 // Todo: use this style of PLL config for other
 #define RCC_PLL_MULX_IS_VALID(x)			(x >= 8 && x <= 86)
 #define RCC_PLL_MULX(x)						(x)
 
 #define RCC_PLL_DIVX_IS_VALID(x)			(x >= 2 && x <= 32)
-#define RCC_PLL_DIVX(x)						((x - 1) * RCC_PLLCFGR_PLLP_0)
+#define RCC_PLL_DIVX(x)						((x - 1) << RCC_PLLCFGR_PLLR_Pos)
 
 #define _PWR_IS_DBP_SET()					(PWR->CR1 & PWR_CR1_DBP)
 #define _PWR_SET_DBP()						(PWR->CR1 |= PWR_CR1_DBP)
 
 #define FLASH_LATENCY						FLASH_LATENCY_2
+
+#if defined(SMT32G0)
+#define RCC_PLL_SYSCLK						RCC_PLLRCLK
+#endif
 
 #endif
 
@@ -84,7 +84,11 @@
 #endif
 
 // Is PLL required?
-#if ((CLK_SYSCLK_FREQ != CLK_PLLSRC_FREQ) && !(defined(RCC_SYSCLKSOURCE_MSI) && (CLK_SYSCLK_SRC == RCC_SYSCLKSOURCE_MSI)))
+#if ((CLK_SYSCLK_FREQ != CLK_PLL_SRC_FREQ) && !(defined(RCC_SYSCLKSOURCE_MSI) && (CLK_SYSCLK_SRC == RCC_SYSCLKSOURCE_MSI)))
+
+#if (defined(STM32G0) || defined(STM32WL)) && (CLK_PLL_SRC_FREQ > 16000000)
+#error "Changes required change RCC_PLLM to keep the PLL input in a 4-16MHz range"
+#endif
 
 #define CLK_USE_PLL
 #include "CLK_PLL.inl.h"
@@ -124,7 +128,11 @@ void CLK_InitSYSCLK(void)
 	 */
 
 #ifdef CLK_USE_HSE
+#ifdef CLK_HSE_BYPASS
+	__HAL_RCC_HSE_CONFIG(RCC_HSE_BYPASS_PWR);
+#else
 	__HAL_RCC_HSE_CONFIG(RCC_HSE_ON);
+#endif
 	while(__HAL_RCC_GET_FLAG(RCC_FLAG_HSERDY) == 0U);
 #endif
 #ifdef CLK_USE_HSI
@@ -145,8 +153,8 @@ void CLK_InitSYSCLK(void)
 	while(__HAL_RCC_GET_FLAG(RCC_FLAG_PLLRDY) != 0U);
 	__CLK_PLL_CONFIG(CLK_PLL_SRC, CLK_PLL_MUL_CFG, CLK_PLL_DIV_CFG);
 	__HAL_RCC_PLL_ENABLE();
-#if defined(STM32G0)
-	__HAL_RCC_PLLCLKOUT_ENABLE(RCC_PLLRCLK);
+#if defined(STM32G0) || defined(STM32WL)
+	__HAL_RCC_PLLCLKOUT_ENABLE(RCC_PLL_SYSCLK);
 #endif
 	while(__HAL_RCC_GET_FLAG(RCC_FLAG_PLLRDY) == 0U);
 #endif
@@ -246,7 +254,7 @@ void CLK_DisableLSO(void)
 void CLK_EnableADCCLK(void)
 {
 	// ADC CLK is driven off the HSI on STM32L0
-#if (defined(STM32L0) || defined(STM32G0)) && !defined(CLK_USE_HSI)
+#if (!defined(STM32F0)) && !defined(CLK_USE_HSI)
 	__HAL_RCC_HSI_ENABLE();
 	while(__HAL_RCC_GET_FLAG(RCC_FLAG_HSIRDY) == 0);
 #endif
@@ -254,7 +262,7 @@ void CLK_EnableADCCLK(void)
 
 void CLK_DisableADCCLK(void)
 {
-#if (defined(STM32L0) || defined(STM32G0)) && !defined(CLK_USE_HSI)
+#if (!defined(STM32F0)) && !defined(CLK_USE_HSI)
 	__HAL_RCC_HSI_DISABLE();
 #endif
 }
@@ -264,6 +272,7 @@ void CLK_DisableADCCLK(void)
  */
 
 #ifdef CLK_USE_LSE
+/*
 static void CLK_ResetBackupDomain(void)
 {
 	uint32_t csr = (RCC->CSR & ~(RCC_CSR_RTCSEL));
@@ -272,6 +281,7 @@ static void CLK_ResetBackupDomain(void)
 	__HAL_RCC_BACKUPRESET_RELEASE();
 	RCC->CSR = csr;
 }
+*/
 #endif
 
 static void CLK_AccessBackupDomain(void)
