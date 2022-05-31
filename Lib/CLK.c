@@ -57,6 +57,9 @@
 #define RCC_PLL_SYSCLK						RCC_PLLRCLK
 #endif
 
+#define RCC_CSR_RTCSEL						RCC_BDCR_RTCSEL
+#define CSR									BDCR
+
 #endif
 
 
@@ -272,16 +275,14 @@ void CLK_DisableADCCLK(void)
  */
 
 #ifdef CLK_USE_LSE
-/*
 static void CLK_ResetBackupDomain(void)
 {
-	uint32_t csr = (RCC->CSR & ~(RCC_CSR_RTCSEL));
 	// RTC Clock selection can be changed only if the Backup Domain is reset
+	uint32_t csr = (RCC->CSR & ~(RCC_CSR_RTCSEL));
 	__HAL_RCC_BACKUPRESET_FORCE();
 	__HAL_RCC_BACKUPRESET_RELEASE();
 	RCC->CSR = csr;
 }
-*/
 #endif
 
 static void CLK_AccessBackupDomain(void)

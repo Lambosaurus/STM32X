@@ -12,7 +12,16 @@
 #define _RTC_WRITEPROTECTION_ENABLE() 		(RTC->WPR = 0xFF)
 #define _RTC_WRITEPROTECTION_DISABLE() 		do { RTC->WPR = 0xCA; RTC->WPR = 0x53; } while(0)
 
-#if defined(STM32G0) || defined(STM32WL)
+#if defined(STM32L0) || defined(STM32F0)
+
+#define _RTC_GET_FLAG(flag)   				(RTC->ISR & (flag))
+#define _RTC_CLEAR_FLAG(flag)   			(RTC->ISR) = (~((flag) | RTC_ISR_INIT) | (RTC->ISR & RTC_ISR_INIT))
+
+#define RTC_CLEAR_WUTF						RTC_FLAG_WUTF
+#define RTC_CLEAR_ALRAF						RTC_FLAG_ALRAF
+#define RTC_CLEAR_ALRBF						RTC_FLAG_ALRBF
+
+#elif defined(STM32G0)
 
 #define RTC_IRQn							RTC_TAMP_IRQn
 #define RTC_IRQHandler						RTC_TAMP_IRQHandler
@@ -28,14 +37,23 @@
 #define _RTC_GET_FLAG(flag)    				(((((flag)) >> 8U) == 1U) ? (((RTC->ICSR & (1U << (((uint16_t)(flag)) & RTC_FLAG_MASK))) != 0U)) :\
                                               (((RTC->SR & (1U << (((uint16_t)(flag)) & RTC_FLAG_MASK))) != 0U)))
 
-#else
+#elif defined(STM32WL)
 
-#define _RTC_GET_FLAG(flag)   				(RTC->ISR & (flag))
-#define _RTC_CLEAR_FLAG(flag)   			(RTC->ISR) = (~((flag) | RTC_ISR_INIT) | (RTC->ISR & RTC_ISR_INIT))
+#define RTC_SPLIT_ALARM_WKUP
 
-#define RTC_CLEAR_WUTF						RTC_FLAG_WUTF
-#define RTC_CLEAR_ALRAF						RTC_FLAG_ALRAF
-#define RTC_CLEAR_ALRBF						RTC_FLAG_ALRBF
+#define ISR									ICSR
+#define RTC_ISR_INIT						RTC_ICSR_INIT
+#define RTC_ISR_WUTWF						RTC_ICSR_WUTWF
+#define RTC_ISR_RSF							RTC_ICSR_RSF
+#define RTC_ISR_INIT						RTC_ICSR_INIT
+
+#define RTC_FLAG_ALRAWF						RTC_FLAG_ALRAF
+#define RTC_FLAG_ALRBWF						RTC_FLAG_ALRBF
+#define RTC_FLAG_WKUPWF						RTC_FLAG_WKUPF
+
+#define _RTC_CLEAR_FLAG(flag)   			(RTC->SCR |= (flag))
+#define _RTC_GET_FLAG(flag)    				(((((flag)) >> 8U) == 1U) ? (RTC->ICSR & (1U << (((flag)) & RTC_FLAG_MASK))) : \
+                                                     (RTC->SR & (1U << ((flag) & RTC_FLAG_MASK))))
 
 #endif
 
@@ -72,7 +90,7 @@ static struct {
 
 void RTC_Init(void)
 {
-#if defined(STM32G0)
+#if defined(STM32G0) || defined(STM32WL)
 	__HAL_RCC_RTCAPB_CLK_ENABLE();
 #endif
 
@@ -97,20 +115,35 @@ void RTC_Init(void)
 		RTC_WaitForSync();
 	}
 
+	// Enable the EXTI's
 #ifdef RTC_USE_IRQS
   __HAL_RTC_ALARM_EXTI_ENABLE_IT();
-#if !defined(STM32G0)
-  __HAL_RTC_ALARM_EXTI_ENABLE_RISING_EDGE();
+	__HAL_RTC_WAKEUPTIMER_EXTI_ENABLE_IT();
+#if !(defined(STM32WL) || defined(STM32G0))
+	__HAL_RTC_WAKEUPTIMER_EXTI_ENABLE_RISING_EDGE();
+	__HAL_RTC_ALARM_EXTI_ENABLE_RISING_EDGE();
 #endif
+
+#ifdef RTC_SPLIT_ALARM_WKUP
+	HAL_NVIC_EnableIRQ(RTC_Alarm_IRQn);
+	HAL_NVIC_EnableIRQ(RTC_WKUP_IRQn);
+#else
 	HAL_NVIC_EnableIRQ(RTC_IRQn);
 #endif
+#endif
+
 	_RTC_WRITEPROTECTION_ENABLE();
 }
 
 void RTC_Deinit(void)
 {
 #ifdef RTC_USE_IRQS
+#ifdef RTC_SPLIT_ALARM_WKUP
+	HAL_NVIC_DisableIRQ(RTC_Alarm_IRQn);
+	HAL_NVIC_DisableIRQ(RTC_WKUP_IRQn);
+#else
 	HAL_NVIC_DisableIRQ(RTC_IRQn);
+#endif
 #endif
 	_RTC_WRITEPROTECTION_DISABLE();
 	RTC_EnterInit();
@@ -205,7 +238,9 @@ void RTC_OnAlarm(RTC_Alarm_t alarm, DateTime_t * time, RTC_Mask_t mask, VoidFunc
 		gRtc.AlarmACallback = callback;
 		RTC->CR &= ~RTC_CR_ALRAE;
 		_RTC_CLEAR_FLAG(RTC_FLAG_ALRAF);
-		while (!_RTC_GET_FLAG(RTC_FLAG_ALRAWF));
+#if defined(STM32L0) || defined(STM32F0)
+		while (!_RTC_GET_FLAG(RTC_FLAG_ALRAF));
+#endif
 		RTC->ALRMAR = treg;
 		RTC->ALRMASSR = ssreg;
 		RTC->CR |= RTC_CR_ALRAE | RTC_CR_ALRAIE;
@@ -215,7 +250,9 @@ void RTC_OnAlarm(RTC_Alarm_t alarm, DateTime_t * time, RTC_Mask_t mask, VoidFunc
 		gRtc.AlarmBCallback = callback;
 		RTC->CR &= ~RTC_CR_ALRBE;
 	    _RTC_CLEAR_FLAG(RTC_FLAG_ALRBF);
+#if defined(STM32L0) || defined(STM32F0)
 	    while (!_RTC_GET_FLAG(RTC_FLAG_ALRBWF));
+#endif
 	    RTC->ALRMBR = treg;
 	    RTC->ALRMBSSR = ssreg;
 	    RTC->CR |= RTC_CR_ALRBE | RTC_CR_ALRBIE;
@@ -268,9 +305,6 @@ void RTC_OnPeriod(uint32_t ms, VoidFunction_t callback)
 	MODIFY_REG(RTC->CR, RTC_CR_WUCKSEL, RTC_WAKEUPCLOCK_RTCCLK_DIV16);
 	// Enable the timer & it
 	RTC->CR |= RTC_CR_WUTE | RTC_CR_WUTIE;
-
-	__HAL_RTC_WAKEUPTIMER_EXTI_ENABLE_IT();
-	__HAL_RTC_WAKEUPTIMER_EXTI_ENABLE_RISING_EDGE();
 
 	_RTC_WRITEPROTECTION_ENABLE();
 }
@@ -368,17 +402,12 @@ static inline void RTC_CheckAlarms(void)
 #endif
 }
 
+
+#if defined(STM32L0) || defined(STM32F0)
+
 void RTC_IRQHandler(void)
 {
-#if defined(STM32G0)
-
-	RTC_CheckWakeupTimer();
-	RTC_CheckAlarms();
-
-#else // STM32G0
-
 	// RTC wakuptimer & Alarms are on different EXTI lines.
-	// These may get a different IRQHandler on different processors (or not be present)
 	if (__HAL_RTC_WAKEUPTIMER_EXTI_GET_FLAG())
 	{
 		RTC_CheckWakeupTimer();
@@ -390,8 +419,28 @@ void RTC_IRQHandler(void)
 		RTC_CheckAlarms();
 		__HAL_RTC_ALARM_EXTI_CLEAR_FLAG();
 	}
+}
 
-#endif // !STM32G0
+#elif defined(SMT32G0)
+
+void RTC_IRQHandler(void)
+{
+	RTC_CheckWakeupTimer();
+	RTC_CheckAlarms();
+}
+
+#elif defined(STM32WL)
+
+void RTC_WKUP_IRQHandler(void)
+{
+	RTC_CheckWakeupTimer();
+}
+
+void RTC_Alarm_IRQHandler(void)
+{
+	RTC_CheckAlarms();
 }
 
 #endif
+
+#endif //RTC_USE_IRQS
