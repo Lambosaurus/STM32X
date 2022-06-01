@@ -185,7 +185,7 @@ void CLK_InitSYSCLK(void)
 	// Configure PCLK dividers (peripheral clock)
 
 
-#if defined(STM32L0)
+#if defined(STM32L0) || defined(STM32WL) || defined(STM32G0)
 	// STM32L0's have a second PCLK. The shift by 3 is defined like this in the HAL.
 	MODIFY_REG(RCC->CFGR, RCC_CFGR_PPRE1, RCC_HCLK_DIV1);
 	MODIFY_REG(RCC->CFGR, RCC_CFGR_PPRE2, RCC_HCLK_DIV1 << 3);
@@ -232,6 +232,7 @@ void CLK_EnableLSO(void)
 #ifdef CLK_LSE_BYPASS
 	__HAL_RCC_LSE_CONFIG(RCC_LSE_BYPASS);
 #else
+	__HAL_RCC_LSEDRIVE_CONFIG(RCC_LSEDRIVE_LOW);
 	__HAL_RCC_LSE_CONFIG(RCC_LSE_ON);
 #endif
 	while(!__HAL_RCC_GET_FLAG(RCC_FLAG_LSERDY));

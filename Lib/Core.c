@@ -111,11 +111,13 @@ void CORE_Stop(void)
 	// The tick may break the WFI if it occurs at the wrong time.
 	HAL_SuspendTick();
 
+#if defined(STM32WL)
+	// Enabling the low power regulator consumes more power than the main regulator on this chip.
+	// No idea why.
+	MODIFY_REG(PWR->CR1, PWR_CR1_LPMS, PWR_LOWPOWERMODE_STOP2);
+#else
 	// Select the low power regulator
 	_PWR_SET_PWR_REGULATOR(PWR_LOWPOWERREGULATOR_ON);
-
-#if defined(STM32WL)
-	MODIFY_REG(PWR->CR1, PWR_CR1_LPMS, PWR_LOWPOWERMODE_STOP2);
 #endif
 
 	// WFI, but with the SLEEPDEEP bit set.
