@@ -160,9 +160,9 @@ void RTC_OnAlarm(RTC_Alarm_t alarm, DateTime_t * time, RTC_Mask_t mask, VoidFunc
 	uint32_t treg = RTC_ALARMMASK_ALL & ~mask;
 	if (time != NULL)
 	{
-		treg |=	(RTC_ByteToBcd2(time->hour)   << 16)
-			 |  (RTC_ByteToBcd2(time->minute) << 8)
-			 |  (RTC_ByteToBcd2(time->second));
+		treg |=	(RTC_ToBCD(time->hour)   << 16)
+			 |  (RTC_ToBCD(time->minute) << 8)
+			 |  (RTC_ToBCD(time->second));
 	}
 	uint32_t ssreg = 0;
 	_RTC_WRITEPROTECTION_DISABLE();
