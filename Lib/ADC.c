@@ -34,6 +34,11 @@
 		MODIFY_REG(ADC->CCR, ADC_CCR_PRESC, prescalar);   \
   } while(0)
 
+#define ADC_CFGR1_CONTINUOUS		ADC_CONTINUOUS
+#define ADC_CFGR1_DMACONTREQ		ADC_DMACONTREQ
+#define ADC_CFGR1_AUTOOFF			__HAL_ADC_CFGR1_AUTOFF
+#define ADC_CFGR1_AUTOWAIT			__HAL_ADC_CFGR1_AutoDelay
+
 #elif defined(STM32F0)
 
 // This puts sample + conversion time at 18us.
@@ -51,7 +56,10 @@
 #define VF_CAL_AIN		(*((uint16_t*)0x1FFFF7BA))
 #define VF_CAL_VREF		3300
 
-#error "Not fully implemented. Specifically the clock prescalar needs to be checked."
+#define _ADC_CLOCK_PRESCALER(adcx, prescalar) MODIFY_REG(adcx->CFGR2, ADC_CFGR2_CKMODE, prescalar)
+#define ADC_SMPR_SMPR	ADC_SMPR_SMP
+
+#define ADC_FLAG_ALL	(ADC_FLAG_AWD | ADC_FLAG_OVR | ADC_FLAG_EOS | ADC_FLAG_RDY | ADC_FLAG_EOC | ADC_FLAG_EOSMP)
 
 #endif
 
@@ -100,6 +108,7 @@ void ADC_Init(void)
 	// Disable the low power mode
 	MODIFY_REG(ADC->CCR, ADC_CCR_LFMEN, __HAL_ADC_CCR_LOWFREQUENCY(DISABLE));
 #endif
+#ifdef ADC_CR_ADVREGEN
 	// Enable the voltage regulator
 	if (HAL_IS_BIT_CLR(ADCx->CR, ADC_CR_ADVREGEN))
 	{
@@ -107,14 +116,15 @@ void ADC_Init(void)
 		// Wait for regulator stability.
 		US_Delay(20);
 	}
+#endif
 
 	ADCx->CFGR1 = ADC_DATAALIGN_RIGHT
 		| ADC_SCANDIR( ADC_SCAN_DIRECTION_FORWARD )
-		| ADC_CONTINUOUS(DISABLE)
-		| ADC_DMACONTREQ(DISABLE)
+		| ADC_CFGR1_CONTINUOUS(DISABLE)
+		| ADC_CFGR1_DMACONTREQ(DISABLE)
+		| ADC_CFGR1_AUTOWAIT(DISABLE)
+		| ADC_CFGR1_AUTOOFF(DISABLE)
 		| ADC_OVR_DATA_PRESERVED
-		| __HAL_ADC_CFGR1_AutoDelay(DISABLE)
-		| __HAL_ADC_CFGR1_AUTOFF(DISABLE)
 		| ADC_RESOLUTION_12B;
 
 	ADCx->CFGR2 = 0;
@@ -134,6 +144,7 @@ uint32_t ADC_SetFreq(uint32_t target)
 	return actual;
 }
 
+#ifdef STM32L0
 void ADC_SetOversampling(uint32_t ratio)
 {
 	if (ratio > 1)
@@ -160,8 +171,8 @@ void ADC_SetOversampling(uint32_t ratio)
 		// Disable oversampling.
 		ADC1->CFGR2 &= ~ADC_CFGR2_OVSE;
 	}
-
 }
+#endif
 
 uint32_t ADC_Read(uint32_t channel)
 {
@@ -172,7 +183,7 @@ uint32_t ADC_Read(uint32_t channel)
 	// Put it back in single shot mode.
 	MODIFY_REG( ADCx->CFGR1,
 				ADC_CFGR1_DMACFG | ADC_CFGR1_CONT | ADC_CFGR1_DMAEN,
-				ADC_CONTINUOUS(DISABLE) | ADC_DMACONTREQ(DISABLE)
+				ADC_CFGR1_CONTINUOUS(DISABLE) | ADC_CFGR1_DMACONTREQ(DISABLE)
 			);
 
 	ADCx->CR |= ADC_CR_ADSTART;
@@ -193,7 +204,9 @@ void ADC_Deinit(void)
 	ADCx->IER = 0;
 	__HAL_ADC_CLEAR_FLAG(&gADC, ADC_FLAG_ALL);
 
+#ifdef ADC_CR_ADVREGEN
 	ADCx->CR &= ~ADC_CR_ADVREGEN;
+#endif
 
 	ADCx->CFGR1 = 0;
 	ADCx->CFGR2 = 0;
@@ -249,7 +262,7 @@ void ADC_Start(uint32_t channel, uint16_t * buffer, uint32_t count, bool circula
 	// Enable DMA, with optional circular mode.
 	MODIFY_REG( ADCx->CFGR1,
 				ADC_CFGR1_DMACFG | ADC_CFGR1_CONT | ADC_CFGR1_DMAEN,
-				ADC_CONTINUOUS(ENABLE) | ADC_DMACONTREQ(circular) | ADC_CFGR1_DMAEN
+				ADC_CFGR1_CONTINUOUS(ENABLE) | ADC_CFGR1_DMACONTREQ(circular) | ADC_CFGR1_DMAEN
 			);
 
 	DMA_Flags_t flags = DMA_Dir_FromPeriph | DMA_MemSize_HalfWord | DMA_PeriphSize_Word;

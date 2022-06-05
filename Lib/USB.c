@@ -6,12 +6,6 @@
 #include "usb/USB_PCD.h"
 #include "usb/USB_CTL.h"
 
-#ifdef USB_CLASS_CDC
-#include "usb/cdc/USB_CDC.h"
-#endif
-#ifdef USB_CLASS_MSC
-#include "usb/msc/USB_MSC.h"
-#endif
 
 /*
  * PRIVATE DEFINITIONS
@@ -53,30 +47,6 @@ void USB_Deinit(void)
 	USBx_Deinit();
 	CLK_DisableUSBCLK();
 }
-
-#ifdef USB_CLASS_CDC
-void USB_Write(const uint8_t * data, uint32_t count)
-{
-	USB_CDC_Write(data, count);
-}
-
-uint32_t USB_Read(uint8_t * data, uint32_t size)
-{
-	return USB_CDC_Read(data, size);
-}
-
-void USB_WriteStr(const char * str)
-{
-	USB_CDC_Write((uint8_t *)str, strlen(str));
-}
-#endif //USB_CLASS_CDC
-
-#ifdef USB_CLASS_MSC
-void USB_Mount(const USB_Storage_t * storage)
-{
-	USB_MSC_Mount(storage);
-}
-#endif
 
 /*
  * PRIVATE FUNCTIONS
