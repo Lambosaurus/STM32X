@@ -87,6 +87,11 @@ void CORE_Init(void)
 	__HAL_PWR_VOLTAGESCALING_CONFIG(CORE_VOLTAGE_RANGE);
 #endif
 
+#if defined(DEBUG) && (defined(STM32WL) || defined(STM32G0))
+	HAL_DBGMCU_EnableDBGSleepMode();
+	HAL_DBGMCU_EnableDBGStopMode();
+#endif
+
 	CLK_InitSYSCLK();
 	CORE_InitSysTick();
 	CORE_InitGPIO();
