@@ -30,6 +30,7 @@
  */
 
 typedef struct {
+	uint16_t millis;
 	uint8_t second;
 	uint8_t minute;
 	uint8_t hour;

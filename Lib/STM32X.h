@@ -29,6 +29,12 @@
 
 #define LENGTH(x)		(sizeof(x) / sizeof(*(x)))
 
+
+#define CRITICAL_SECTION_BEGIN() uint32_t primask_bit= __get_PRIMASK();\
+  __disable_irq()
+
+#define CRITICAL_SECTION_END()  __set_PRIMASK(primask_bit)
+
 /*
  * PUBLIC TYPES
  */

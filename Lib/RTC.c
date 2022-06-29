@@ -7,7 +7,10 @@
  */
 
 
-#define RTC_PREDIV	128
+#ifndef RTC_SUBSECOND_RES
+#define RTC_SUBSECOND_RES	256
+#endif
+
 
 #define _RTC_WRITEPROTECTION_ENABLE() 		(RTC->WPR = 0xFF)
 #define _RTC_WRITEPROTECTION_DISABLE() 		do { RTC->WPR = 0xCA; RTC->WPR = 0x53; } while(0)
@@ -103,8 +106,10 @@ void RTC_Init(void)
 	RTC->CR &= ~(RTC_CR_FMT | RTC_CR_OSEL | RTC_CR_POL);
 	RTC->CR |= RTC_HOURFORMAT_24 | RTC_OUTPUT_DISABLE | RTC_OUTPUT_POLARITY_HIGH;
 
-	uint32_t divisor = (CLK_GetLSOFreq() / RTC_PREDIV);
-	RTC->PRER = ((RTC_PREDIV - 1) << 16U) | (divisor - 1);
+	uint32_t sync_div = RTC_SUBSECOND_RES - 1;
+	uint32_t async_div = (CLK_GetLSOFreq() / RTC_SUBSECOND_RES);
+
+	RTC->PRER = ((async_div - 1) << 16U) | (sync_div - 1);
 
 	// Exit Initialization mode
 	RTC->ISR &= ((uint32_t)~RTC_ISR_INIT);
@@ -207,7 +212,7 @@ void RTC_Write(DateTime_t * time)
 void RTC_Read(DateTime_t * time)
 {
 	// Get subseconds structure field from the corresponding register
-	(void)RTC->SSR;
+	uint16_t ssr  = RTC->SSR;
 	uint32_t treg = RTC->TR & RTC_TR_RESERVED_MASK;
 	uint32_t dreg = RTC->DR & RTC_DR_RESERVED_MASK;
 
@@ -217,6 +222,7 @@ void RTC_Read(DateTime_t * time)
 	time->year 		= RTC_FromBCD((dreg & (RTC_DR_YT | RTC_DR_YU)) >> 16) + RTC_YEAR_MIN;
 	time->month 	= RTC_FromBCD((dreg & (RTC_DR_MT | RTC_DR_MU)) >> 8);
 	time->day 		= RTC_FromBCD((dreg & (RTC_DR_DT | RTC_DR_DU)));
+	time->millis    = (ssr * 1000) / RTC_SUBSECOND_RES;
 }
 
 #ifdef RTC_USE_IRQS
