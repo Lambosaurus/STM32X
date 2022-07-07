@@ -27,6 +27,7 @@
 // Initialisation
 void USB_Init(void);
 void USB_Deinit(void);
+bool USB_IsEnumerated(void);
 
 /*
  * EXTERN DECLARATIONS
