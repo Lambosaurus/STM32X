@@ -28,12 +28,19 @@ typedef struct {
 	bool ext;
 } CAN_Msg_t;
 
+typedef enum
+{
+	CAN_Mode_Default 			= 0,
+	CAN_Mode_Silent 			= (1 << 0),
+	CAN_Mode_MailboxFIFO		= (1 << 1),
+} CAN_Mode_t;
+
 /*
  * PUBLIC FUNCTIONS
  */
 
 // Initialisation
-void CAN_Init(uint32_t bitrate);
+void CAN_Init(uint32_t bitrate, CAN_Mode_t mode);
 void CAN_EnableFilter(uint32_t bank, uint32_t id, uint32_t mask);
 void CAN_Deinit(void);
 

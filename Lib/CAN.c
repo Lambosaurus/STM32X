@@ -52,7 +52,7 @@ static uint32_t CAN_SelectNominalBitTime(uint32_t base_freq, uint32_t bitrate);
  * PUBLIC FUNCTIONS
  */
 
-void CAN_Init(uint32_t bitrate)
+void CAN_Init(uint32_t bitrate, CAN_Mode_t mode)
 {
 
 	CANx_Init();
@@ -79,10 +79,16 @@ void CAN_Init(uint32_t bitrate)
 	SET_BIT(CAN->MCR, CAN_MCR_INRQ);
 	while ((CAN->MSR & CAN_MSR_INAK) == 0U);
 
-	MODIFY_REG(CAN->MCR, CAN_FEATURE_BITS, CAN_ENABLED_FEATURES);
+	uint32_t features = CAN_MCR_ABOM;
+	if (mode & CAN_Mode_MailboxFIFO) 	{ features |= CAN_MCR_TXFP; }
+	MODIFY_REG(CAN->MCR, CAN_FEATURE_BITS, features);
 
 	// Timing bit register.
-	CAN->BTR = CAN_MODE_NORMAL | ((sjw - 1) << CAN_BTR_SJW_Pos) | ((ts1 - 1) << CAN_BTR_TS1_Pos) | ((ts2 - 1) << CAN_BTR_TS2_Pos) | (prescalar - 1U);
+	CAN->BTR = ((mode & CAN_Mode_Silent) ? CAN_MODE_SILENT : CAN_MODE_NORMAL)
+			 | ((sjw - 1) << CAN_BTR_SJW_Pos)
+			 | ((ts1 - 1) << CAN_BTR_TS1_Pos)
+			 | ((ts2 - 1) << CAN_BTR_TS2_Pos)
+			 | (prescalar - 1U);
 
 	// Clear init mode - this starts everything.
 	CAN->MCR &= ~CAN_MCR_INRQ;
