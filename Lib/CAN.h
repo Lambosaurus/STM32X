@@ -32,7 +32,7 @@ typedef enum
 {
 	CAN_Mode_Default 			= 0,
 	CAN_Mode_Silent 			= (1 << 0),
-	CAN_Mode_MailboxFIFO		= (1 << 1),
+	CAN_Mode_TransmitFIFO		= (1 << 1),
 } CAN_Mode_t;
 
 /*

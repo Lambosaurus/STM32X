@@ -80,7 +80,7 @@ void CAN_Init(uint32_t bitrate, CAN_Mode_t mode)
 	while ((CAN->MSR & CAN_MSR_INAK) == 0U);
 
 	uint32_t features = CAN_MCR_ABOM;
-	if (mode & CAN_Mode_MailboxFIFO) 	{ features |= CAN_MCR_TXFP; }
+	if (mode & CAN_Mode_TransmitFIFO) 	{ features |= CAN_MCR_TXFP; }
 	MODIFY_REG(CAN->MCR, CAN_FEATURE_BITS, features);
 
 	// Timing bit register.
