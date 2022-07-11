@@ -7,11 +7,14 @@
 
 #define DMAx	DMA1
 
-#if defined(STM32G0)
-#define DMA1_Channel4_Plus_IRQn			DMA1_Ch4_5_DMAMUX1_OVR_IRQn
-#define DMA1_Channel4_5_6_7_IRQHandler	DMA1_Ch4_5_DMAMUX1_OVR_IRQHandler
-#elif !defined(STM32WL)
-#define DMA1_Channel4_Plus_IRQn			DMA1_Channel4_5_6_7_IRQn
+#if defined(STM32L0) || defined(STM32G0)
+#define DMA1_Channel4_7_IRQn			DMA1_Channel4_5_6_7_IRQn
+#define DMA1_Channel4_7_IRQHandler		DMA1_Channel4_5_6_7_IRQHandler
+#elif defined(STM32G0)
+#define DMA1_Channel4_7_IRQn			DMA1_Ch4_5_DMAMUX1_OVR_IRQn
+#define DMA1_Channel4_7_IRQHandler		DMA1_Ch4_5_DMAMUX1_OVR_IRQHandler
+#elif defined(STM32WL)
+#define DMAMUX_ENABLE
 #endif
 
 
@@ -26,6 +29,10 @@
 static void DMAx_Init(DMA_t * dma);
 static void DMAx_Deinit(DMA_t * dma);
 static uint32_t DMA_GetMemSize(DMA_Flags_t flags);
+
+#ifdef DMAMUX_ENABLE
+static void DMA_ConfigureMux(int n, uint32_t resource);
+#endif
 
 /*
  * PRIVATE VARIABLES
@@ -81,10 +88,10 @@ DMA_t * DMA_CH7 = &gDMA_CH7;
 
 void DMA_Init(DMA_t * dma, void * peripheral, void * bfr, uint32_t length, DMA_Flags_t flags, DMA_Callback_t callback)
 {
-	DMAx_Init(dma);
-
 	dma->callback = callback;
 	dma->index = (((uint32_t)dma->Instance - (uint32_t)DMA1_Channel1) / ((uint32_t)DMA1_Channel2 - (uint32_t)DMA1_Channel1));
+
+	DMAx_Init(dma);
 
 	MODIFY_REG( dma->Instance->CCR,
 		  DMA_CCR_PL    | DMA_CCR_MSIZE  | DMA_CCR_PSIZE
@@ -126,6 +133,14 @@ void DMA_Deinit(DMA_t * dma)
  * PRIVATE FUNCTIONS
  */
 
+static void DMA_ConfigureMux(int n, uint32_t resource)
+{
+	/* DMA1 */
+	/* Associate a DMA Channel to a DMAMUX channel */
+	DMAMUX_Channel_TypeDef * mux_ch = DMAMUX1_Channel0 + n;
+	mux_ch->CCR = resource;
+}
+
 static uint32_t DMA_GetMemSize(DMA_Flags_t flags)
 {
 	if (flags & DMA_MemSize_Word)
@@ -144,27 +159,58 @@ static uint32_t DMA_GetMemSize(DMA_Flags_t flags)
 
 static void DMAx_EnableIRQn(int n)
 {
+	// Note, n = 0 corresponds to DMA1_Channel1_IRQn
 #if defined(STM32WL)
-	  HAL_NVIC_EnableIRQ((DMA1_Channel1_IRQn - 1) + n);
+	  HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn + n);
 #else
-	if (n <= 1)
+	if (n < 1)
 	{
 		HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
 	}
-	else if (n <= 3)
+	else if (n < 3)
 	{
 		HAL_NVIC_EnableIRQ(DMA1_Channel2_3_IRQn);
 	}
 	else
 	{
-		HAL_NVIC_EnableIRQ(DMA1_Channel4_Plus_IRQn);
+		HAL_NVIC_EnableIRQ(DMA1_Channel4_7_IRQn);
 	}
 #endif
 }
 
-
 static void DMAx_Init(DMA_t * dma)
 {
+
+#ifdef DMAMUX_ENABLE
+	__HAL_RCC_DMAMUX1_CLK_ENABLE();
+	uint32_t resource = 0;
+	switch (dma->index)
+	{
+#ifdef DMA_CH1_ENABLE
+	case 0: resource = DMA_CH1_RESOURCE; break;
+#endif
+#ifdef DMA_CH2_ENABLE
+	case 1: resource = DMA_CH2_RESOURCE; break;
+#endif
+#ifdef DMA_CH3_ENABLE
+	case 2: resource = DMA_CH3_RESOURCE; break;
+#endif
+#ifdef DMA_CH4_ENABLE
+	case 3: resource = DMA_CH4_RESOURCE; break;
+#endif
+#ifdef DMA_CH5_ENABLE
+	case 4: resource = DMA_CH5_RESOURCE; break;
+#endif
+#ifdef DMA_CH6_ENABLE
+	case 5: resource = DMA_CH6_RESOURCE; break;
+#endif
+#ifdef DMA_CH7_ENABLE
+	case 6: resource = DMA_CH7_RESOURCE; break;
+#endif
+	}
+	DMA_ConfigureMux(dma->index, resource);
+#endif //DMAMUX_ENABLE
+
 	__DMA1_CLK_ENABLE();
 	DMAx_EnableIRQn(dma->index);
 }
@@ -172,6 +218,9 @@ static void DMAx_Init(DMA_t * dma)
 static void DMAx_Deinit(DMA_t * dma)
 {
 	__DMA1_CLK_DISABLE();
+#ifdef DMAMUX_ENABLE
+	__HAL_RCC_DMAMUX1_CLK_DISABLE();
+#endif //DMAMUX_ENABLE
 }
 
 static void DMA_IRQHandler(DMA_t * dma, uint32_t flag_it)
@@ -294,7 +343,7 @@ void DMA1_Channel2_3_IRQHandler(void)
 #endif //defined(DMA_CH1_ENABLE) || defined(DMA_CH2_ENABLE)
 
 #if defined(DMA_CH4_ENABLE) || defined(DMA_CH5_ENABLE) || defined(DMA_CH6_ENABLE) || defined(DMA_CH7_ENABLE)
-void DMA1_Channel4_5_6_7_IRQHandler(void)
+void DMA1_Channel4_7_IRQHandler(void)
 {
 	uint32_t flag_it = DMAx->ISR;
 #ifdef DMA_CH4_ENABLE
