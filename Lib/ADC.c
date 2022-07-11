@@ -16,8 +16,6 @@
 #define ADC_CLOCK_PRESCALAR			ADC_CLOCK_ASYNC_DIV4
 #define ADC_CLOCK_FREQ				(16000000 / 4) // 16MHz HSI div 4.
 #define ADC_SMPR_DEFAULT			ADC_SAMPLETIME_79CYCLES_5 // Gives ~ 20us sample time
-#define _ADC_SELECT(adc, channel) 	(adc->CHSELR = channel & ADC_CHANNEL_MASK)
-#define ADC_COMMON					ADC
 
 #define TS_CAL1_AIN					(*((uint16_t*)0x1FF8007A))
 #define TS_CAL2_AIN					(*((uint16_t*)0x1FF8007E))
@@ -27,6 +25,9 @@
 
 #define VF_CAL_AIN					(*((uint16_t*)0x1FF80078))
 #define VF_CAL_VREF					3000
+
+#define ADC_Channel_Vref			ADC_Channel_17
+#define ADC_Channel_Temp			ADC_Channel_18
 
 // refer to HAL on this implementation
 #define _ADC_CLOCK_PRESCALER(adcx, prescalar)         \
@@ -47,8 +48,6 @@
 #define ADC_CLOCK_PRESCALAR			ADC_CLOCK_ASYNC_DIV1
 #define ADC_CLOCK_FREQ				14000000 // ADC Asynchronous clock is 14MHz
 #define ADC_SMPR_DEFAULT			ADC_SAMPLETIME_239CYCLES_5 // Gives about 17us sample time.
-#define _ADC_SELECT(adc, channel)	(adc->CHSELR = ADC_CHSELR_CHANNEL(channel))
-#define ADC_COMMON					ADC
 
 #define TS_CAL1_AIN					(*((uint16_t*)0x1FFFF7B8))
 #define TS_CAL2_AIN					(*((uint16_t*)0x1FFFF7C2))
@@ -58,6 +57,9 @@
 
 #define VF_CAL_AIN					(*((uint16_t*)0x1FFFF7BA))
 #define VF_CAL_VREF					3300
+
+#define ADC_Channel_Vref			ADC_Channel_17
+#define ADC_Channel_Temp			ADC_Channel_16
 
 #define _ADC_CLOCK_PRESCALER(adcx, prescalar) MODIFY_REG(adcx->CFGR2, ADC_CFGR2_CKMODE, prescalar)
 #define ADC_SMPR_SMPR				ADC_SMPR_SMP
@@ -151,6 +153,8 @@ void ADC_Init(void)
 	if (HAL_IS_BIT_CLR(ADCx->CR, ADC_CR_ADVREGEN))
 	{
 		ADCx->CR |= ADC_CR_ADVREGEN;
+		// Wait for regulator stability.
+		US_Delay(20);
 	}
 	US_Delay(20);
 #endif
@@ -211,11 +215,11 @@ void ADC_SetOversampling(uint32_t ratio)
 }
 #endif
 
-uint32_t ADC_Read(uint32_t channel)
+uint32_t ADC_Read(ADC_Channel_t channel)
 {
 	__HAL_ADC_CLEAR_FLAG(&gADC, (ADC_FLAG_EOC | ADC_FLAG_EOS | ADC_FLAG_OVR));
 
-	_ADC_SELECT(ADCx, channel);
+	ADCx->CHSELR = channel;
 
 	// Put it back in single shot mode.
 	MODIFY_REG( ADCx->CFGR1,
@@ -270,8 +274,8 @@ int32_t ADC_ReadDieTemp(void)
 {
 	ADC_COMMON->CCR |= ADC_CCR_TSEN;
 	US_Delay(10);
-	int32_t ain = ADC_Read(ADC_CHANNEL_TEMPSENSOR);
-	ADC_COMMON->CCR &= ~ADC_CCR_TSEN;
+	int32_t ain = ADC_Read(ADC_Channel_Temp);
+	ADC->CCR &= ~ADC_CCR_TSEN;
 
 	// The temp sensor is not ratiometric, so the vref must be adjusted for.
 	ain = ain * ADC_VREF / TS_CAL_VREF;
@@ -282,21 +286,21 @@ uint32_t ADC_ReadVRef(void)
 {
 	ADC_COMMON->CCR |= ADC_CCR_VREFEN;
 	US_Delay(10);
-	int32_t ain = ADC_Read(ADC_CHANNEL_VREFINT);
-	ADC_COMMON->CCR &= ~ADC_CCR_VREFEN;
+	int32_t ain = ADC_Read(ADC_Channel_Vref);
+	ADC->CCR &= ~ADC_CCR_VREFEN;
 
 	return (VF_CAL_VREF * (uint32_t)VF_CAL_AIN) / ain;
 }
 
 #ifdef ADC_DMA_CH
 
-void ADC_Start(uint32_t channel, uint16_t * buffer, uint32_t count, bool circular, ADC_Callback_t callback)
+void ADC_Start(ADC_Channel_t channel, uint16_t * buffer, uint32_t count, bool circular, ADC_Callback_t callback)
 {
 	// These flags can cause the previous ADC sample to be sent via DMA if not cleared.
 	__HAL_ADC_CLEAR_FLAG(&gADC, ADC_FLAG_ALL);
 
 	// Select the channel
-	_ADC_SELECT(ADCx, channel);
+	ADCx->CHSELR = channel;
 
 	// Enable DMA, with optional circular mode.
 	MODIFY_REG( ADCx->CFGR1,

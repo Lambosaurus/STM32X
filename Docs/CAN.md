@@ -14,7 +14,7 @@ Filters can be enabled to recieve the requested messages.
 Once initialised, the recieved messages will be queued into the CAN FIFO's, and should be polled. Interrupts are currently not utilised.
 
 ```C
-CAN_Init(250000);
+CAN_Init(250000, CAN_Mode_Default);
 CAN_EnableFilter(0, 0, 0); // All messages
 
 while (1)
@@ -37,12 +37,25 @@ while (1)
 }
 ```
 
-Up to `FILTER_BANK_COUNT` CAN filters can be enabled
+## Filters
+
+Up to `FILTER_BANK_COUNT` CAN filters can be enabled. These are used to restrict the recieved messages.
+There is no default filter. One should always be enabled.
+
 ```C
 // Arguments are: index, id_mask, id_match 
 CAN_EnableFilter(0, 0x00F00000, 0x00100000);
 CAN_EnableFilter(1, 0x00F00000, 0x00200000);
 ```
+
+## Modes
+The CAN_Mode_t provides the following flags for altering the CAN behavior:
+
+| Mode                   | Description                                         |
+| ---------------------- | --------------------------------------------------- |
+| CAN_Mode_Silent        | Disables writing to bus, including acknowledgements |
+| CAN_Mode_TransmitFIFO  | Transmits are first-in-first-out, instead of using ID priority |
+
 
 # Board
 

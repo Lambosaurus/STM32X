@@ -191,8 +191,8 @@ def generate_composite_device(usb_classes, dest_folder):
         info = USBClassInfo(usb_class, interfaces, endpoints)
         info.parse()
 
-        interfaces += info.endpoints
-        endpoints += info.interfaces
+        interfaces += info.interfaces
+        endpoints += info.endpoints
         config_size += info.config_size
         config_body.extend(info.config_body)
 

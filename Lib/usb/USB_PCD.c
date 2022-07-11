@@ -53,6 +53,11 @@ void USB_PCD_Init(void)
 #endif
 }
 
+void USB_PCD_Deinit(void)
+{
+	USB_EP_Deinit();
+}
+
 void USB_PCD_Start(void)
 {
 	// Enable interrupt sources

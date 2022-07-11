@@ -4,7 +4,7 @@
 The Composite device allows multiple [USB](../USB.md) classes to be used.
 
 # Python tools
-The composite device must be generated using the supplied tools, with `Tools/usb_composite`.
+The composite device must be generated using the supplied tools in [Tools/usb_composite](../../Tools/usb-composite/).
 Python is required to run these. These are tested on python 3, but **may** be compatible with python 2.7.
 
 `usb_composite.py` takes two arguments:

@@ -141,6 +141,11 @@ void USB_CTL_Deinit(void)
 	}
 }
 
+bool USB_CTL_IsEnumerated(void)
+{
+	return gCTL.class_config != 0;
+}
+
 void USB_CTL_HandleSetup(uint8_t * data)
 {
 	USB_SetupRequest_t req;

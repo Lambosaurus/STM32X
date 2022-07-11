@@ -38,8 +38,8 @@
 
 static void CANx_Init(void);
 static void CANx_Deinit(void);
-static void CAN_ReadMailbox(CAN_FIFOMailBox_TypeDef * mailbox, CANMsg_t * msg);
-static void CAN_WriteMailbox(CAN_TxMailBox_TypeDef * mailbox, const CANMsg_t * msg);
+static void CAN_ReadMailbox(CAN_FIFOMailBox_TypeDef * mailbox, CAN_Msg_t * msg);
+static void CAN_WriteMailbox(CAN_TxMailBox_TypeDef * mailbox, const CAN_Msg_t * msg);
 #ifdef AUTO_CALC_TQ
 static uint32_t CAN_SelectNominalBitTime(uint32_t base_freq, uint32_t bitrate);
 #endif
@@ -52,7 +52,7 @@ static uint32_t CAN_SelectNominalBitTime(uint32_t base_freq, uint32_t bitrate);
  * PUBLIC FUNCTIONS
  */
 
-void CAN_Init(uint32_t bitrate)
+void CAN_Init(uint32_t bitrate, CAN_Mode_t mode)
 {
 
 	CANx_Init();
@@ -79,10 +79,16 @@ void CAN_Init(uint32_t bitrate)
 	SET_BIT(CAN->MCR, CAN_MCR_INRQ);
 	while ((CAN->MSR & CAN_MSR_INAK) == 0U);
 
-	MODIFY_REG(CAN->MCR, CAN_FEATURE_BITS, CAN_ENABLED_FEATURES);
+	uint32_t features = CAN_MCR_ABOM;
+	if (mode & CAN_Mode_TransmitFIFO) 	{ features |= CAN_MCR_TXFP; }
+	MODIFY_REG(CAN->MCR, CAN_FEATURE_BITS, features);
 
 	// Timing bit register.
-	CAN->BTR = CAN_MODE_NORMAL | ((sjw - 1) << CAN_BTR_SJW_Pos) | ((ts1 - 1) << CAN_BTR_TS1_Pos) | ((ts2 - 1) << CAN_BTR_TS2_Pos) | (prescalar - 1U);
+	CAN->BTR = ((mode & CAN_Mode_Silent) ? CAN_MODE_SILENT : CAN_MODE_NORMAL)
+			 | ((sjw - 1) << CAN_BTR_SJW_Pos)
+			 | ((ts1 - 1) << CAN_BTR_TS1_Pos)
+			 | ((ts2 - 1) << CAN_BTR_TS2_Pos)
+			 | (prescalar - 1U);
 
 	// Clear init mode - this starts everything.
 	CAN->MCR &= ~CAN_MCR_INRQ;
@@ -141,24 +147,31 @@ void CAN_Deinit(void)
 	CANx_Deinit();
 }
 
-bool CAN_Write(const CANMsg_t * msg)
+bool CAN_Write(const CAN_Msg_t * msg)
 {
 	uint32_t tsr = CAN->TSR;
-
 	if ((tsr & (CAN_TSR_TME0 | CAN_TSR_TME1 | CAN_TSR_TME2)) == 0)
 	{
 		// All Tx mailboxes are full.
 		return false;
 	}
-
 	uint32_t free_mailbox = (tsr & CAN_TSR_CODE) >> CAN_TSR_CODE_Pos;
 	CAN_WriteMailbox(&CAN->sTxMailBox[free_mailbox], msg);
 
 	return true;
 }
 
+uint32_t CAN_WriteFree(void)
+{
+	uint32_t count = 0;
+	uint32_t tsr = CAN->TSR;
+	if (tsr & CAN_TSR_TME0) { count++; }
+	if (tsr & CAN_TSR_TME1) { count++; }
+	if (tsr & CAN_TSR_TME2) { count++; }
+	return count;
+}
 
-uint8_t CAN_ReadCount()
+uint32_t CAN_ReadCount()
 {
 #ifdef CAN_DUAL_FIFO
 	return _CAN_RX_FIFO0_COUNT(CAN) + _CAN_RX_FIFO1_COUNT(CAN);
@@ -166,7 +179,7 @@ uint8_t CAN_ReadCount()
 	return _CAN_RX_FIFO0_COUNT(CAN);
 }
 
-bool CAN_Read(CANMsg_t * msg)
+bool CAN_Read(CAN_Msg_t * msg)
 {
 	if (_CAN_RX_FIFO0_COUNT(CAN))
 	{
@@ -222,10 +235,11 @@ static uint32_t CAN_SelectNominalBitTime(uint32_t base_freq, uint32_t bitrate)
 }
 #endif
 
-static void CAN_ReadMailbox(CAN_FIFOMailBox_TypeDef * mailbox, CANMsg_t * msg)
+static void CAN_ReadMailbox(CAN_FIFOMailBox_TypeDef * mailbox, CAN_Msg_t * msg)
 {
 	uint32_t rir = mailbox->RIR;
-	if (rir & CAN_RI0R_IDE)
+	msg->ext = rir & CAN_RI0R_IDE;
+	if (msg->ext)
 	{
 		// Extended IDE
 		msg->id = (rir & (CAN_RI0R_EXID | CAN_RI0R_STID)) >> CAN_RI0R_EXID_Pos;
@@ -244,10 +258,19 @@ static void CAN_ReadMailbox(CAN_FIFOMailBox_TypeDef * mailbox, CANMsg_t * msg)
 	data[1] = mailbox->RDHR;
 }
 
-static void CAN_WriteMailbox(CAN_TxMailBox_TypeDef * mailbox, const CANMsg_t * msg)
+static void CAN_WriteMailbox(CAN_TxMailBox_TypeDef * mailbox, const CAN_Msg_t * msg)
 {
-	// Only support std ide.
-	mailbox->TIR = (msg->id << CAN_TI0R_EXID_Pos) | CAN_TI0R_IDE;
+	if (msg->ext)
+	{
+		// Extended IDE
+		mailbox->TIR = (msg->id << CAN_TI0R_EXID_Pos) | CAN_TI0R_IDE;
+	}
+	else
+	{
+		// Standard IDE
+		mailbox->TIR = (msg->id << CAN_TI0R_STID_Pos);
+	}
+
 	mailbox->TDTR = msg->len;
 
 	// Note: we rely on the packing alignment of the CANMsg_t for this to work.
