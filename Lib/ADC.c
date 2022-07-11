@@ -82,6 +82,9 @@
 #define VF_CAL_AIN					(*((uint16_t*)0x1FFF75AA))
 #define VF_CAL_VREF					3000
 
+#define ADC_Channel_Vref			ADC_Channel_13
+#define ADC_Channel_Temp			ADC_Channel_12
+
 #define __HAL_RCC_ADC1_CLK_ENABLE	__HAL_RCC_ADC_CLK_ENABLE
 #define __HAL_RCC_ADC1_CLK_DISABLE	__HAL_RCC_ADC_CLK_DISABLE
 #define ADC_FLAG_ALL				(ADC_FLAG_OVR | ADC_FLAG_EOS | ADC_FLAG_RDY | ADC_FLAG_EOC | ADC_FLAG_EOSMP)
@@ -185,7 +188,7 @@ uint32_t ADC_SetFreq(uint32_t target)
 	return actual;
 }
 
-#ifdef STM32L0
+#if defined(STM32L0) || defined(STM32WL)
 void ADC_SetOversampling(uint32_t ratio)
 {
 	if (ratio > 1)
@@ -275,7 +278,7 @@ int32_t ADC_ReadDieTemp(void)
 	ADC_COMMON->CCR |= ADC_CCR_TSEN;
 	US_Delay(10);
 	int32_t ain = ADC_Read(ADC_Channel_Temp);
-	ADC->CCR &= ~ADC_CCR_TSEN;
+	ADC_COMMON->CCR &= ~ADC_CCR_TSEN;
 
 	// The temp sensor is not ratiometric, so the vref must be adjusted for.
 	ain = ain * ADC_VREF / TS_CAL_VREF;
@@ -287,7 +290,7 @@ uint32_t ADC_ReadVRef(void)
 	ADC_COMMON->CCR |= ADC_CCR_VREFEN;
 	US_Delay(10);
 	int32_t ain = ADC_Read(ADC_Channel_Vref);
-	ADC->CCR &= ~ADC_CCR_VREFEN;
+	ADC_COMMON->CCR &= ~ADC_CCR_VREFEN;
 
 	return (VF_CAL_VREF * (uint32_t)VF_CAL_AIN) / ain;
 }
