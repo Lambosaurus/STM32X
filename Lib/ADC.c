@@ -73,6 +73,13 @@
 #define ADC_SMPR_DEFAULT			ADC_SAMPLETIME_79CYCLES_5 // Gives ~ 20us sample time
 #define _ADC_SELECT(adc, channel) 	(adc->CHSELR = channel & ADC_CHANNEL_ID_BITFIELD_MASK)
 
+// refer to HAL on this implementation
+#define _ADC_CLOCK_PRESCALER(adcx, prescalar)         		\
+  do{                                                       \
+		adcx->CFGR2 &= ~(ADC_CFGR2_CKMODE);                 \
+		MODIFY_REG(ADC_COMMON->CCR, ADC_CCR_PRESC, prescalar);\
+  } while(0)
+
 #define TS_CAL1_AIN					(*((uint16_t*)0x1FFF75A8))
 #define TS_CAL2_AIN					(*((uint16_t*)0x1FFF75CA))
 #define TS_CAL1_DEG					30
@@ -159,7 +166,6 @@ void ADC_Init(void)
 		// Wait for regulator stability.
 		US_Delay(20);
 	}
-	US_Delay(20);
 #endif
 
 	ADCx->CFGR1 = ADC_DATAALIGN_RIGHT

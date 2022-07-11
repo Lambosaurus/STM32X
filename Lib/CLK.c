@@ -260,6 +260,10 @@ void CLK_EnableADCCLK(void)
 	__HAL_RCC_HSI_ENABLE();
 	while(__HAL_RCC_GET_FLAG(RCC_FLAG_HSIRDY) == 0);
 #endif
+
+#if defined(STM32WL)
+	__HAL_RCC_ADC_CONFIG(RCC_ADCCLKSOURCE_HSI);
+#endif
 }
 
 void CLK_DisableADCCLK(void)
