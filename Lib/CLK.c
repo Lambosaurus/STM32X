@@ -10,8 +10,6 @@
 #if defined(STM32L0)
 #define CLK_HSI_FREQ			16000000
 
-#define __HAL_RCC_HSI_ENABLE()		__HAL_RCC_HSI_CONFIG(RCC_HSI_ON)
-#define __HAL_RCC_HSI_DISABLE()		__HAL_RCC_HSI_CONFIG(RCC_HSI_OFF)
 #define __CLK_PLL_CONFIG(src, mul, div)		__HAL_RCC_PLL_CONFIG(src, mul, div)
 
 #elif defined(STM32F0)
@@ -159,7 +157,7 @@ void CLK_InitSYSCLK(void)
 #ifndef CLK_USE_HSI
 	__HAL_RCC_HSI_DISABLE();
 #endif
-#if (defined(RCC_SYSCLKSOURCE_MSI) && !CLK_USE_MSI)
+#if (defined(RCC_SYSCLKSOURCE_MSI) && !defined(CLK_USE_MSI))
 	__HAL_RCC_MSI_DISABLE();
 #endif
 }
