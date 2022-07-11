@@ -134,10 +134,12 @@ static void GPIO_ConfigInterrupt( GPIO_t * gpio, int n, GPIO_IT_Dir_t dir)
 	else
 	{
 		// Assign the EXTI channel to the given GPIO.
+#ifdef __HAL_RCC_SYSCFG_CLK_ENABLE
 		__HAL_RCC_SYSCFG_CLK_ENABLE();
+#endif
 		uint32_t gpio_index = GPIO_GET_INDEX(gpio);
 
-#if defined(STM32G0) || defined(STM32WL)
+#if defined(STM32G0)
 		uint32_t offset = (n & 0x3) * 8;
 		MODIFY_REG(EXTI->EXTICR[n >> 2], 0xF << offset, gpio_index << offset);
 #else
@@ -175,18 +177,19 @@ static inline void EXTIx_IRQHandler(int n)
 
 static void EXTIx_EnableIRQn(int n)
 {
-	if (n <= 1)
-	{
-		HAL_NVIC_EnableIRQ(EXTI0_1_IRQn);
-	}
-	else if (n <= 3)
-	{
-		HAL_NVIC_EnableIRQ(EXTI2_3_IRQn);
-	}
-	else
-	{
-		HAL_NVIC_EnableIRQ(EXTI4_15_IRQn);
-	}
+#if defined(STM32WL)
+	if (n <= 0) 		{ HAL_NVIC_EnableIRQ(EXTI0_IRQn); }
+	else if (n <= 1) 	{ HAL_NVIC_EnableIRQ(EXTI1_IRQn); }
+	else if (n <= 2) 	{ HAL_NVIC_EnableIRQ(EXTI2_IRQn); }
+	else if (n <= 3) 	{ HAL_NVIC_EnableIRQ(EXTI3_IRQn); }
+	else if (n <= 4) 	{ HAL_NVIC_EnableIRQ(EXTI4_IRQn); }
+	else if (n <= 9) 	{ HAL_NVIC_EnableIRQ(EXTI9_5_IRQn); }
+	else 				{ HAL_NVIC_EnableIRQ(EXTI15_10_IRQn); }
+#else
+	if (n <= 1) 		{ HAL_NVIC_EnableIRQ(EXTI0_1_IRQn); }
+	else if (n <= 3) 	{ HAL_NVIC_EnableIRQ(EXTI2_3_IRQn); }
+	else 				{ HAL_NVIC_EnableIRQ(EXTI4_15_IRQn); }
+#endif
 }
 #endif //GPIO_USE_IRQS
 
@@ -195,6 +198,92 @@ static void EXTIx_EnableIRQn(int n)
  */
 
 #ifdef GPIO_USE_IRQS
+#if defined(STM32WL)
+
+#if defined(GPIO_IRQ0_ENABLE)
+void EXTI0_IRQHandler(void)
+{
+	EXTIx_IRQHandler(0);
+}
+#endif
+
+#if defined(GPIO_IRQ1_ENABLE)
+void EXTI1_IRQHandler(void)
+{
+	EXTIx_IRQHandler(1);
+}
+#endif
+
+#if defined(GPIO_IRQ2_ENABLE)
+void EXTI2_IRQHandler(void)
+{
+	EXTIx_IRQHandler(2);
+}
+#endif
+
+#if defined(GPIO_IRQ3_ENABLE)
+void EXTI3_IRQHandler(void)
+{
+	EXTIx_IRQHandler(3);
+}
+#endif
+
+#if defined(GPIO_IRQ4_ENABLE)
+void EXTI4_IRQHandler(void)
+{
+	EXTIx_IRQHandler(4);
+}
+#endif
+
+#if    defined(GPIO_IRQ5_ENABLE) || defined(GPIO_IRQ6_ENABLE)   || defined(GPIO_IRQ7_ENABLE)\
+	|| defined(GPIO_IRQ8_ENABLE) || defined(GPIO_IRQ9_ENABLE)
+void EXTI9_5_IRQHandler(void)
+{
+#ifdef GPIO_IRQ5_ENABLE
+	EXTIx_IRQHandler(5);
+#endif
+#ifdef GPIO_IRQ6_ENABLE
+	EXTIx_IRQHandler(6);
+#endif
+#ifdef GPIO_IRQ7_ENABLE
+	EXTIx_IRQHandler(7);
+#endif
+#ifdef GPIO_IRQ8_ENABLE
+	EXTIx_IRQHandler(8);
+#endif
+#ifdef GPIO_IRQ9_ENABLE
+	EXTIx_IRQHandler(9);
+#endif
+}
+#endif
+
+#if    defined(GPIO_IRQ10_ENABLE) || defined(GPIO_IRQ11_ENABLE)   || defined(GPIO_IRQ12_ENABLE)\
+	|| defined(GPIO_IRQ13_ENABLE) || defined(GPIO_IRQ14_ENABLE)
+void EXTI15_10_IRQHandler(void)
+{
+#ifdef GPIO_IRQ10_ENABLE
+	EXTIx_IRQHandler(10);
+#endif
+#ifdef GPIO_IRQ11_ENABLE
+	EXTIx_IRQHandler(11);
+#endif
+#ifdef GPIO_IRQ12_ENABLE
+	EXTIx_IRQHandler(12);
+#endif
+#ifdef GPIO_IRQ13_ENABLE
+	EXTIx_IRQHandler(13);
+#endif
+#ifdef GPIO_IRQ14_ENABLE
+	EXTIx_IRQHandler(14);
+#endif
+#ifdef GPIO_IRQ15_ENABLE
+	EXTIx_IRQHandler(15);
+#endif
+}
+#endif
+
+#else
+
 #if defined(GPIO_IRQ0_ENABLE) || defined(GPIO_IRQ1_ENABLE)
 void EXTI0_1_IRQHandler(void)
 {
@@ -263,4 +352,7 @@ void EXTI4_15_IRQHandler(void)
 #endif
 }
 #endif
+
+#endif
+
 #endif //GPIO_USE_IRQS
