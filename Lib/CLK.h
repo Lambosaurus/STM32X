@@ -45,6 +45,17 @@ static inline uint32_t CLK_GetHCLKFreq(void);
 static inline uint32_t CLK_GetPCLKFreq(void);
 static inline uint32_t CLK_GetLSOFreq(void);
 
+
+// Helper function for selecting a peripheral prescalar.
+// Inputs: 	Source clock frequency
+//			Minimum divider
+//			Maximum divider
+// 			Destination frequency - this shall not be exceeded
+// Returns: The prescalar index. (index = 0 is the minimum prescalar. index = 1 is minimum x2)
+//          Destination frequency is modified to be the actual frequency.
+uint32_t CLK_SelectPrescalar(uint32_t src_freq, uint32_t div_min, uint32_t div_max, uint32_t * dst_freq);
+
+
 /*
  * EXTERN DECLARATIONS
  */

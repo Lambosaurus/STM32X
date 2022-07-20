@@ -273,6 +273,23 @@ void CLK_DisableADCCLK(void)
 #endif
 }
 
+uint32_t CLK_SelectPrescalar(uint32_t src_freq, uint32_t div_min, uint32_t div_max, uint32_t * dst_freq)
+{
+	uint32_t k = 0;
+	uint32_t div = div_min;
+	src_freq /= div_min;
+
+	while (div <= div_max && src_freq > *dst_freq)
+	{
+		div <<= 2;
+		src_freq >>= 1;
+		k++;
+	}
+
+	*dst_freq = src_freq;
+	return k;
+}
+
 /*
  * PRIVATE FUNCTIONS
  */
