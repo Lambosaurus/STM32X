@@ -4,6 +4,7 @@
 #ifdef CAN_GPIO
 #include "GPIO.h"
 #include "CLK.h"
+#include "Core.h"
 
 /*
  * PRIVATE DEFINITIONS
@@ -43,6 +44,7 @@ static void CAN_WriteMailbox(CAN_TxMailBox_TypeDef * mailbox, const CAN_Msg_t * 
 #ifdef AUTO_CALC_TQ
 static uint32_t CAN_SelectNominalBitTime(uint32_t base_freq, uint32_t bitrate);
 #endif
+static bool CAN_WaitForStatus(uint32_t msr_bit, bool state);
 
 /*
  * PRIVATE VARIABLES
@@ -73,11 +75,11 @@ void CAN_Init(uint32_t bitrate, CAN_Mode_t mode)
 #endif
 
 	CLEAR_BIT(CAN->MCR, CAN_MCR_SLEEP);
-	while ((CAN->MSR & CAN_MSR_SLAK) != 0U);
+	CAN_WaitForStatus(CAN_MSR_SLAK, false);
 
 	// Request initialisation
 	SET_BIT(CAN->MCR, CAN_MCR_INRQ);
-	while ((CAN->MSR & CAN_MSR_INAK) == 0U);
+	CAN_WaitForStatus(CAN_MSR_INAK, true);
 
 	uint32_t features = CAN_MCR_ABOM;
 	if (mode & CAN_Mode_TransmitFIFO) 	{ features |= CAN_MCR_TXFP; }
@@ -93,8 +95,7 @@ void CAN_Init(uint32_t bitrate, CAN_Mode_t mode)
 	// Clear init mode - this starts everything.
 	CAN->MCR &= ~CAN_MCR_INRQ;
 	// Wait for ack. This is probably not required.
-	// Unsure if it messes with subsequent TX.
-	while (CAN->MSR & CAN_MSR_INAK);
+	CAN_WaitForStatus(CAN_MSR_INAK, false);
 }
 
 void CAN_EnableFilter(uint32_t bank, uint32_t id, uint32_t mask)
@@ -139,9 +140,11 @@ void CAN_Deinit(void)
 {
 	// Request initialisation (stop the tx/rx), then wait for ack
 	CAN->MCR |= CAN_MCR_INRQ;
-	while (!(CAN->MSR & CAN_MSR_INAK));
+
+	CAN_WaitForStatus(CAN_MSR_INAK, false);
+
 	// Exit sleep mode. (Is this required?)
-	CAN->MCR &= ~CAN_MCR_SLEEP;
+	//CAN->MCR &= ~CAN_MCR_SLEEP;
 
 	_CAN_RESET(CAN);
 	CANx_Deinit();
@@ -200,6 +203,22 @@ bool CAN_Read(CAN_Msg_t * msg)
 	}
 #endif
 	return false;
+}
+
+static bool CAN_WaitForStatus(uint32_t msr_bit, bool state)
+{
+	uint32_t start = CORE_GetTick();
+	while (1)
+	{
+		if ((CAN->MSR & msr_bit) > 0 == state)
+		{
+			return true;
+		}
+		if (CORE_GetTick() - start > 5)
+		{
+			return false;
+		}
+	}
 }
 
 /*
