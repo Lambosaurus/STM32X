@@ -210,7 +210,7 @@ static bool CAN_WaitForStatus(uint32_t msr_bit, bool state)
 	uint32_t start = CORE_GetTick();
 	while (1)
 	{
-		if ((CAN->MSR & msr_bit) > 0 == state)
+		if (((CAN->MSR & msr_bit) > 0) == state)
 		{
 			return true;
 		}
