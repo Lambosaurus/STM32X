@@ -116,8 +116,9 @@ void SUBGHZ_ExecuteGet(SUBGHZ_RadioGetCmd_t cmd, uint8_t * bfr, uint32_t size)
 void SUBGHZ_ReadBuffer(uint8_t offset, uint8_t * bfr, uint32_t size)
 {
 	uint8_t tx[] = {
-		SUBGHZ_RADIO_WRITE_BUFFER,
+		SUBGHZ_RADIO_READ_BUFFER,
 		offset,
+		0x00,
 	};
 	SUBGHZ_SPI_ReadTransaction(tx, sizeof(tx), bfr, size);
 }
