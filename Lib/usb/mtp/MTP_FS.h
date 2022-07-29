@@ -46,11 +46,14 @@ typedef struct {
 
 void MTP_Init(MTP_t * mtp);
 bool MTP_AddFile(MTP_t * mtp, MTP_File_t * file);
-bool MTP_AddFileInternal(MTP_t * mtp, MTP_File_t * file);
-void MTP_RemoveFile(MTP_t * mtp, MTP_File_t * file);
-MTP_File_t * MTP_GetObjectById(MTP_t * mtp, uint32_t object_id);
-void MTP_OnNewFile(MTP_t * mtp, MTP_NewFileCallback_t callback);
 uint32_t MTP_FreeObjects(MTP_t * mtp);
+void MTP_RemoveFile(MTP_t * mtp, MTP_File_t * file);
+void MTP_UpdateFile(MTP_t * mtp, MTP_File_t * file);
+
+void MTP_OnNewFile(MTP_t * mtp, MTP_NewFileCallback_t callback);
+
+MTP_File_t * MTP_GetObjectById(MTP_t * mtp, uint32_t object_id);
+bool MTP_AddFileInternal(MTP_t * mtp, MTP_File_t * file);
 
 /*
  * EXTERN DECLARATIONS

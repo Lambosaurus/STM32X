@@ -48,6 +48,7 @@ static MTP_State_t MTP_GetObjectPropertyDescriptor(MTP_Container_t * container, 
 static MTP_State_t MTP_GetObjectPropertyList(MTP_t * mtp, MTP_Container_t * container, uint32_t object_id);
 static MTP_State_t MTP_GetObjectPropertyValue(MTP_t * mtp, MTP_Container_t * container, uint32_t object_id, uint32_t property_id);
 static MTP_State_t MTP_GetObjectReferences(MTP_t * mtp, MTP_Container_t * container, uint32_t object_id);
+static MTP_State_t MTP_DeleteObject(MTP_t * mtp, MTP_Container_t * container, uint32_t object_id);
 
 static MTP_State_t MTP_GetObjectInfo(MTP_t * mtp, MTP_Container_t * container, uint32_t object_id);
 static MTP_State_t MTP_GetObject(MTP_t * mtp, MTP_Container_t * container, uint32_t object_id);
@@ -62,6 +63,7 @@ static MTP_State_t MTP_RecieveObject(MTP_t * mtp, MTP_Container_t * container, M
 static MTP_State_t MTP_SendResponse(MTP_Container_t * container, uint16_t code);
 static MTP_State_t MTP_SendData(MTP_Container_t * container, uint32_t size);
 static MTP_State_t MTP_ReceiveData(MTP_Container_t * container, uint32_t size);
+static MTP_State_t MTP_RecieveRawData(MTP_Container_t * container, uint32_t size);
 
 
 /*
@@ -140,9 +142,7 @@ MTP_State_t MTP_HandleOperation(MTP_t * mtp, MTP_Operation_t * op, MTP_Container
 		return MTP_SendObject(mtp, container);
 
 	case MTP_OP_DELETE_OBJECT:
-		//USBD_MTP_OPT_DeleteObject(pdev);
-		//hmtp->MTP_ResponsePhase = MTP_RESPONSE_PHASE;
-		break;
+		return MTP_DeleteObject(mtp, container, op->param[0]);
 
 	default:
 		break;
@@ -204,6 +204,15 @@ void MTP_UpdateFileEvent(MTP_t * mtp, MTP_File_t * file, uint16_t code)
 	}
 }
 
+uint16_t MTP_GetState(MTP_t * mtp)
+{
+	if (mtp->transaction.remaining)
+	{
+		return MTP_RESP_DEVICE_BUSY;
+	}
+	return MTP_RESP_OK;
+}
+
 /*
  * PRIVATE FUNCTIONS
  */
@@ -239,6 +248,12 @@ static MTP_State_t MTP_SendData(MTP_Container_t * container, uint32_t size)
 static MTP_State_t MTP_ReceiveData(MTP_Container_t * container, uint32_t size)
 {
 	container->packet_size = MTP_CONT_HEADER_SIZE + size;
+	return MTP_State_RxData;
+}
+
+static MTP_State_t MTP_RecieveRawData(MTP_Container_t * container, uint32_t size)
+{
+	container->packet_size = size;
 	return MTP_State_RxData;
 }
 
@@ -434,7 +449,7 @@ static MTP_State_t MTP_GetObjectHandles(MTP_t * mtp, MTP_Container_t * container
 	uint32_t handles[LENGTH(mtp->objects)];
 	for (uint32_t i = 0; i < LENGTH(mtp->objects); i++)
 	{
-		if (mtp->objects[i] != NULL)
+		if (mtp->objects[i] != NULL && mtp->objects[i]->mtp.id)
 		{
 			handles[count++] = i + 1;
 		}
@@ -632,36 +647,53 @@ static MTP_State_t MTP_RecieveObjectInfo(MTP_t * mtp, MTP_Container_t * containe
 	char name[MTP_STRING_MAX];
 	MTP_ReadString(container->data + 52, name);
 
-	if (MTP_FreeObjects(mtp) == 0)
-	{
-		return MTP_SendResponse(container, MTP_RESP_STORE_FULL);
-	}
 
-	// Next.. see if the user wants the file.
-	if (mtp->new_file_callback)
+	MTP_File_t * file = NULL;
+
+	// First - check if we have an object we can overwrite
+	for (uint32_t i = 0; i < LENGTH(mtp->objects); i++)
 	{
-		MTP_File_t * file = mtp->new_file_callback(name, size);
-		if (file && file->write)
+		MTP_File_t * f = mtp->objects[i];
+		if (f != NULL && strcmp(f->name, name) == 0)
 		{
-			uint32_t object_id = mtp->next_id++;
-
-			file->size = size;
-			file->mtp.type = obj_type;
-			file->mtp.id = object_id;
-
-			mtp->new_file = file; // This is where a subsequent send data will occurr.
-
-			uint32_t params[] = {
-				MTP_STORAGE_ID,
-				0,
-				object_id,
-			};
-
-			return MTP_SendResponseParams(container, params, LENGTH(params));
+			file = f;
+			break;
 		}
 	}
-	// Reject the file.
-	return MTP_SendResponse(container, MTP_RESP_INVALID_DATASET);
+
+	// We did not find a writable file. Can we create one?
+	if (file == NULL && mtp->new_file_callback)
+	{
+		if (MTP_FreeObjects(mtp) == 0)
+		{
+			return MTP_SendResponse(container, MTP_RESP_STORE_FULL);
+		}
+
+		file = mtp->new_file_callback(name, size);
+	}
+
+	// We have failed to create a valid file.
+	if (file == NULL || file->write == NULL)
+	{
+		return MTP_SendResponse(container, MTP_RESP_INVALID_DATASET);
+	}
+
+	// Allocate the file.
+	uint32_t object_id = mtp->next_id++;
+
+	file->size = size;
+	file->mtp.type = obj_type;
+	file->mtp.id = object_id;
+
+	mtp->new_file = file; // This is where a subsequent send data will occurr.
+
+	uint32_t params[] = {
+		MTP_STORAGE_ID,
+		0,
+		object_id,
+	};
+
+	return MTP_SendResponseParams(container, params, LENGTH(params));
 }
 
 static MTP_State_t MTP_SendObject(MTP_t * mtp, MTP_Container_t * container)
@@ -713,7 +745,7 @@ static MTP_State_t MTP_RecieveObject(MTP_t * mtp, MTP_Container_t * container, M
 	if (container->packet_size == sizeof(container->data))
 	{
 		// No short packet. Await more data.
-		return MTP_ReceiveData(container, sizeof(container->data) - MTP_CONT_HEADER_SIZE);
+		return MTP_RecieveRawData(container, sizeof(container->data));
 	}
 	else
 	{
@@ -722,6 +754,12 @@ static MTP_State_t MTP_RecieveObject(MTP_t * mtp, MTP_Container_t * container, M
 		mtp->transaction.remaining = 0;
 		if (success)
 		{
+			if (mtp->transaction.callback)
+			{
+				// Zero length write indicates EOF.
+				mtp->transaction.callback(src, mtp->transaction.offset, 0);
+			}
+
 			// If this fails - it means we ran out of slots just as the data came in. Whoops!
 			success &= MTP_AddFileInternal(mtp, mtp->new_file);
 			mtp->new_file = NULL;
@@ -732,6 +770,25 @@ static MTP_State_t MTP_RecieveObject(MTP_t * mtp, MTP_Container_t * container, M
 
 		return MTP_SendResponse(container, success ? MTP_RESP_OK : MTP_RESP_INCOMPLETE_TRANSFER );
 	}
+}
+
+static MTP_State_t MTP_DeleteObject(MTP_t * mtp, MTP_Container_t * container, uint32_t object_id)
+{
+	// object_id = 0xFFFFFFFF indicates delete all. I will neglect this case.
+
+	MTP_File_t * file = MTP_GetObjectById(mtp, object_id);
+	if (file == NULL)
+	{
+		return MTP_SendResponse(container, MTP_RESP_INVALID_OBJECT_HANDLE);
+	}
+
+	if (!file->write)
+	{
+		return MTP_SendResponse(container, MTP_RESP_OBJECT_WRITE_PROTECTED);
+	}
+
+	file->mtp.id = 0;
+	return MTP_SendResponse(container, MTP_RESP_OK);
 }
 
 /*

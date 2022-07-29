@@ -88,11 +88,14 @@ void MTP_UpdateFile(MTP_t * mtp, MTP_File_t * file)
 
 MTP_File_t * MTP_GetObjectById(MTP_t * mtp, uint32_t object_id)
 {
-	for (uint32_t i = 0; i < LENGTH(mtp->objects); i++)
+	if (object_id != 0)
 	{
-		if (mtp->objects[i]->mtp.id == object_id)
+		for (uint32_t i = 0; i < LENGTH(mtp->objects); i++)
 		{
-			return mtp->objects[i];
+			if (mtp->objects[i]->mtp.id == object_id)
+			{
+				return mtp->objects[i];
+			}
 		}
 	}
 	return NULL;

@@ -33,6 +33,10 @@
 #define MTP_PACKET_SIZE						USB_PACKET_SIZE
 
 
+#define MTP_REQ_RESET						0x66
+#define MTP_REQ_GET_STATUS					0x67
+
+
 /*
  * PRIVATE TYPES
  */
@@ -109,7 +113,21 @@ void USB_MTP_Deinit(void)
 
 void USB_MTP_Setup(USB_SetupRequest_t * req)
 {
-	// TODO .....
+	switch (req->bRequest)
+	{
+	case MTP_REQ_GET_STATUS:
+	{
+		uint16_t status[] = {
+			4,
+			MTP_GetState(gMtp.mtp),
+		};
+		USB_CTL_Send((uint8_t*)status, 4);
+		break;
+	}
+	case MTP_REQ_RESET:
+		// TODO
+		break;
+	}
 }
 
 bool USB_MTP_SubmitEvent(MTP_Event_t * event)
