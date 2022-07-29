@@ -4,7 +4,7 @@
 #ifdef USB_ENABLE
 #include "USB_EP.h"
 #include "USB_CTL.h"
-#include "USB_CLASS.h"
+#include "USB_Class.h"
 
 /*
  * PRIVATE DEFINITIONS
