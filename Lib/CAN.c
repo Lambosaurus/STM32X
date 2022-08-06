@@ -1,7 +1,7 @@
 
 #include "CAN.h"
 
-#ifdef CAN_GPIO
+#ifdef CAN_PINS
 #include "GPIO.h"
 #include "CLK.h"
 #include "Core.h"
@@ -304,7 +304,7 @@ static void CAN_WriteMailbox(CAN_TxMailBox_TypeDef * mailbox, const CAN_Msg_t * 
 static void CANx_Init(void)
 {
 	__HAL_RCC_CAN1_CLK_ENABLE();
-	GPIO_EnableAlternate(CAN_GPIO, CAN_PINS, 0, CAN_AF);
+	GPIO_EnableAlternate(CAN_PINS, 0, CAN_AF);
 	//HAL_NVIC_EnableIRQ(CEC_CAN_IRQn);
 }
 
@@ -312,11 +312,11 @@ static void CANx_Deinit(void)
 {
 	//HAL_NVIC_DisableIRQ(CEC_CAN_IRQn);
 	__HAL_RCC_CAN1_CLK_DISABLE();
-	GPIO_Deinit(CAN_GPIO, CAN_PINS);
+	GPIO_Deinit(CAN_PINS);
 }
 
 /*
  * INTERRUPT ROUTINES
  */
 
-#endif
+#endif // CAN_PINS

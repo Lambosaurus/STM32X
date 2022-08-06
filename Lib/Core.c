@@ -181,20 +181,20 @@ void CORE_InitGPIO(void)
 	__HAL_RCC_GPIOA_CLK_ENABLE();
 #ifdef DEBUG
 	// SWCLK and SWDIO on PA13, PA14
-	GPIO_Deinit(GPIOA, GPIO_PIN_All & ~(GPIO_PIN_13 | GPIO_PIN_14));
+	GPIO_Deinit(GPIO_Port_A | (GPIO_Pin_All & ~(GPIO_Pin_13 | GPIO_Pin_14)));
 #else
-	GPIO_Deinit(GPIOA, GPIO_PIN_All);
+	GPIO_Deinit(GPIO_Port_A | GPIO_Pin_All);
 #endif
 
 	__HAL_RCC_GPIOB_CLK_ENABLE();
-	GPIO_Deinit(GPIOB, GPIO_PIN_All);
+	GPIO_Deinit(GPIO_Port_B | GPIO_Pin_All);
 
 	__HAL_RCC_GPIOC_CLK_ENABLE();
-	GPIO_Deinit(GPIOC, GPIO_PIN_All);
+	GPIO_Deinit(GPIO_Port_C | GPIO_Pin_All);
 
 #if defined(GPIOD)
 	__HAL_RCC_GPIOD_CLK_ENABLE();
-	GPIO_Deinit(GPIOD, GPIO_PIN_All);
+	GPIO_Deinit(GPIO_Port_D | GPIO_Pin_All);
 #endif
 }
 

@@ -19,6 +19,8 @@
  * PRIVATE TYPES
  */
 
+typedef GPIO_TypeDef GPIO_t;
+
 /*
  * PRIVATE PROTOTYPES
  */
@@ -26,12 +28,13 @@
 #ifdef GPIO_USE_IRQS
 static inline void EXTIx_IRQHandler(int n);
 static void EXTIx_EnableIRQn(int n);
-static void GPIO_ConfigInterrupt( GPIO_t * gpio, int n, GPIO_IT_Dir_t dir);
+static void GPIO_ConfigInterrupt(int gpio_index, int n, GPIO_IT_Dir_t dir);
 #endif //GPIO_USE_IRQS
 
-static void GPIO_ConfigAlternate( GPIO_t * gpio, uint32_t pins, uint32_t af);
+static void GPIO_ConfigAlternate(GPIO_Pin_t pins, uint32_t af);
 
 static uint32_t GPIO_SWARBitDouble(uint32_t s);
+static inline GPIO_t * GPIO_GetPort(GPIO_Pin_t pins);
 
 /*
  * PRIVATE VARIABLES
@@ -45,40 +48,42 @@ VoidFunction_t gCallback[16] = { 0 };
  * PUBLIC FUNCTIONS
  */
 
-void GPIO_Write(GPIO_t * gpio, uint32_t pin, GPIO_State_t state)
+void GPIO_Write(GPIO_Pin_t pins, GPIO_State_t state)
 {
 	if (state)
 	{
-		GPIO_Set(gpio, pin);
+		GPIO_Set(pins);
 	}
 	else
 	{
-		GPIO_Reset(gpio, pin);
+		GPIO_Reset(pins);
 	}
 }
 
-void GPIO_EnableAlternate(GPIO_t * gpio, uint32_t pin, GPIO_Flag_t flags, uint32_t af)
+void GPIO_EnableAlternate(GPIO_Pin_t pins, GPIO_Flag_t flags, uint32_t af)
 {
-	GPIO_ConfigAlternate(gpio, pin, af);
-	GPIO_Init(gpio, pin, GPIO_Mode_Alternate | GPIO_Speed_High | flags);
+	GPIO_ConfigAlternate(pins, af);
+	GPIO_Init(pins, GPIO_Mode_Alternate | GPIO_Speed_High | flags);
 }
 
 #ifdef GPIO_USE_IRQS
-void GPIO_OnChange(GPIO_t * gpio, uint32_t pin, GPIO_IT_Dir_t dir, VoidFunction_t callback)
+void GPIO_OnChange(GPIO_Pin_t pin, GPIO_IT_Dir_t dir, VoidFunction_t callback)
 {
 	int n = 0;
 	while ((pin & (1 << n)) == 0) { n++; }
 
 	gCallback[n] = callback;
 
-	GPIO_ConfigInterrupt(gpio, n, dir);
+	GPIO_ConfigInterrupt(pin >> 16, n, dir);
 
 	EXTIx_EnableIRQn(n);
 }
 #endif //GPIO_USE_IRQS
 
-void GPIO_Init(GPIO_t * gpio, uint32_t pins, GPIO_Flag_t mode)
+void GPIO_Init(GPIO_Pin_t pins, GPIO_Flag_t mode)
 {
+	GPIO_t * gpio = GPIO_GetPort(pins);
+	pins &= GPIO_Pin_All;
 	uint32_t pinmask = GPIO_SWARBitDouble(pins);
 
 	GPIO_Mode_t dir = mode & GPIO_Mode_MASK;
@@ -95,12 +100,40 @@ void GPIO_Init(GPIO_t * gpio, uint32_t pins, GPIO_Flag_t mode)
 	MODIFY_REG( gpio->PUPDR, pinmask * GPIO_PUPDR_PUPD0, pinmask * pull);
 }
 
+void GPIO_Set(GPIO_Pin_t pins)
+{
+	GPIO_GetPort(pins)->BSRR = pins & GPIO_Pin_All;
+}
+
+void GPIO_Reset(GPIO_Pin_t pins)
+{
+	GPIO_GetPort(pins)->BRR = pins & GPIO_Pin_All;
+}
+
+GPIO_State_t GPIO_Read(GPIO_Pin_t pins)
+{
+	return (GPIO_GetPort(pins)->IDR & (pins & GPIO_Pin_All)) > 0;
+}
+
+GPIO_Pin_t GPIO_ReadPort(GPIO_Pin_t pins)
+{
+	return GPIO_GetPort(pins)->IDR & pins;
+}
+
 /*
  * PRIVATE FUNCTIONS
  */
 
-static void GPIO_ConfigAlternate( GPIO_t * gpio, uint32_t pins, uint32_t af)
+static inline GPIO_t * GPIO_GetPort(GPIO_Pin_t pins)
 {
+	uint32_t index = pins >> 16;
+	return (GPIO_t*)(GPIOA_BASE + (index * (GPIOB_BASE - GPIOA_BASE)));
+}
+
+static void GPIO_ConfigAlternate(GPIO_Pin_t pins, uint32_t af)
+{
+	GPIO_t * gpio = GPIO_GetPort(pins);
+	pins &= GPIO_Pin_All;
 	uint32_t pos = 0;
 	while (pins)
 	{
@@ -115,7 +148,7 @@ static void GPIO_ConfigAlternate( GPIO_t * gpio, uint32_t pins, uint32_t af)
 }
 
 #ifdef GPIO_USE_IRQS
-static void GPIO_ConfigInterrupt( GPIO_t * gpio, int n, GPIO_IT_Dir_t dir)
+static void GPIO_ConfigInterrupt(int gpio_index, int n, GPIO_IT_Dir_t dir)
 {
 	uint32_t pin = 1 << n;
 	if (dir == GPIO_IT_None)
@@ -127,7 +160,6 @@ static void GPIO_ConfigInterrupt( GPIO_t * gpio, int n, GPIO_IT_Dir_t dir)
 	{
 		// Assign the EXTI channel to the given GPIO.
 		__HAL_RCC_SYSCFG_CLK_ENABLE();
-		uint32_t gpio_index = GPIO_GET_INDEX(gpio);
 		uint32_t offset = (n & 0x3) * 4;
 		MODIFY_REG(SYSCFG->EXTICR[n >> 2], 0xF << offset, gpio_index << offset);
 

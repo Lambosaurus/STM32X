@@ -3,7 +3,7 @@
 
 #include "STM32X.h"
 
-#ifdef CAN_GPIO
+#ifdef CAN_PINS
 
 /*
  * FUNCTIONAL TESTING
@@ -53,5 +53,5 @@ uint32_t CAN_ReadCount(void);
 bool CAN_Read(CAN_Msg_t * msg);
 
 
-#endif
+#endif //CAN_PINS
 #endif //CAN_H
