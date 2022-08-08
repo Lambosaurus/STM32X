@@ -7,11 +7,6 @@
  */
 
 
-#ifndef RTC_SUBSECOND_RES
-#define RTC_SUBSECOND_RES	256
-#endif
-
-
 #define _RTC_WRITEPROTECTION_ENABLE() 		(RTC->WPR = 0xFF)
 #define _RTC_WRITEPROTECTION_DISABLE() 		do { RTC->WPR = 0xCA; RTC->WPR = 0x53; } while(0)
 

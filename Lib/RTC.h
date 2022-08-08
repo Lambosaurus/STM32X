@@ -15,6 +15,10 @@
  * PUBLIC DEFINITIONS
  */
 
+#ifndef RTC_SUBSECOND_RES
+#define RTC_SUBSECOND_RES	256
+#endif
+
 #ifdef RTC_CR_ALRBE
 #define RTC_ALARMB_ENABLE
 #endif
