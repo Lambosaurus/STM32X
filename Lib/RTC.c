@@ -58,6 +58,12 @@
 #define _RTC_GET_FLAG(flag)    				(((((flag)) >> 8U) == 1U) ? (RTC->ICSR & (1U << (((flag)) & RTC_FLAG_MASK))) : \
                                                      (RTC->SR & (1U << ((flag) & RTC_FLAG_MASK))))
 
+#if defined(RTC_USE_BINARY)
+#if (!IS_POWER_OF_2(RTC_SUBSECOND_RES) || RTC_SUBSECOND_RES < 256)
+#error "Calendar cannot be derived from a binary timer with this prescalar"
+#endif
+#endif
+
 #endif
 
 
@@ -105,6 +111,11 @@ void RTC_Init(void)
 
 	RTC->CR &= ~(RTC_CR_FMT | RTC_CR_OSEL | RTC_CR_POL);
 	RTC->CR |= RTC_HOURFORMAT_24 | RTC_OUTPUT_DISABLE | RTC_OUTPUT_POLARITY_HIGH;
+
+#ifdef RTC_USE_BINARY
+	uint32_t ssr_reload = (FIRST_BIT_INDEX(RTC_SUBSECOND_RES) - 8) << RTC_ICSR_BCDU_Pos;
+	RTC->ISR |= RTC_BINARY_MIX | ssr_reload;
+#endif
 
 	uint32_t sync_div = RTC_SUBSECOND_RES - 1;
 	uint32_t async_div = (CLK_GetLSOFreq() / RTC_SUBSECOND_RES);
@@ -211,10 +222,18 @@ void RTC_Write(DateTime_t * time)
 
 void RTC_Read(DateTime_t * time)
 {
-	// Get subseconds structure field from the corresponding register
+#ifdef RTC_USE_BINARY
+	// In binary mode, the SSR is extended - the higher bits must be dropped.
+	uint16_t ssr  = RTC->SSR & (RTC_SUBSECOND_RES - 1);
+#else
+	// In normal mode, just read the SSR.
 	uint16_t ssr  = RTC->SSR;
+#endif
 	uint32_t treg = RTC->TR & RTC_TR_RESERVED_MASK;
 	uint32_t dreg = RTC->DR & RTC_DR_RESERVED_MASK;
+
+	// SSR is a downcounter. Invert it.
+	ssr = (RTC_SUBSECOND_RES - 1) - ssr;
 
 	time->hour 		= RTC_FromBCD((treg & (RTC_TR_HT | RTC_TR_HU)) >> 16);
 	time->minute 	= RTC_FromBCD((treg & (RTC_TR_MNT | RTC_TR_MNU)) >> 8);
@@ -223,6 +242,7 @@ void RTC_Read(DateTime_t * time)
 	time->month 	= RTC_FromBCD((dreg & (RTC_DR_MT | RTC_DR_MU)) >> 8);
 	time->day 		= RTC_FromBCD((dreg & (RTC_DR_DT | RTC_DR_DU)));
 	time->millis    = (ssr * 1000) / RTC_SUBSECOND_RES;
+
 }
 
 #ifdef RTC_USE_IRQS
@@ -327,6 +347,12 @@ void RTC_StopPeriod(void)
 
 #endif //RTC_USE_IRQS
 
+#ifdef RTC_USE_BINARY
+uint32_t RTC_ReadBinary(void)
+{
+	return 0xFFFFFFFF - RTC->SSR;
+}
+#endif
 
 /*
  * PRIVATE FUNCTIONS

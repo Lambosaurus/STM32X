@@ -74,8 +74,7 @@ void GPIO_EnableAlternate(GPIO_t * gpio, uint32_t pin, GPIO_Flag_t flags, uint32
 #ifdef GPIO_USE_IRQS
 void GPIO_OnChange(GPIO_t * gpio, uint32_t pin, GPIO_IT_Dir_t dir, VoidFunction_t callback)
 {
-	int n = 0;
-	while ((pin & (1 << n)) == 0) { n++; }
+	int n = FIRST_SET_BIT(pin);
 
 	gCallback[n] = callback;
 

@@ -275,6 +275,9 @@ void CLK_DisableADCCLK(void)
 
 uint32_t CLK_SelectPrescalar(uint32_t src_freq, uint32_t div_min, uint32_t div_max, uint32_t * dst_freq)
 {
+	// TODO: This is really a log2 problem.
+	// This can possibly be reduced to a call to FIRST_SET_BIT.
+
 	uint32_t k = 0;
 	uint32_t div = div_min;
 	src_freq /= div_min;

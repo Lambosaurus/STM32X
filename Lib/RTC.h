@@ -78,6 +78,10 @@ void RTC_StopPeriod(void);
 
 #endif //RTC_USE_IRQS
 
+#ifdef RTC_USE_BINARY
+uint32_t RTC_ReadBinary(void);
+#endif
+
 /*
  * EXTERN DECLARATIONS
  */
