@@ -18,6 +18,8 @@
 void USB_CTL_Init(void);
 void USB_CTL_Deinit(void);
 
+bool USB_CTL_IsEnumerated(void);
+
 // Called by status requests on EP0
 void USB_CTL_HandleSetup(uint8_t * data);
 

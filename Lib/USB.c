@@ -48,6 +48,11 @@ void USB_Deinit(void)
 	CLK_DisableUSBCLK();
 }
 
+bool USB_IsEnumerated(void)
+{
+	return USB_CTL_IsEnumerated();
+}
+
 /*
  * PRIVATE FUNCTIONS
  */
