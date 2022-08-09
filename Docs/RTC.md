@@ -62,7 +62,7 @@ Note that the alarms can be generated each second/hour/minute/day. For more cust
 
 ## Timer:
 
-The RTC may also have an input timer. This can be used for higher frequency wakeups. Check your datasheet for the presence of this device.
+The RTC may also have an inbuilt timer. This can be used for higher frequency wakeups. Check your datasheet for the availability of this device.
 
 ```c
 RTC_Init();

@@ -21,6 +21,6 @@
  * PUBLIC FUNCTIONS
  */
 
-uint32_t CRC32(uint32_t init, uint32_t * words, uint32_t size);
+uint32_t CRC32(uint32_t init, const uint32_t * words, uint32_t size);
 
 #endif //CRC_H
