@@ -201,7 +201,7 @@ void CLK_InitSYSCLK(void)
 #ifndef CLK_USE_HSI
 	__HAL_RCC_HSI_DISABLE();
 #endif
-#if (defined(RCC_SYSCLKSOURCE_MSI) && !CLK_USE_MSI)
+#if (defined(RCC_SYSCLKSOURCE_MSI) && !defined(CLK_USE_MSI))
 	__HAL_RCC_MSI_DISABLE();
 #endif
 }
