@@ -77,6 +77,19 @@ while(1)
 }
 ```
 
+## Binary counter:
+
+The RTC may support a free running binary counter. This can be enabled using `RTC_USE_BINARY`.
+
+```c
+RTC_Init();
+
+uint32_t start = RTC_ReadBinary();
+...
+uint32_t end = RTC_ReadBinary();
+uint32_t elapsed_ms =  (end - start) * 1000 / RTC_SUBSECOND_RES;
+```
+
 ## Oscillator selection:
 
 Its important to note that the LSI (Low speed internal oscillator) is **extremely** inacurate. Check your parts datasheet. It is useful for wakeups, but not for accurate time keeping.
@@ -91,4 +104,6 @@ The following template can be used. Commented out definitions are optional.
 ```C
 // RTC configuration
 //#define RTC_USE_IRQS
+//#define RTC_SUBSECOND_RES	    256
+//#define RTC_USE_BINARY
 ```
