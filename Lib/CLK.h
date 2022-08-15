@@ -36,6 +36,9 @@ void CLK_DisableLSO(void);
 void CLK_EnableADCCLK(void);
 void CLK_DisableADCCLK(void);
 
+void CLK_EnableRNGCLK(void);
+void CLK_DisableRNGCLK(void);
+
 #ifdef USB_ENABLE
 void CLK_EnableUSBCLK(void);
 void CLK_DisableUSBCLK(void);

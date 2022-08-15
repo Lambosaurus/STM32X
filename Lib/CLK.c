@@ -58,6 +58,9 @@
 #define RCC_CSR_RTCSEL						RCC_BDCR_RTCSEL
 #define CSR									BDCR
 
+// If the RNG module is required - then crank it.
+#define CLK_RNG_MSI_RANGE					RCC_MSIRANGE_11
+
 #endif
 
 
@@ -270,6 +273,23 @@ void CLK_DisableADCCLK(void)
 {
 #if (!defined(STM32F0)) && !defined(CLK_USE_HSI)
 	__HAL_RCC_HSI_DISABLE();
+#endif
+}
+
+void CLK_EnableRNGCLK(void)
+{
+#if (defined(STM32G0) || defined(STM32WL)) && !defined(CLK_USE_MSI)
+	__HAL_RCC_MSI_ENABLE();
+	__HAL_RCC_MSI_RANGE_CONFIG(CLK_RNG_MSI_RANGE);
+	while(__HAL_RCC_GET_FLAG(RCC_FLAG_MSIRDY) == 0U);
+	__HAL_RCC_RNG_CONFIG(RCC_RNGCLKSOURCE_MSI);
+#endif
+}
+
+void CLK_DisableRNGCLK(void)
+{
+#if (defined(STM32G0) || defined(STM32WL)) && !defined(CLK_USE_MSI)
+	__HAL_RCC_MSI_DISABLE();
 #endif
 }
 
