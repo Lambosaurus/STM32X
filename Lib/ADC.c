@@ -41,6 +41,7 @@
 #define ADC_CFGR1_AUTOOFF			__HAL_ADC_CFGR1_AUTOFF
 #define ADC_CFGR1_AUTOWAIT			__HAL_ADC_CFGR1_AutoDelay
 
+#define ADC_COMMON					ADC
 
 #elif defined(STM32F0)
 

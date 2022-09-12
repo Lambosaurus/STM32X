@@ -3,7 +3,6 @@
 
 #include "STM32X.h"
 
-// Use this bit to detect whether the comparator modules are available for this MCU
 #if defined(STM32WL)
 #define SUBGHZ_ENABLED
 #endif
@@ -15,6 +14,8 @@
  * STM32G0: N/A
  * STM32WL: N
  */
+
+#ifdef SUBGHZ_ENABLED
 
 /*
  * PUBLIC DEFINITIONS
@@ -63,4 +64,5 @@ void SUBGHZ_WriteRegisters(uint16_t address, const uint8_t * value, uint32_t cou
  * EXTERN DECLARATIONS
  */
 
+#endif //SUBGHZ_ENABLED
 #endif //SUBGHZ_H

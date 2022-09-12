@@ -133,6 +133,7 @@ void DMA_Deinit(DMA_t * dma)
  * PRIVATE FUNCTIONS
  */
 
+#ifdef DMAMUX_ENABLE
 static void DMA_ConfigureMux(int n, uint32_t resource)
 {
 	/* DMA1 */
@@ -140,6 +141,7 @@ static void DMA_ConfigureMux(int n, uint32_t resource)
 	DMAMUX_Channel_TypeDef * mux_ch = DMAMUX1_Channel0 + n;
 	mux_ch->CCR = resource;
 }
+#endif //DMAMUX_ENABLE
 
 static uint32_t DMA_GetMemSize(DMA_Flags_t flags)
 {
