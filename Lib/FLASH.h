@@ -17,6 +17,14 @@
 
 // Refer to FLASH_PAGE_SIZE for page dimensions.
 
+#if defined(STM32L0)
+#define FLASH_WORD_SIZE		2
+#elif defined(STM32F0)
+#define FLASH_WORD_SIZE		4
+#elif defined(STM32G0) || defined(STM32WL)
+#define FLASH_WORD_SIZE		8
+#endif
+
 /*
  * PUBLIC TYPES
  */
