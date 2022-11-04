@@ -30,6 +30,10 @@
 #define __UART_TX_BUSY(uart)	(!(uart->Instance->ISR & USART_ISR_TC))
 #define __UART_CLEAR_FLAGS(uart, flags) (uart->Instance->ICR |= flags)
 
+#ifndef UART_IRQ_PRIO
+#define UART_IRQ_PRIO					1
+#endif //UART_IRQ_PRIO
+
 /*
  * PRIVATE TYPES
  */
@@ -252,6 +256,7 @@ static void UARTx_Init(UART_t * uart)
 		__HAL_RCC_LPUART1_CLK_ENABLE();
 		GPIO_EnableAlternate(UARTLP_GPIO, UARTLP_PINS, 0, UARTLP_AF);
 		HAL_NVIC_EnableIRQ(LPUART1_IRQn);
+		HAL_NVIC_SetPriority(LPUART1_IRQn, UART_IRQ_PRIO, UART_IRQ_PRIO);
 	}
 #endif
 #ifdef UART1_GPIO
@@ -260,6 +265,7 @@ static void UARTx_Init(UART_t * uart)
 		__HAL_RCC_USART1_CLK_ENABLE();
 		GPIO_EnableAlternate(UART1_GPIO, UART1_PINS, 0, UART1_AF);
 		HAL_NVIC_EnableIRQ(USART1_IRQn);
+		HAL_NVIC_SetPriority(USART1_IRQn, UART_IRQ_PRIO, UART_IRQ_PRIO);
 	}
 #endif
 #ifdef UART2_GPIO
@@ -268,6 +274,7 @@ static void UARTx_Init(UART_t * uart)
 		__HAL_RCC_USART2_CLK_ENABLE();
 		GPIO_EnableAlternate(UART2_GPIO, UART2_PINS, 0, UART2_AF);
 		HAL_NVIC_EnableIRQ(USART2_IRQn);
+		HAL_NVIC_SetPriority(USART2_IRQn, UART_IRQ_PRIO, UART_IRQ_PRIO);
 	}
 #endif
 #ifdef UART3_GPIO
@@ -276,6 +283,7 @@ static void UARTx_Init(UART_t * uart)
 		__HAL_RCC_USART3_CLK_ENABLE();
 		GPIO_EnableAlternate(UART3_GPIO, UART3_PINS, 0, UART3_AF);
 		HAL_NVIC_EnableIRQ(USART3_IRQn);
+		HAL_NVIC_SetPriority(USART3_IRQn, UART_IRQ_PRIO, UART_IRQ_PRIO);
 	}
 #endif
 #ifdef UART4_GPIO
@@ -284,6 +292,7 @@ static void UARTx_Init(UART_t * uart)
 		__HAL_RCC_USART4_CLK_ENABLE();
 		GPIO_EnableAlternate(UART4_GPIO, UART4_PINS, 0, UART4_AF);
 		HAL_NVIC_EnableIRQ(USART4_5_IRQn);
+		HAL_NVIC_SetPriority(USART4_5_IRQn, UART_IRQ_PRIO, UART_IRQ_PRIO);
 	}
 #endif
 #ifdef UART5_GPIO
@@ -292,6 +301,7 @@ static void UARTx_Init(UART_t * uart)
 		__HAL_RCC_USART5_CLK_ENABLE();
 		GPIO_EnableAlternate(UART5_GPIO, UART5_PINS, 0, UART5_AF);
 		HAL_NVIC_EnableIRQ(USART4_5_IRQn);
+		HAL_NVIC_SetPriority(USART4_5_IRQn, UART_IRQ_PRIO, UART_IRQ_PRIO);
 	}
 #endif
 }
