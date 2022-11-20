@@ -59,7 +59,8 @@
 #define CSR									BDCR
 
 // If the RNG module is required - then crank it.
-#define CLK_RNG_MSI_RANGE					RCC_MSIRANGE_11
+#define CLK_RNG_MSI_RANGE					RCC_MSIRANGE_4
+#define CLK_WAKEUP_CLK 						RCC_STOP_WAKEUPCLOCK_HSI
 
 #endif
 
@@ -125,6 +126,9 @@ static void CLK_AccessBackupDomain(void);
 void CLK_InitSYSCLK(void)
 {
 	__HAL_FLASH_SET_LATENCY(FLASH_LATENCY);
+#ifdef CLK_WAKEUP_CLK
+	__HAL_RCC_WAKEUPSTOP_CLK_CONFIG(CLK_WAKEUP_CLK);
+#endif
 
 	/*
 	 * ENABLE OSCILLATORS
