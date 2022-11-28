@@ -28,6 +28,9 @@
 uint32_t RNG_Read(void);
 void RNG_ReadBytes(uint8_t * bfr, uint32_t size);
 
+// Returns a random number between (and including) min and max
+int32_t RNG_RandInt(int32_t min, int32_t max);
+
 /*
  * EXTERN DECLARATIONS
  */

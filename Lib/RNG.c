@@ -64,6 +64,12 @@ void RNG_ReadBytes(uint8_t * bfr, uint32_t size)
 	RNG_Deinit();
 }
 
+int32_t RNG_RandInt(int32_t min, int32_t max)
+{
+	uint32_t range = max - min;
+	return (int32_t)(RNG_Read() % (range + 1)) + min;
+}
+
 /*
  * PRIVATE FUNCTIONS
  */
