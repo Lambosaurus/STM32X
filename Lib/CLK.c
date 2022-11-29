@@ -59,7 +59,7 @@
 #define CSR									BDCR
 
 // If the RNG module is required - then crank it.
-#define CLK_RNG_MSI_RANGE					RCC_MSIRANGE_4
+#define CLK_RNG_MSI_RANGE					RCC_MSIRANGE_6
 #define CLK_WAKEUP_CLK 						RCC_STOP_WAKEUPCLOCK_HSI
 
 #endif
