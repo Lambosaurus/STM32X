@@ -65,10 +65,6 @@ void CORE_Init(void)
 	__HAL_RCC_SYSCFG_CLK_ENABLE();
 	__HAL_RCC_PWR_CLK_ENABLE();
 #ifdef STM32L0
-#ifndef USB_ENABLE
-	// This seems to disrupt USB. Future investigation needed.
-	SET_BIT(PWR->CR, PWR_CR_ULP | PWR_CR_FWU); // Enable Ultra low power mode & Fast wakeup
-#endif
 	__HAL_PWR_VOLTAGESCALING_CONFIG(CORE_VOLTAGE_RANGE);
 #endif
 
@@ -96,6 +92,10 @@ void CORE_Stop(void)
 	// The tick may break the WFI if it occurs at the wrong time.
 	HAL_SuspendTick();
 
+#ifdef STM32L0
+	SET_BIT(PWR->CR, PWR_CR_ULP | PWR_CR_FWU);
+#endif
+
 	// Select the low power regulator
 	MODIFY_REG(PWR->CR, _PWR_REGULATOR_MASK, PWR_LOWPOWERREGULATOR_ON);
 	// WFI, but with the SLEEPDEEP bit set.
@@ -103,6 +103,10 @@ void CORE_Stop(void)
 	__WFI();
 	CLEAR_BIT(SCB->SCR, SCB_SCR_SLEEPDEEP_Msk);
 	MODIFY_REG(PWR->CR, _PWR_REGULATOR_MASK, PWR_MAINREGULATOR_ON);
+
+#ifdef STM32L0
+	CLEAR_BIT(PWR->CR, PWR_CR_ULP | PWR_CR_FWU);
+#endif
 
 	// SYSCLK is defaulted to HSI on boot
 	CLK_InitSYSCLK();
