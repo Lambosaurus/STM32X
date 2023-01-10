@@ -260,7 +260,7 @@ void RTC_OnAlarm(RTC_Alarm_t alarm, DateTime_t * time, RTC_Mask_t mask, VoidFunc
 		RTC->CR &= ~RTC_CR_ALRAE;
 		_RTC_CLEAR_FLAG(RTC_FLAG_ALRAF);
 #if defined(STM32L0) || defined(STM32F0)
-		while (!_RTC_GET_FLAG(RTC_FLAG_ALRAF));
+		while (!_RTC_GET_FLAG(RTC_FLAG_ALRAWF));
 #endif
 		RTC->ALRMAR = treg;
 		RTC->ALRMASSR = ssreg;
