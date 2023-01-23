@@ -51,16 +51,18 @@
 
 #define FLASH_LATENCY						FLASH_LATENCY_2
 
-#if defined(SMT32G0)
+#if defined(STM32G0)
 #define RCC_PLL_SYSCLK						RCC_PLLRCLK
 #endif
 
 #define RCC_CSR_RTCSEL						RCC_BDCR_RTCSEL
 #define CSR									BDCR
 
+#if defined(STM32WL)
 // If the RNG module is required - then crank it.
 #define CLK_RNG_MSI_RANGE					RCC_MSIRANGE_6
 #define CLK_WAKEUP_CLK 						RCC_STOP_WAKEUPCLOCK_HSI
+#endif
 
 #endif
 
@@ -189,8 +191,7 @@ void CLK_InitSYSCLK(void)
 
 	// Configure PCLK dividers (peripheral clock)
 
-
-#if defined(STM32L0) || defined(STM32WL) || defined(STM32G0)
+#if defined(STM32L0) || defined(STM32WL)
 	// STM32L0's have a second PCLK. The shift by 3 is defined like this in the HAL.
 	MODIFY_REG(RCC->CFGR, RCC_CFGR_PPRE1, RCC_HCLK_DIV1);
 	MODIFY_REG(RCC->CFGR, RCC_CFGR_PPRE2, RCC_HCLK_DIV1 << 3);
@@ -282,7 +283,7 @@ void CLK_DisableADCCLK(void)
 
 void CLK_EnableRNGCLK(void)
 {
-#if (defined(STM32G0) || defined(STM32WL)) && !defined(CLK_USE_MSI)
+#if (defined(STM32WL)) && !defined(CLK_USE_MSI)
 	__HAL_RCC_MSI_ENABLE();
 	__HAL_RCC_MSI_RANGE_CONFIG(CLK_RNG_MSI_RANGE);
 	while(__HAL_RCC_GET_FLAG(RCC_FLAG_MSIRDY) == 0U);
@@ -292,7 +293,7 @@ void CLK_EnableRNGCLK(void)
 
 void CLK_DisableRNGCLK(void)
 {
-#if (defined(STM32G0) || defined(STM32WL)) && !defined(CLK_USE_MSI)
+#if (defined(STM32WL)) && !defined(CLK_USE_MSI)
 	__HAL_RCC_MSI_DISABLE();
 #endif
 }
