@@ -3,6 +3,8 @@
 
 #include "STM32X.h"
 
+#ifdef DMA_ENABLE
+
 /*
  * FUNCTIONAL TESTING
  * STM32L0: Y
@@ -83,4 +85,5 @@ extern DMA_t * DMA_CH6;
 extern DMA_t * DMA_CH7;
 #endif
 
+#ifdef // DMA_ENABLE
 #endif //DMA_H

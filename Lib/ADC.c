@@ -3,6 +3,8 @@
 #include "CLK.h"
 #include "US.h"
 
+#ifdef ADC_ENABLE
+
 #ifdef ADC_DMA_CH
 #include "DMA.h"
 #endif
@@ -66,6 +68,37 @@
 #define ADC_SMPR_SMPR				ADC_SMPR_SMP
 
 #define ADC_FLAG_ALL				(ADC_FLAG_AWD | ADC_FLAG_OVR | ADC_FLAG_EOS | ADC_FLAG_RDY | ADC_FLAG_EOC | ADC_FLAG_EOSMP)
+
+#elif defined(STM32F4)
+
+#define ADC_CLOCK_PRESCALAR			ADC_CLOCK_SYNC_PCLK_DIV2
+#define ADC_CLOCK_FREQ				(CLK_GetPCLKFreq() / 2)
+#define ADC_SMPR_DEFAULT			ADC_SAMPLETIME_144CYCLES
+#define _ADC_SELECT(adc, channel) 	(adc->CHSELR = channel & ADC_CHANNEL_ID_BITFIELD_MASK)
+
+#define TS_CAL1_AIN					(*((uint16_t*)0x1FFF75A8))
+#define TS_CAL2_AIN					(*((uint16_t*)0x1FFF75CA))
+#define TS_CAL1_DEG					30
+#define TS_CAL2_DEG					130
+#define TS_CAL_VREF					3000
+
+#define VF_CAL_AIN					(*((uint16_t*)0x1FFF75AA))
+#define VF_CAL_VREF					3000
+
+#define ADC_Channel_Vref			ADC_Channel_17
+
+#define ADC_FLAG_ALL				(ADC_FLAG_OVR | ADC_FLAG_EOC)
+#define ADC_SMPR_SMPR				ADC_SMPR2_SMP1_Msk
+#define ADC_SMPR_SMP_Pos			ADC_SMPR2_SMP1_Pos
+#define ADC_SCANDIR(x)				ADC_SCAN_SEQ_MODE(x)
+
+#define ADC_CFGR1_CONTINUOUS		ADC_CR1_CONTINUOUS
+#define ADC_CFGR1_DMACONTREQ		ADC_CR1_DMACONTREQ
+#define ADC_CFGR1_AUTOWAIT			ADC_CR1_AUTOWAIT
+#define ADC_CFGR1_AUTOOFF			ADC_CR1_AUTOOFF
+
+#define CFGR1						CR1
+#define CFGR2						CR2
 
 #elif defined(STM32G0) || defined(STM32WL)
 
@@ -280,6 +313,7 @@ uint32_t AIN_AinToMv(uint32_t ain)
 	return (ain * ADC_VREF) / ADC_MAX;
 }
 
+#ifdef ADC_Channel_Temp
 int32_t ADC_ReadDieTemp(void)
 {
 	ADC_COMMON->CCR |= ADC_CCR_TSEN;
@@ -291,6 +325,7 @@ int32_t ADC_ReadDieTemp(void)
 	ain = ain * ADC_VREF / TS_CAL_VREF;
 	return ((ain - TS_CAL1_AIN) * (TS_CAL2_DEG - TS_CAL1_DEG) / (TS_CAL2_AIN - TS_CAL1_AIN)) + TS_CAL1_DEG;
 }
+#endif
 
 uint32_t ADC_ReadVRef(void)
 {
@@ -379,6 +414,18 @@ static uint32_t ADC_SelectSampleTime(uint32_t desired, uint32_t * frequency)
 		ADC_CLKS(79), 	// ADC_SAMPLETIME_79CYCLES_5
 		ADC_CLKS(160), 	// ADC_SAMPLETIME_160CYCLES_5
 	};
+#elif defined(STM32F4)
+	const uint16_t sample_times[] = {
+		// STM32LF0 has 12.5 cycle conversion time.
+		ADC_CLKS(3), 	// ADC_SAMPLETIME_3CYCLES
+		ADC_CLKS(15), 	// ADC_SAMPLETIME_15CYCLES
+		ADC_CLKS(28), 	// ADC_SAMPLETIME_28CYCLES
+		ADC_CLKS(56), 	// ADC_SAMPLETIME_56CYCLES
+		ADC_CLKS(84), 	// ADC_SAMPLETIME_84CYCLES
+		ADC_CLKS(112), 	// ADC_SAMPLETIME_112CYCLES
+		ADC_CLKS(144), 	// ADC_SAMPLETIME_144CYCLES
+		ADC_CLKS(480), 	// ADC_SAMPLETIME_480CYCLES
+	};
 #elif defined(STM32F0)
 	const uint16_t sample_times[] = {
 		// STM32LF0 has 12.5 cycle conversion time.
@@ -410,3 +457,6 @@ static uint32_t ADC_SelectSampleTime(uint32_t desired, uint32_t * frequency)
 /*
  * INTERRUPT ROUTINES
  */
+
+#endif //ADC_ENABLE
+

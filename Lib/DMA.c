@@ -5,6 +5,8 @@
  * PRIVATE DEFINITIONS
  */
 
+#ifdef DMA_ENABLE
+
 #define DMAx	DMA1
 
 #if defined(STM32L0) || defined(STM32G0)
@@ -364,3 +366,5 @@ void DMA1_Channel4_7_IRQHandler(void)
 #endif
 
 #endif
+
+#endif //DMA_ENABLE

@@ -32,7 +32,11 @@ static inline void GPIO_Set(GPIO_t * gpio, uint32_t pin)
 
 static inline void GPIO_Reset(GPIO_t * gpio, uint32_t pin)
 {
+#ifdef STM32F4
+	gpio->BSRR = ((uint32_t)pin) << 16;
+#else
 	gpio->BRR = (uint32_t)pin;
+#endif
 }
 
 static inline GPIO_State_t GPIO_Read(GPIO_t * gpio, uint32_t pin)

@@ -13,6 +13,8 @@
 #ifndef CLK_PLL_MUL
 #if defined(STM32G0) || defined(STM32WL)
 #define CLK_PLL_MUL				8
+#elif defined(STM32F4)
+#define CLK_PLL_MUL				192
 #else
 #define CLK_PLL_MUL				4
 #endif
@@ -21,10 +23,6 @@
 #ifndef CLK_PLL_DIV
 #define CLK_PLL_DIV				((CLK_PLL_SRC_FREQ * CLK_PLL_MUL) / CLK_SYSCLK_FREQ)
 #endif
-
-#define RCC_PLL_MULX_IS_VALID(x)	(x >= 8 && x <= 86)
-#define RCC_PLL_MULX(x)				(x)
-
 
 
 #ifdef RCC_PLL_MULX_IS_VALID

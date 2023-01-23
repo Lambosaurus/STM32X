@@ -35,7 +35,22 @@
 
 #define FLASH_LATENCY						FLASH_LATENCY_1
 
-#elif defined(STM32G0) || defined(STM32WL)
+#elif defined(STM32F4)
+#define CLK_HSI_FREQ						16000000
+#define __CLK_PLL_CONFIG(src, mul, div)		__HAL_RCC_PLL_CONFIG(src, div, mul, 2, 2)
+
+#define RCC_PLL_MULX_IS_VALID(x)			(x >= 50 && x <= 432)
+#define RCC_PLL_MULX(x)						(x)
+
+#define RCC_PLL_DIVX_IS_VALID(x)			(x >= 2 && x <= 63)
+#define RCC_PLL_DIVX(x)						((x - 1) << RCC_PLLCFGR_PLLR_Pos)
+
+#define FLASH_LATENCY						FLASH_LATENCY_2
+
+#define RCC_CSR_RTCSEL						RCC_BDCR_RTCSEL
+#define CSR									BDCR
+
+#elif defined(STM32G0) || defined(STM32WL) || defined(STM32F4)
 #define CLK_HSI_FREQ						16000000
 
 #define __CLK_PLL_CONFIG(src, mul, div)		__HAL_RCC_PLL_CONFIG(src, RCC_PLLM_DIV1, mul, RCC_PLLP_DIV2, RCC_PLLQ_DIV2, div)
@@ -334,12 +349,14 @@ static void CLK_ResetBackupDomain(void)
 
 static void CLK_AccessBackupDomain(void)
 {
+#ifdef _PWR_IS_DBP_SET
 	// Get access to backup domain
 	if (!_PWR_IS_DBP_SET())
 	{
 		_PWR_SET_DBP();
 		while (!_PWR_IS_DBP_SET());
 	}
+#endif
 }
 
 /*

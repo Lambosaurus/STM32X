@@ -5,6 +5,8 @@
  * PRIVATE DEFINITIONS
  */
 
+#ifdef FLASH_ENABLE
+
 
 #if defined(STM32L0)
 
@@ -212,4 +214,5 @@ __RAM_FUNC void FLASH_WriteHalfPage(uint32_t * __restrict address, const uint32_
  * INTERRUPT ROUTINES
  */
 
+#endif //FLASH_ENABLE
 
