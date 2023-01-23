@@ -11,12 +11,32 @@
 
 // The multiplier can be overridden by the user.
 #ifndef CLK_PLL_MUL
+#if defined(STM32G0) || defined(STM32WL)
+#define CLK_PLL_MUL				8
+#else
 #define CLK_PLL_MUL				4
+#endif
 #endif
 
 #ifndef CLK_PLL_DIV
 #define CLK_PLL_DIV				((CLK_PLL_SRC_FREQ * CLK_PLL_MUL) / CLK_SYSCLK_FREQ)
 #endif
+
+#define RCC_PLL_MULX_IS_VALID(x)	(x >= 8 && x <= 86)
+#define RCC_PLL_MULX(x)				(x)
+
+
+
+#ifdef RCC_PLL_MULX_IS_VALID
+// Do we have generated definitions for PLL_MUL_X?
+#if RCC_PLL_MULX_IS_VALID(CLK_PLL_MUL)
+// Do we have a valid multiplier?
+#define CLK_PLL_MUL_CFG			RCC_PLL_MULX(CLK_PLL_MUL)
+#else
+#error "Unavailable PLL multiplier"
+#endif
+
+#else // We do not have generated PLL_MUL - do a manual selection
 
 // Select the PLL MUL/DIV registers (There must be a smarter way)
 #if (CLK_PLL_MUL == 2)
@@ -57,6 +77,20 @@
 #error "Unavailable PLL multiplier"
 #endif
 
+#endif
+
+
+
+#ifdef RCC_PLL_DIVX_IS_VALID
+// Do we have generated definitions for PLL_MUL_X?
+#if RCC_PLL_DIVX_IS_VALID(CLK_PLL_DIV)
+// Do we have a valid multiplier?
+#define CLK_PLL_DIV_CFG			RCC_PLL_DIVX(CLK_PLL_DIV)
+#else
+#error "Unavailable PLL divider"
+#endif
+
+#else // We do not have generated PLL_DIV - do a manual selection
 
 #if (CLK_PLL_DIV == 1)
 #define CLK_PLL_DIV_CFG			RCC_PLL_DIV1
@@ -76,6 +110,7 @@
 #define CLK_PLL_DIV_CFG			RCC_PLL_DIV8
 #else
 #error "Unavailable PLL divider"
+#endif
 #endif
 
 #if (((CLK_PLL_SRC_FREQ * CLK_PLL_MUL) / CLK_PLL_DIV) != CLK_SYSCLK_FREQ)

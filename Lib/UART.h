@@ -7,6 +7,8 @@
  * FUNCTIONAL TESTING
  * STM32L0: Y
  * STM32F0: N
+ * STM32G0: Y
+ * STM32WL: Y
  */
 
 /*

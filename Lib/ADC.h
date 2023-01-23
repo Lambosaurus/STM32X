@@ -7,6 +7,8 @@
  * FUNCTIONAL TESTING
  * STM32L0: Y
  * STM32F0: Y
+ * STM32G0: N
+ * STM32WL: N
  */
 
 /*
@@ -57,7 +59,7 @@ void ADC_Deinit(void);
 // Configuration
 uint32_t ADC_SetFreq(uint32_t target);
 
-#ifdef STM32L0
+#if defined(STM32L0) || defined(STM32WL)
 void ADC_SetOversampling(uint32_t ratio);
 #endif
 
