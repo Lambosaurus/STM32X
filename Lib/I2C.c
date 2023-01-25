@@ -4,6 +4,8 @@
 #include "GPIO.h"
 #include "CLK.h"
 
+#ifdef I2C_ENABLE
+
 /*
  * PRIVATE DEFINITIONS
  */
@@ -463,3 +465,5 @@ static uint32_t I2Cx_GetFMPBit(I2C_t * i2c)
 /*
  * INTERRUPT ROUTINES
  */
+
+#endif //I2C_ENABLE

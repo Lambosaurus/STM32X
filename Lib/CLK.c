@@ -43,14 +43,15 @@
 #define RCC_PLL_MULX(x)						(x)
 
 #define RCC_PLL_DIVX_IS_VALID(x)			(x >= 2 && x <= 63)
-#define RCC_PLL_DIVX(x)						((x - 1) << RCC_PLLCFGR_PLLR_Pos)
+#define RCC_PLL_DIVX(x)						((x - 1) << RCC_PLLCFGR_PLLM_Pos)
+#define RCC_PLL_POSTDIV						2
 
 #define FLASH_LATENCY						FLASH_LATENCY_2
 
 #define RCC_CSR_RTCSEL						RCC_BDCR_RTCSEL
 #define CSR									BDCR
 
-#elif defined(STM32G0) || defined(STM32WL) || defined(STM32F4)
+#elif defined(STM32G0) || defined(STM32WL)
 #define CLK_HSI_FREQ						16000000
 
 #define __CLK_PLL_CONFIG(src, mul, div)		__HAL_RCC_PLL_CONFIG(src, RCC_PLLM_DIV1, mul, RCC_PLLP_DIV2, RCC_PLLQ_DIV2, div)

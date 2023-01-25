@@ -85,5 +85,5 @@ extern DMA_t * DMA_CH6;
 extern DMA_t * DMA_CH7;
 #endif
 
-#ifdef // DMA_ENABLE
+#endif // DMA_ENABLE
 #endif //DMA_H

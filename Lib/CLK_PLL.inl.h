@@ -14,14 +14,18 @@
 #if defined(STM32G0) || defined(STM32WL)
 #define CLK_PLL_MUL				8
 #elif defined(STM32F4)
-#define CLK_PLL_MUL				192
+#define CLK_PLL_MUL				128
 #else
 #define CLK_PLL_MUL				4
 #endif
 #endif
 
+#ifndef RCC_PLL_POSTDIV
+#define RCC_PLL_POSTDIV			1
+#endif
+
 #ifndef CLK_PLL_DIV
-#define CLK_PLL_DIV				((CLK_PLL_SRC_FREQ * CLK_PLL_MUL) / CLK_SYSCLK_FREQ)
+#define CLK_PLL_DIV				(((CLK_PLL_SRC_FREQ / RCC_PLL_POSTDIV) * CLK_PLL_MUL) / CLK_SYSCLK_FREQ)
 #endif
 
 
@@ -111,7 +115,7 @@
 #endif
 #endif
 
-#if (((CLK_PLL_SRC_FREQ * CLK_PLL_MUL) / CLK_PLL_DIV) != CLK_SYSCLK_FREQ)
+#if ((((CLK_PLL_SRC_FREQ / RCC_PLL_POSTDIV) * CLK_PLL_MUL) / CLK_PLL_DIV) != CLK_SYSCLK_FREQ)
 #error "CLK_SYSCLK_FREQ not achieved"
 #endif
 

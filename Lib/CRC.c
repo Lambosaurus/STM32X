@@ -54,4 +54,4 @@ uint32_t CRC32(uint32_t crc, const uint32_t * words, uint32_t size)
  * INTERRUPT ROUTINES
  */
 
-#endif CRC_ENABLE
+#endif //CRC_ENABLE

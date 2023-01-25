@@ -1,6 +1,7 @@
 
 #include "WDG.h"
 
+#ifdef IWDG_ENABLE
 
 /*
  * PRIVATE DEFINITIONS
@@ -66,3 +67,5 @@ void WDG_Kick(void)
 /*
  * INTERRUPT ROUTINES
  */
+
+#endif //IWDG_ENABLE

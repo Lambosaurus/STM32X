@@ -22,6 +22,24 @@
 #define USART_ISR_TXE					USART_ISR_TXE_TXFNF
 #endif
 
+#if defined(STM32F4)
+#define ISR								SR
+#define ICR								SR
+#define USART_ISR_RXNE					USART_SR_RXNE
+#define USART_ISR_TXE					USART_SR_TXE
+#define USART_ISR_TC					USART_SR_TC
+#define USART_ISR_ORE					USART_SR_ORE
+#define USART_ISR_PE					USART_SR_PE
+#define USART_ISR_NE					USART_SR_NE
+#define USART_ISR_FE					USART_SR_FE
+#define TDR								DR
+#define RDR								DR
+#define UART_CLEAR_PEF					USART_SR_PE
+#define UART_CLEAR_FEF					USART_SR_FE
+#define UART_CLEAR_NEF					USART_SR_NE
+#define UART_CLEAR_OREF					USART_SR_ORE
+#endif
+
 
 #define __UART_RX_ENABLE(uart) 	(uart->Instance->CR1 |= USART_CR1_RXNEIE)
 #define __UART_RX_DISABLE(uart) (uart->Instance->CR1 &= ~USART_CR1_RXNEIE)
@@ -106,12 +124,16 @@ void UART_Init(UART_t * uart, uint32_t baud, UART_Mode_t mode)
 	MODIFY_REG(uart->Instance->CR1, cr1msk,	cr1);
 
 	uint32_t cr2 = UART_STOPBITS_1;
+#ifdef USART_CR2_SWAP
 	if (mode & UART_Mode_Inverted) 	{ cr2 |= USART_CR2_RXINV | USART_CR2_TXINV; }
 	if (mode & UART_Mode_Swap) 		{ cr2 |= USART_CR2_SWAP; }
-	const uint32_t cr2msk = USART_CR2_STOP | USART_CR2_RXINV | USART_CR2_TXINV | USART_CR2_SWAP | USART_CR2_LINEN | USART_CR2_CLKEN;
-	MODIFY_REG(uart->Instance->CR2, cr2msk, cr2);
+#endif //USART_CR2_SWAP
+	WRITE_REG(uart->Instance->CR2, cr2);
 
-	uint32_t cr3 = (uint32_t)UART_HWCONTROL_NONE | UART_ONE_BIT_SAMPLE_DISABLE;
+	uint32_t cr3 = (uint32_t)UART_HWCONTROL_NONE;
+#ifdef UART_ONE_BIT_SAMPLE_DISABLE
+	cr3 |= UART_ONE_BIT_SAMPLE_DISABLE
+#endif
 	const uint32_t cr3msk = USART_CR3_RTSE | USART_CR3_CTSE | USART_CR3_ONEBIT | USART_CR3_SCEN | USART_CR3_HDSEL | USART_CR3_IREN;
 	MODIFY_REG(uart->Instance->CR3, cr3msk, cr3);
 
