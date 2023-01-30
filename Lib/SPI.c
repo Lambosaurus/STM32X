@@ -26,19 +26,19 @@ static uint32_t SPI_SelectPrescalar(SPI_t * spi, uint32_t target);
  * PRIVATE VARIABLES
  */
 
-#ifdef SPI1_GPIO
+#ifdef SPI1_PINS
 static SPI_t gSPI_1 = {
 	.Instance = SPI1
 };
 SPI_t * SPI_1 = &gSPI_1;
 #endif
-#ifdef SPI2_GPIO
+#ifdef SPI2_PINS
 static SPI_t gSPI_2 = {
 	.Instance = SPI2
 };
 SPI_t * SPI_2 = &gSPI_2;
 #endif
-#ifdef SPI3_GPIO
+#ifdef SPI3_PINS
 static SPI_t gSPI_3 = {
 	.Instance = SPI3
 };
@@ -146,50 +146,50 @@ static uint32_t SPI_SelectPrescalar(SPI_t * spi, uint32_t target)
 
 static void SPIx_Init(SPI_t * spi)
 {
-#ifdef SPI1_GPIO
+#ifdef SPI1_PINS
 	if (spi == SPI_1)
 	{
 		__HAL_RCC_SPI1_CLK_ENABLE();
-		GPIO_EnableAlternate(SPI1_GPIO, SPI1_PINS, 0, SPI1_AF);
+		GPIO_EnableAlternate(SPI1_PINS, 0, SPI1_AF);
 	}
 #endif
-#ifdef SPI2_GPIO
+#ifdef SPI2_PINS
 	if (spi == SPI_2)
 	{
 		__HAL_RCC_SPI2_CLK_ENABLE();
-		GPIO_EnableAlternate(SPI2_GPIO, SPI2_PINS, 0, SPI2_AF);
+		GPIO_EnableAlternate(SPI2_PINS, 0, SPI2_AF);
 	}
 #endif
-#ifdef SPI3_GPIO
+#ifdef SPI3_PINS
 	if (spi == SPI_3)
 	{
 		__HAL_RCC_SPI3_CLK_ENABLE();
-		GPIO_EnableAlternate(SPI3_GPIO, SPI3_PINS, 0, SPI3_AF);
+		GPIO_EnableAlternate(SPI3_PINS, 0, SPI3_AF);
 	}
 #endif
 }
 
 static void SPIx_Deinit(SPI_t * spi)
 {
-#ifdef SPI1_GPIO
+#ifdef SPI1_PINS
 	if (spi == SPI_1)
 	{
 		__HAL_RCC_SPI1_CLK_DISABLE();
-		GPIO_Deinit(SPI1_GPIO, SPI1_PINS);
+		GPIO_Deinit(SPI1_PINS);
 	}
 #endif
-#ifdef SPI2_GPIO
+#ifdef SPI2_PINS
 	if (spi == SPI_2)
 	{
 		__HAL_RCC_SPI2_CLK_DISABLE();
-		GPIO_Deinit(SPI2_GPIO, SPI2_PINS);
+		GPIO_Deinit(SPI2_PINS);
 	}
 #endif
-#ifdef SPI3_GPIO
+#ifdef SPI3_PINS
 	if (spi == SPI_3)
 	{
 		__HAL_RCC_SPI3_CLK_DISABLE();
-		GPIO_Deinit(SPI3_GPIO, SPI3_PINS);
+		GPIO_Deinit(SPI3_PINS);
 	}
 #endif
 }

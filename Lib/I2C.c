@@ -71,19 +71,19 @@ static uint32_t I2Cx_GetFMPBit(I2C_t * i2c);
  * PRIVATE VARIABLES
  */
 
-#ifdef I2C1_GPIO
+#ifdef I2C1_PINS
 static I2C_t gI2C_1 = {
 	.Instance = I2C1
 };
 I2C_t * I2C_1 = &gI2C_1;
 #endif
-#ifdef I2C2_GPIO
+#ifdef I2C2_PINS
 static I2C_t gI2C_2 = {
 	.Instance = I2C2
 };
 I2C_t * I2C_2 = &gI2C_2;
 #endif
-#ifdef I2C3_GPIO
+#ifdef I2C3_PINS
 static I2C_t gI2C_3 = {
 	.Instance = I2C3
 };
@@ -384,50 +384,50 @@ static uint32_t I2C_SelectTiming(uint32_t bitrate)
 
 static void I2Cx_Init(I2C_t * i2c)
 {
-#ifdef I2C1_GPIO
+#ifdef I2C1_PINS
 	if (i2c == I2C_1)
 	{
 		__HAL_RCC_I2C1_CLK_ENABLE();
-		GPIO_EnableAlternate(I2C1_GPIO, I2C1_PINS, GPIO_Flag_OpenDrain, I2C1_AF);
+		GPIO_EnableAlternate(I2C1_PINS, GPIO_Flag_OpenDrain, I2C1_AF);
 	}
 #endif
-#ifdef I2C2_GPIO
+#ifdef I2C2_PINS
 	if (i2c == I2C_2)
 	{
 		__HAL_RCC_I2C2_CLK_ENABLE();
-		GPIO_EnableAlternate(I2C2_GPIO, I2C2_PINS, GPIO_Flag_OpenDrain, I2C2_AF);
+		GPIO_EnableAlternate(I2C2_PINS, GPIO_Flag_OpenDrain, I2C2_AF);
 	}
 #endif
-#ifdef I2C3_GPIO
+#ifdef I2C3_PINS
 	if (i2c == I2C_3)
 	{
 		__HAL_RCC_I2C3_CLK_ENABLE();
-		GPIO_EnableAlternate(I2C3_GPIO, I2C3_PINS, GPIO_Flag_OpenDrain, I2C3_AF);
+		GPIO_EnableAlternate(I2C3_PINS, GPIO_Flag_OpenDrain, I2C3_AF);
 	}
 #endif
 }
 
 static void I2Cx_Deinit(I2C_t * i2c)
 {
-#ifdef I2C1_GPIO
+#ifdef I2C1_PINS
 	if (i2c == I2C_1)
 	{
 		__HAL_RCC_I2C1_CLK_DISABLE();
-		GPIO_Deinit(I2C1_GPIO, I2C1_PINS);
+		GPIO_Deinit(I2C1_PINS);
 	}
 #endif
-#ifdef I2C2_GPIO
+#ifdef I2C2_PINS
 	if (i2c == I2C_2)
 	{
 		__HAL_RCC_I2C2_CLK_DISABLE();
-		GPIO_Deinit(I2C2_GPIO, I2C2_PINS);
+		GPIO_Deinit(I2C2_PINS);
 	}
 #endif
-#ifdef I2C3_GPIO
+#ifdef I2C3_PINS
 	if (i2c == I2C_3)
 	{
 		__HAL_RCC_I2C3_CLK_DISABLE();
-		GPIO_Deinit(I2C3_GPIO, I2C3_PINS);
+		GPIO_Deinit(I2C3_PINS);
 	}
 #endif
 }
@@ -436,19 +436,19 @@ static void I2Cx_Deinit(I2C_t * i2c)
 static uint32_t I2Cx_GetFMPBit(I2C_t * i2c)
 {
 	uint32_t bit;
-#ifdef I2C1_GPIO
+#ifdef I2C1_PINS
 	if (i2c == I2C_1)
 	{
 		bit = I2C_FASTMODEPLUS_I2C1;
 	}
 #endif
-#ifdef I2C2_GPIO
+#ifdef I2C2_PINS
 	if (i2c == I2C_2)
 	{
 		bit = I2C_FASTMODEPLUS_I2C2;
 	}
 #endif
-#ifdef I2C3_GPIO
+#ifdef I2C3_PINS
 	if (i2c == I2C_3)
 	{
 		bit = I2C_FASTMODEPLUS_I2C3;

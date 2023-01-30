@@ -9,12 +9,12 @@
 
 #define DMAx	DMA1
 
-#if defined(STM32L0) || defined(STM32G0)
+#if defined(STM32L0) || defined(STM32F0)
 #define DMA1_Channel4_7_IRQn			DMA1_Channel4_5_6_7_IRQn
 #define DMA1_Channel4_7_IRQHandler		DMA1_Channel4_5_6_7_IRQHandler
 #elif defined(STM32G0)
-#define DMA1_Channel4_7_IRQn			DMA1_Ch4_5_DMAMUX1_OVR_IRQn
-#define DMA1_Channel4_7_IRQHandler		DMA1_Ch4_5_DMAMUX1_OVR_IRQHandler
+#define DMA1_Channel4_7_IRQn			DMA1_Ch4_7_DMAMUX1_OVR_IRQn
+#define DMA1_Channel4_7_IRQHandler		DMA1_Ch4_7_DMAMUX1_OVR_IRQHandler
 #elif defined(STM32WL)
 #define DMAMUX_ENABLE
 #endif

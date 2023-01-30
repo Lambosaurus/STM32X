@@ -67,22 +67,22 @@ void UART_ReadFlush(UART_t * uart);
  * EXTERN DECLARATIONS
  */
 
-#ifdef UARTLP_GPIO
+#ifdef UARTLP_PINS
 extern UART_t * UART_LP;
 #endif
-#ifdef UART1_GPIO
+#ifdef UART1_PINS
 extern UART_t * UART_1;
 #endif
-#ifdef UART2_GPIO
+#ifdef UART2_PINS
 extern UART_t * UART_2;
 #endif
-#ifdef UART3_GPIO
+#ifdef UART3_PINS
 extern UART_t * UART_3;
 #endif
-#ifdef UART4_GPIO
+#ifdef UART4_PINS
 extern UART_t * UART_4;
 #endif
-#ifdef UART5_GPIO
+#ifdef UART5_PINS
 extern UART_t * UART_5;
 #endif
 

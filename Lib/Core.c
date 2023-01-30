@@ -83,16 +83,11 @@ void CORE_Init(void)
 #if !defined(STM32WL)
 	__HAL_RCC_SYSCFG_CLK_ENABLE();
 	__HAL_RCC_PWR_CLK_ENABLE();
-#endif
-#if defined(STM32L0) && !defined(USB_ENABLE)
-	// This seems to disrupt USB. Future investigation needed.
-	SET_BIT(PWR->CR, PWR_CR_ULP | PWR_CR_FWU); // Enable Ultra low power mode & Fast wakeup
-#endif
 #ifdef __HAL_PWR_VOLTAGESCALING_CONFIG
 	__HAL_PWR_VOLTAGESCALING_CONFIG(CORE_VOLTAGE_RANGE);
 #endif
 
-#if defined(DEBUG) && (defined(STM32WL) || defined(STM32G0))
+#if defined(DEBUG) && (defined(STM32WL))
 	HAL_DBGMCU_EnableDBGSleepMode();
 	HAL_DBGMCU_EnableDBGStopMode();
 #endif
@@ -122,10 +117,11 @@ void CORE_Stop(void)
 	HAL_SuspendTick();
 
 #if defined(STM32WL)
-	// Enabling the low power regulator consumes more power than the main regulator on this chip.
-	// No idea why.
 	MODIFY_REG(PWR->CR1, PWR_CR1_LPMS, PWR_LOWPOWERMODE_STOP2);
-#else
+#elif defined(STM32L0)
+	SET_BIT(PWR->CR, PWR_CR_ULP | PWR_CR_FWU);
+#endif
+
 	// Select the low power regulator
 	_PWR_SET_PWR_REGULATOR(PWR_LOWPOWERREGULATOR_ON);
 #endif
@@ -135,6 +131,10 @@ void CORE_Stop(void)
 	__WFI();
 	CLEAR_BIT(SCB->SCR, SCB_SCR_SLEEPDEEP_Msk);
 	_PWR_SET_PWR_REGULATOR(PWR_MAINREGULATOR_ON);
+
+#ifdef STM32L0
+	CLEAR_BIT(PWR->CR, PWR_CR_ULP | PWR_CR_FWU);
+#endif
 
 	// SYSCLK is defaulted to HSI on boot
 	CLK_InitSYSCLK();
@@ -213,20 +213,20 @@ void CORE_InitGPIO(void)
 	__HAL_RCC_GPIOA_CLK_ENABLE();
 #ifdef DEBUG
 	// SWCLK and SWDIO on PA13, PA14
-	GPIO_Deinit(GPIOA, GPIO_PIN_All & ~(GPIO_PIN_13 | GPIO_PIN_14));
+	GPIO_Deinit(GPIO_Port_A | (GPIO_Pin_All & ~(GPIO_Pin_13 | GPIO_Pin_14)));
 #else
-	GPIO_Deinit(GPIOA, GPIO_PIN_All);
+	GPIO_Deinit(GPIO_Port_A | GPIO_Pin_All);
 #endif
 
 	__HAL_RCC_GPIOB_CLK_ENABLE();
-	GPIO_Deinit(GPIOB, GPIO_PIN_All);
+	GPIO_Deinit(GPIO_Port_B | GPIO_Pin_All);
 
 	__HAL_RCC_GPIOC_CLK_ENABLE();
-	GPIO_Deinit(GPIOC, GPIO_PIN_All);
+	GPIO_Deinit(GPIO_Port_C | GPIO_Pin_All);
 
 #if defined(GPIOD)
 	__HAL_RCC_GPIOD_CLK_ENABLE();
-	GPIO_Deinit(GPIOD, GPIO_PIN_All);
+	GPIO_Deinit(GPIO_Port_D | GPIO_Pin_All);
 #endif
 }
 

@@ -45,8 +45,8 @@ void CLK_DisableUSBCLK(void);
 #endif
 
 static inline uint32_t CLK_GetHCLKFreq(void);
-static inline uint32_t CLK_GetPCLKFreq(void);
 static inline uint32_t CLK_GetLSOFreq(void);
+uint32_t CLK_GetPCLKFreq(void);
 
 
 // Helper function for selecting a peripheral prescalar.

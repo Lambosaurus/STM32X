@@ -12,11 +12,6 @@ static inline uint32_t CLK_GetHCLKFreq(void)
 	return CLK_SYSCLK_FREQ;
 }
 
-static inline uint32_t CLK_GetPCLKFreq(void)
-{
-	return CLK_SYSCLK_FREQ;
-}
-
 static inline uint32_t CLK_GetLSOFreq(void)
 {
 #ifdef CLK_USE_LSE

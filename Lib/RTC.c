@@ -10,7 +10,7 @@
 #define _RTC_WRITEPROTECTION_ENABLE() 		(RTC->WPR = 0xFF)
 #define _RTC_WRITEPROTECTION_DISABLE() 		do { RTC->WPR = 0xCA; RTC->WPR = 0x53; } while(0)
 
-#if defined(STM32L0) || defined(STM32F0)
+#if defined(STM32L0) || defined(STM32F0) || defined(STM32F4)
 
 #define _RTC_GET_FLAG(flag)   				(RTC->ISR & (flag))
 #define _RTC_CLEAR_FLAG(flag)   			(RTC->ISR) = (~((flag) | RTC_ISR_INIT) | (RTC->ISR & RTC_ISR_INIT))
