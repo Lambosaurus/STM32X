@@ -47,6 +47,7 @@
 //#define I2C1_PINS			(GPIO_PIN_6 | GPIO_PIN_7)
 //#define I2C1_AF			GPIO_AF1_I2C1
 //#define I2C_USE_FASTMODEPLUS
+//#define I2C_USE_LONG_TRANSFER
 
 // CAN config
 //#define CAN_GPIO			GPIOB

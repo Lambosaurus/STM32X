@@ -60,6 +60,7 @@ static bool I2C_WaitForRXNE(I2C_t * i2c);
 static inline void I2C_StartTransfer(I2C_t * i2c, uint8_t address, uint8_t size, uint32_t mode);
 
 static bool I2C_XferBlock(I2C_t * i2c, uint8_t address, uint8_t * data, uint32_t count, uint32_t rw, uint32_t endMode);
+static bool I2C_ScanAddress(I2C_t * i2c, uint8_t address);
 
 #ifdef I2C_USE_FASTMODEPLUS
 static uint32_t I2Cx_GetFMPBit(I2C_t * i2c);
@@ -164,84 +165,106 @@ bool I2C_Transfer(I2C_t * i2c, uint8_t address, const uint8_t * txdata, uint32_t
 
 bool I2C_Scan(I2C_t * i2c, uint8_t address)
 {
-	return I2C_Write(i2c, address, NULL, 0);
+	return I2C_WaitForIdle(i2c)
+		&& I2C_ScanAddress(i2c, address);
 }
 
 /*
  * PRIVATE FUNCTIONS
  */
 
-static bool I2C_XferBlock(I2C_t * i2c, uint8_t address, uint8_t * data, uint32_t count, uint32_t rw, uint32_t endMode)
+static bool I2C_ScanAddress(I2C_t * i2c, uint8_t address)
+{
+	address <<= 1;
+	I2C_StartTransfer(i2c, address, 0, I2C_WRITE_MODE | I2C_START_MODE | I2C_AUTOEND_MODE);
+
+	if (!I2C_WaitForFlag(i2c, I2C_FLAG_STOPF))
+	{
+		return false;
+	}
+
+	bool acked = !(_I2C_GET_FLAGS(i2c) & I2C_FLAG_AF);
+	__HAL_I2C_CLEAR_FLAG(i2c, I2C_FLAG_STOPF);
+	I2C_RESET_CR2(i2c);
+	return acked;
+}
+
+static bool I2C_XferChunk(I2C_t * i2c, uint8_t address, uint8_t * data, uint32_t count, uint32_t rw, uint32_t stopMode)
 {
 	// Correct the address.
-	address = address << 1;
-	if (rw == I2C_READ_MODE) { address |= 0x01; }
+	address = (rw == I2C_READ_MODE) ? (address << 1) | 0x01 : (address << 1);
 
-	// Default transaction parameters.
-	uint32_t startMode = I2C_START_MODE;
-	uint32_t stopMode = I2C_RELOAD_MODE;
-	uint32_t block = 255;
+	I2C_StartTransfer(i2c, address, count, rw | I2C_START_MODE | stopMode);
 
-	while (stopMode == I2C_RELOAD_MODE)
+	if (rw == I2C_READ_MODE)
 	{
-		if (count <= 255)
+		while (count-- > 0)
 		{
-			// This is the final block of data.
-			block = count;
-			stopMode = endMode;
-		}
-		count -= block;
-
-		I2C_StartTransfer(i2c, address, block, rw | startMode | stopMode);
-		startMode = I2C_NO_STARTSTOP; // Following loops will not have a start condition.
-
-		if (rw == I2C_READ_MODE)
-		{
-			while (block-- > 0)
+			if (!I2C_WaitForRXNE(i2c))
 			{
-				if (!I2C_WaitForRXNE(i2c))
-				{
-					return false;
-				}
-				*data++ = i2c->Instance->RXDR;
+				return false;
 			}
+			*data++ = i2c->Instance->RXDR;
 		}
-		else
+	}
+	else
+	{
+		while (count-- > 0)
 		{
-			while (block-- > 0)
+			if (!I2C_WaitForFlag(i2c, I2C_FLAG_TXIS))
 			{
-				if (!I2C_WaitForFlag(i2c, I2C_FLAG_TXIS))
-				{
-					return false;
-				}
-				i2c->Instance->TXDR = *data++;
+				return false;
 			}
-		}
-
-		uint32_t stopflag;
-		switch (stopMode)
-		{
-		case I2C_RELOAD_MODE:
-			stopflag = I2C_FLAG_TCR;
-			break;
-		case I2C_SOFTEND_MODE:
-			stopflag = I2C_FLAG_TC;
-			break;
-		default:
-		case I2C_AUTOEND_MODE:
-			stopflag = I2C_FLAG_STOPF;
-			break;
-		}
-		if (!I2C_WaitForFlag(i2c, stopflag))
-		{
-			return false;
+			i2c->Instance->TXDR = *data++;
 		}
 	}
 
-	__HAL_I2C_CLEAR_FLAG(i2c, I2C_FLAG_STOPF);
-	I2C_RESET_CR2(i2c);
+	uint32_t stopflag =
+#ifdef I2C_USE_LONG_TRANSFER
+			(stopMode == I2C_RELOAD_MODE) ? I2C_FLAG_TCR :
+#endif
+			(stopMode == I2C_SOFTEND_MODE) ? I2C_FLAG_TC : I2C_FLAG_STOPF;
+
+	if (!I2C_WaitForFlag(i2c, stopflag))
+	{
+		return false;
+	}
+
+#ifdef I2C_USE_LONG_TRANSFER
+	if (stopMode != I2C_RELOAD_MODE)
+	{
+#endif
+		__HAL_I2C_CLEAR_FLAG(i2c, I2C_FLAG_STOPF);
+		I2C_RESET_CR2(i2c);
+#ifdef I2C_USE_LONG_TRANSFER
+	}
+#endif
+
 	return true;
 }
+
+#ifdef I2C_USE_LONG_TRANSFER
+static bool I2C_XferBlock(I2C_t * i2c, uint8_t address, uint8_t * data, uint32_t count, uint32_t rw, uint32_t stopMode)
+{
+	while (count > 255)
+	{
+		if (!I2C_XferChunk(i2c, address, data, 255, rw, I2C_RELOAD_MODE))
+		{
+			return false;
+		}
+		count -= 255;
+		data += 255;
+	}
+	return I2C_XferChunk(i2c, address, data, count, rw, stopMode);
+}
+#else
+
+static bool I2C_XferBlock(I2C_t * i2c, uint8_t address, uint8_t * data, uint32_t count, uint32_t rw, uint32_t stopMode)
+{
+	return I2C_XferChunk(i2c, address, data, count, rw, stopMode);
+}
+
+#endif //I2C_LONG_TRANSFER
 
 static bool I2C_WaitForIdle(I2C_t * i2c)
 {

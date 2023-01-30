@@ -61,6 +61,13 @@ for (uint8_t address = 0; address < 0x7F; address++)
 }
 ```
 
+## I2C maximum transfer size
+The maximum size of an I2C transfer is by default limited to 255 bytes.
+
+This can be overridden using the `I2C_USE_LONG_TRANSFER` definition to add support for longer blocks.
+
+> The transfer size is per read/write block. A transfer of 255 bytes tx followed by 255 bytes rx is permitted.
+
 ## I2C Timeouts
 
 Because I2C supports clock stretching, all I2C transfers have a timeout. This timeout is implemented per byte, and can be overidden using the `I2C_TIMEOUT` definiton.
@@ -77,5 +84,6 @@ The following template can be used. Commented out definitions are optional.
 #define I2C1_PINS			(GPIO_PIN_6 | GPIO_PIN_7)
 #define I2C1_AF			    GPIO_AF1_I2C1
 //#define USE_I2C_FASTMODEPLUS
+//#define I2C_USE_LONG_TRANSFER
 //#define I2C_TIMEOUT       10
 ```
