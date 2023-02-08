@@ -14,7 +14,7 @@
 #if defined(STM32G0) || defined(STM32WL)
 #define CLK_PLL_MUL				8
 #elif defined(STM32F4)
-#define CLK_PLL_MUL				192
+#define CLK_PLL_MUL				128
 #else
 #define CLK_PLL_MUL				4
 #endif

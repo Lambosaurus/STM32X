@@ -118,6 +118,9 @@ void TIM_Init(TIM_t * tim, uint32_t freq, uint32_t reload)
 void TIM_SetFreq(TIM_t * tim, uint32_t freq)
 {
 	uint32_t clk = CLK_GetPCLKFreq();
+#ifdef STM32F4
+	clk *= 2;
+#endif
 	tim->Instance->PSC = (clk / freq) - 1;
 }
 
