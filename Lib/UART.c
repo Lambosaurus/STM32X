@@ -234,6 +234,38 @@ uint32_t UART_Read(UART_t * uart, uint8_t * data, uint32_t count)
 	return count;
 }
 
+uint32_t UART_ReadUntil(UART_t * uart, uint8_t * data, uint32_t count, uint8_t delimiter)
+{
+	uint32_t available = UART_ReadCount(uart);
+
+	// As long as we read faster than the tail is nudged, we should be fine.
+	uint32_t j = uart->rx.tail;
+	for (uint32_t i = 0; i < available; i++)
+	{
+		if (uart->rx.buffer[j] == delimiter)
+		{
+			if (count > i)
+			{
+				count = i;
+			}
+
+			uint32_t tail = uart->rx.tail;
+			for (uint32_t i = 0; i < count; i++)
+			{
+				*data++ = uart->rx.buffer[tail];
+				tail = UART_BFR_WRAP(tail + 1);
+			}
+			uart->rx.tail = UART_BFR_WRAP(tail + 1); // skip over delimiter.
+
+			return count;
+		}
+
+		j = UART_BFR_WRAP(j + 1);
+	}
+
+	return 0;
+}
+
 uint8_t UART_Pop(UART_t * uart)
 {
 	uint32_t tail = uart->rx.tail;

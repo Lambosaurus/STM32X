@@ -62,6 +62,9 @@ uint32_t UART_Read(UART_t * uart, uint8_t * data, uint32_t count);
 uint8_t UART_Pop(UART_t * uart);
 void UART_ReadFlush(UART_t * uart);
 
+// Reads until the specified delimiter is found (no action if delimiter not found)
+uint32_t UART_ReadUntil(UART_t * uart, uint8_t * data, uint32_t count, uint8_t delimiter);
+
 
 /*
  * EXTERN DECLARATIONS
