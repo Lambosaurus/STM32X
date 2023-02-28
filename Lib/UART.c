@@ -210,6 +210,21 @@ uint32_t UART_Read(UART_t * uart, uint8_t * data, uint32_t count)
 	return count;
 }
 
+uint32_t UART_Seek(UART_t * uart, uint8_t delimiter)
+{
+	uint32_t count = UART_ReadCount(uart);
+	uint32_t tail = uart->rx.tail;
+	for (uint32_t i = 0; i < count; i++)
+	{
+		if (uart->rx.buffer[tail] == delimiter)
+		{
+			return i + 1;
+		}
+		tail = UART_BFR_WRAP(tail + 1);
+	}
+	return 0;
+}
+
 uint8_t UART_Pop(UART_t * uart)
 {
 	uint32_t tail = uart->rx.tail;
