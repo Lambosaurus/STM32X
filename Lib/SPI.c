@@ -58,10 +58,18 @@ void SPI_Init(SPI_t * spi, uint32_t bitrate, SPI_Mode_t mode)
 
 	uint32_t prescalar = SPI_SelectPrescalar(spi, bitrate);
 
-	spi->Instance->CR1 =  SPI_MODE_MASTER | SPI_DIRECTION_2LINES | SPI_DATASIZE_8BIT | mode
-						| (SPI_NSS_SOFT & SPI_CR1_SSM) | prescalar | SPI_FIRSTBIT_MSB | SPI_CRCCALCULATION_DISABLE;
+	uint32_t cr1 = SPI_MODE_MASTER | SPI_DIRECTION_2LINES | mode
+			| (SPI_NSS_SOFT & SPI_CR1_SSM) | prescalar | SPI_FIRSTBIT_MSB | SPI_CRCCALCULATION_DISABLE;
+	uint32_t cr2 = ((SPI_NSS_SOFT >> 16u) & SPI_CR2_SSOE) | SPI_TIMODE_DISABLE | SPI_RXFIFO_THRESHOLD_QF;
 
-	spi->Instance->CR2 = ((SPI_NSS_SOFT >> 16u) & SPI_CR2_SSOE) | SPI_TIMODE_DISABLE;
+#ifdef STM32G0
+	cr2 |= SPI_DATASIZE_8BIT | SPI_RXFIFO_THRESHOLD_QF;
+#else
+	cr1 |= SPI_DATASIZE_8BIT;
+#endif
+
+	spi->Instance->CR1 = cr1;
+	spi->Instance->CR2 = cr2;
 
 #ifdef SPI_I2SCFGR_I2SMOD
 	// This register is only defined on some cores.

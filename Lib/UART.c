@@ -15,13 +15,24 @@
 #endif
 
 
+#if defined(STM32G0) || defined(STM32WL)
+#define USART_CR1_RXNEIE				USART_CR1_RXNEIE_RXFNEIE
+#define USART_CR1_TXEIE					USART_CR1_TXEIE_TXFNFIE
+#define USART_ISR_RXNE					USART_ISR_RXNE_RXFNE
+#define USART_ISR_TXE					USART_ISR_TXE_TXFNF
+#endif
+
+
 #define __UART_RX_ENABLE(uart) 	(uart->Instance->CR1 |= USART_CR1_RXNEIE)
 #define __UART_RX_DISABLE(uart) (uart->Instance->CR1 &= ~USART_CR1_RXNEIE)
 #define __UART_TX_ENABLE(uart) 	(uart->Instance->CR1 |= USART_CR1_TXEIE)
 #define __UART_TX_DISABLE(uart) (uart->Instance->CR1 &= ~USART_CR1_TXEIE)
 #define __UART_TX_BUSY(uart)	(!(uart->Instance->ISR & USART_ISR_TC))
-
 #define __UART_CLEAR_FLAGS(uart, flags) (uart->Instance->ICR |= flags)
+
+#ifndef UART_IRQ_PRIO
+#define UART_IRQ_PRIO					1
+#endif //UART_IRQ_PRIO
 
 /*
  * PRIVATE TYPES
@@ -110,12 +121,20 @@ void UART_Init(UART_t * uart, uint32_t baud, UART_Mode_t mode)
 #ifdef UARTLP_PINS
 	if (UART_INSTANCE_LOWPOWER(uart))
 	{
+#if defined(STM32G0) || defined(STM32WL)
+		uart->Instance->BRR = UART_DIV_LPUART(pclk, baud, UART_PRESCALER_DIV1);
+#else
 		uart->Instance->BRR = UART_DIV_LPUART(pclk, baud);
+#endif
 	}
 	else
 #endif
 	{
+#if defined(STM32G0) || defined(STM32WL)
+		uart->Instance->BRR = UART_DIV_SAMPLING16(pclk, baud, UART_PRESCALER_DIV1);
+#else
 		uart->Instance->BRR = UART_DIV_SAMPLING16(pclk, baud);
+#endif
 	}
 	__HAL_UART_ENABLE(uart);
 
@@ -191,6 +210,21 @@ uint32_t UART_Read(UART_t * uart, uint8_t * data, uint32_t count)
 	return count;
 }
 
+uint32_t UART_Seek(UART_t * uart, uint8_t delimiter)
+{
+	uint32_t count = UART_ReadCount(uart);
+	uint32_t tail = uart->rx.tail;
+	for (uint32_t i = 0; i < count; i++)
+	{
+		if (uart->rx.buffer[tail] == delimiter)
+		{
+			return i + 1;
+		}
+		tail = UART_BFR_WRAP(tail + 1);
+	}
+	return 0;
+}
+
 uint8_t UART_Pop(UART_t * uart)
 {
 	uint32_t tail = uart->rx.tail;
@@ -237,6 +271,7 @@ static void UARTx_Init(UART_t * uart)
 		__HAL_RCC_LPUART1_CLK_ENABLE();
 		GPIO_EnableAlternate(UARTLP_PINS, 0, UARTLP_AF);
 		HAL_NVIC_EnableIRQ(LPUART1_IRQn);
+		HAL_NVIC_SetPriority(LPUART1_IRQn, UART_IRQ_PRIO, UART_IRQ_PRIO);
 	}
 #endif
 #ifdef UART1_PINS
@@ -245,6 +280,7 @@ static void UARTx_Init(UART_t * uart)
 		__HAL_RCC_USART1_CLK_ENABLE();
 		GPIO_EnableAlternate(UART1_PINS, 0, UART1_AF);
 		HAL_NVIC_EnableIRQ(USART1_IRQn);
+		HAL_NVIC_SetPriority(USART1_IRQn, UART_IRQ_PRIO, UART_IRQ_PRIO);
 	}
 #endif
 #ifdef UART2_PINS
@@ -253,6 +289,7 @@ static void UARTx_Init(UART_t * uart)
 		__HAL_RCC_USART2_CLK_ENABLE();
 		GPIO_EnableAlternate(UART2_PINS, 0, UART2_AF);
 		HAL_NVIC_EnableIRQ(USART2_IRQn);
+		HAL_NVIC_SetPriority(USART2_IRQn, UART_IRQ_PRIO, UART_IRQ_PRIO);
 	}
 #endif
 #ifdef UART3_PINS
@@ -261,6 +298,7 @@ static void UARTx_Init(UART_t * uart)
 		__HAL_RCC_USART3_CLK_ENABLE();
 		GPIO_EnableAlternate(UART3_PINS, 0, UART3_AF);
 		HAL_NVIC_EnableIRQ(USART3_IRQn);
+		HAL_NVIC_SetPriority(USART3_IRQn, UART_IRQ_PRIO, UART_IRQ_PRIO);
 	}
 #endif
 #ifdef UART4_PINS
@@ -269,6 +307,7 @@ static void UARTx_Init(UART_t * uart)
 		__HAL_RCC_USART4_CLK_ENABLE();
 		GPIO_EnableAlternate(UART4_PINS, 0, UART4_AF);
 		HAL_NVIC_EnableIRQ(USART4_5_IRQn);
+		HAL_NVIC_SetPriority(USART4_5_IRQn, UART_IRQ_PRIO, UART_IRQ_PRIO);
 	}
 #endif
 #ifdef UART5_PINS
@@ -277,6 +316,7 @@ static void UARTx_Init(UART_t * uart)
 		__HAL_RCC_USART5_CLK_ENABLE();
 		GPIO_EnableAlternate(UART5_PINS, 0, UART5_AF);
 		HAL_NVIC_EnableIRQ(USART4_5_IRQn);
+		HAL_NVIC_SetPriority(USART4_5_IRQn, UART_IRQ_PRIO, UART_IRQ_PRIO);
 	}
 #endif
 }

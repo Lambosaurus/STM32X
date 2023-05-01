@@ -7,6 +7,8 @@
  * FUNCTIONAL TESTING
  * STM32L0: Y
  * STM32F0: N
+ * STM32G0: N
+ * STM32WL: N
  */
 
 /*
@@ -49,13 +51,13 @@ uint8_t SPI_TransferByte(SPI_t * spi, uint8_t data);
  * EXTERN DECLARATIONS
  */
 
-#ifdef SPI1_GPIO
+#ifdef SPI1_PINS
 extern SPI_t * SPI_1;
 #endif
-#ifdef SPI2_GPIO
+#ifdef SPI2_PINS
 extern SPI_t * SPI_2;
 #endif
-#ifdef SPI3_GPIO
+#ifdef SPI3_PINS
 extern SPI_t * SPI_3;
 #endif
 
