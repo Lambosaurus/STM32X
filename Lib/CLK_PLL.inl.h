@@ -22,9 +22,11 @@
 #define CLK_PLL_DIV				((CLK_PLL_SRC_FREQ * CLK_PLL_MUL) / CLK_SYSCLK_FREQ)
 #endif
 
+
+#if defined(STM32G0) || defined(STM32WL)
 #define RCC_PLL_MULX_IS_VALID(x)	(x >= 8 && x <= 86)
 #define RCC_PLL_MULX(x)				(x)
-
+#endif
 
 
 #ifdef RCC_PLL_MULX_IS_VALID
