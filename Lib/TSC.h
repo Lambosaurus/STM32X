@@ -4,6 +4,7 @@
 #include "STM32X.h"
 
 #ifdef TSC_ENABLE
+#include "GPIO.h"
 
 /*
  * FUNCTIONAL TESTING
@@ -44,7 +45,10 @@ void TSC_Init(uint32_t freq);
 void TSC_Deinit(void);
 
 void TSC_EnableChannel(TSC_Group_t group, TSC_Channel_t ch, GPIO_Pin_t pin);
-void TSC_EnableGroup(TSC_Group_t group, TSC_Channel_t sample_ch, GPIO_Pin_t pin);
+void TSC_EnableGroup(TSC_Group_t group, TSC_Channel_t sample_ch, GPIO_Pin_t sample_pin);
+
+void TSC_Sample(void);
+uint32_t TSC_Read(TSC_Group_t group);
 
 #endif //TSC_ENABLE
 #endif //TSC_H

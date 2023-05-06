@@ -307,9 +307,9 @@ uint32_t CLK_SelectPrescalar(uint32_t src_freq, uint32_t div_min, uint32_t div_m
 	uint32_t div = div_min;
 	src_freq /= div_min;
 
-	while (div <= div_max && src_freq > *dst_freq)
+	while (div < div_max && src_freq > *dst_freq)
 	{
-		div <<= 2;
+		div <<= 1;
 		src_freq >>= 1;
 		k++;
 	}
