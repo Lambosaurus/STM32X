@@ -20,14 +20,14 @@
  */
 
 typedef enum {
-	TSC_Channel_1,
-	TSC_Channel_2,
-	TSC_Channel_3,
-	TSC_Channel_4,
+	TSC_Channel_1 = (1 << 0),
+	TSC_Channel_2 = (1 << 1),
+	TSC_Channel_3 = (1 << 2),
+	TSC_Channel_4 = (1 << 3),
 } TSC_Channel_t;
 
 typedef enum {
-	TSC_Group_1,
+	TSC_Group_1 = 0,
 	TSC_Group_2,
 	TSC_Group_3,
 	TSC_Group_4,
@@ -41,7 +41,7 @@ typedef enum {
  * PUBLIC FUNCTIONS
  */
 
-void TSC_Init(uint32_t freq);
+void TSC_Init(void);
 void TSC_Deinit(void);
 
 void TSC_EnableChannel(TSC_Group_t group, TSC_Channel_t ch, GPIO_Pin_t pin);
