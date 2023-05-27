@@ -169,7 +169,6 @@ static void GPIO_ConfigInterrupt(int gpio_index, int n, GPIO_IT_Dir_t dir)
 #ifdef __HAL_RCC_SYSCFG_CLK_ENABLE
 		__HAL_RCC_SYSCFG_CLK_ENABLE();
 #endif
-		uint32_t gpio_index = GPIO_GET_INDEX(gpio);
 
 #if defined(STM32G0)
 		uint32_t offset = (n & 0x3) * 8;
