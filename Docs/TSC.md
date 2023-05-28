@@ -9,21 +9,38 @@ The header is available [here](../Lib/TSC.h).
 
 Understanding how the groups and channels are laid out on your processor is critical to using this peripheral. Note that each pin has a specific group and channel.
 
-`TSC_EnableGroup` is used to enable one of the TSC groups, and the channel + pin provided should include the reference capacitor.
+`TSC_EnableCapacitor` is used to enable the sampling capacitor. One sampling capacitor should be enabled for each group.
 
-`TSC_EnableChannel` is then used to enable the channels to be monitored by the group. While a group may support multiple channels, this is not currently supported.
+`TSC_EnableInput` is used to enable a channel as a sampled input. It will be compared to the sampling capacitor for its group.
 
 ```c
-// Enable TSC_Group_1 - with sample capacitor on PA1, and the pad on PA2.
+// Enable TSC_Group_1 - with sample capacitor on PA0, and the input element on PA1.
 TSC_Init();
-TSC_EnableGroup(TSC_Group_1, TSC_Channel_2, PA1);
-TSC_EnableChannel(TSC_Group_1, TSC_Channel_3, PA2);
+TSC_EnableCapacitor(TSC_G1_Channel1, PA0);
+TSC_EnableInput(TSC_G1_Channel2, PA1);
 
 while(1)
 {
-    // Start the sampling process, then read the channel.
-    TSC_Sample();
-    uint32_t cycles = TSC_Read(TSC_Group_1);
+    // Read the input
+    uint32_t cycles = TSC_Read(TSC_G1_Channel2);
+    ...
+}
+```
+
+## Multiple inputs
+Multiple inputs can be enabled simultaniously as long as they are on the same port.
+
+```c
+TSC_Init();
+TSC_EnableCapacitor(TSC_G1_Channel1, PA0);
+TSC_EnableInput(TSC_G1_Channel2 | TSC_G1_Channel3 | TSC_G1_Channel3, PA1 | PA2 | PA3);
+
+while(1)
+{
+    // Read the input
+    uint32_t cycles_a = TSC_Read(TSC_G1_Channel2);
+    uint32_t cycles_b = TSC_Read(TSC_G1_Channel3);
+    uint32_t cycles_c = TSC_Read(TSC_G1_Channel4);
     ...
 }
 ```

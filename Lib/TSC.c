@@ -22,6 +22,9 @@
  * PRIVATE PROTOTYPES
  */
 
+static uint32_t TSC_GetGroup(TSC_Channel_t ch);
+static void TSC_Sample(void);
+
 /*
  * PRIVATE VARIABLES
  */
@@ -65,31 +68,48 @@ void TSC_Deinit(void)
 	__HAL_RCC_TSC_CLK_DISABLE();
 }
 
-void TSC_EnableChannel(TSC_Group_t group, TSC_Channel_t ch, GPIO_Pin_t pin)
+void TSC_EnableCapacitor(TSC_Channel_t ch, GPIO_Pin_t pin)
+{
+	GPIO_EnableAlternate(pin, GPIO_Flag_OpenDrain, TSC_AF);
+	TSC->IOHCR &= ~ch;
+
+	TSC->IOSCR |= ch; // Select this as a sampling capacitor
+
+}
+
+void TSC_EnableInput(TSC_Channel_t ch, GPIO_Pin_t pin)
 {
 	// This function can enable multiple channels at once, so long as:
-	//  - They are on the same group
 	//  - They are on the same GPIO bank
 	GPIO_EnableAlternate(pin, GPIO_Flag_None, TSC_AF);
-
-	uint32_t tsc_ch = ch << (group << 2);
-
-	TSC->IOHCR &= ~tsc_ch;
-	TSC->IOCCR |= tsc_ch;
+	TSC->IOHCR &= ~ch;
 }
 
-void TSC_EnableGroup(TSC_Group_t group, TSC_Channel_t sample_ch, GPIO_Pin_t sample_pin)
+uint32_t TSC_Read(TSC_Channel_t ch)
 {
-	GPIO_EnableAlternate(sample_pin, GPIO_Flag_OpenDrain, TSC_AF);
+	// This read function reads a single channel.
+	// Reading multiple channels using multiple groups is possible, but not here.
 
-	uint32_t tsc_ch = sample_ch << (group << 2);
+	uint32_t group = TSC_GetGroup(ch);
 
-	TSC->IOHCR &= ~tsc_ch;
-	TSC->IOSCR |= tsc_ch;
-	TSC->IOGCSR |= 1 << group;
+	TSC->IOCCR = ch; // Select only this channel
+	TSC->IOGCSR = 1 << group; // select only this group
+
+	TSC_Sample();
+
+	return TSC->IOGXCR[group];
 }
 
-void TSC_Sample(void)
+/*
+ * PRIVATE FUNCTIONS
+ */
+
+static uint32_t TSC_GetGroup(TSC_Channel_t ch)
+{
+	return FIRST_BIT_INDEX(ch) >> 2;
+}
+
+static void TSC_Sample(void)
 {
 	// Clear end of acquisition flag
 	TSC->ICR |= TSC_FLAG_EOA | TSC_FLAG_MCE;
@@ -97,17 +117,7 @@ void TSC_Sample(void)
 	// Start acquisition and wait for end
 	TSC->CR |= TSC_CR_START;
 	while (!(TSC->ISR & TSC_FLAG_EOA));
-
 }
-
-uint32_t TSC_Read(TSC_Group_t group)
-{
-	return TSC->IOGXCR[group];
-}
-
-/*
- * PRIVATE FUNCTIONS
- */
 
 /*
  * INTERRUPT ROUTINES
