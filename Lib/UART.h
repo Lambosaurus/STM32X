@@ -40,6 +40,8 @@ typedef enum {
 	UART_Mode_Default 	= 0,
 	UART_Mode_Inverted 	= (1 << 0),
 	UART_Mode_Swap		= (1 << 1),
+	UART_Mode_EvenParity = (1 << 2),
+	UART_Mode_OddParity = (1 << 3),
 } UART_Mode_t;
 
 /*

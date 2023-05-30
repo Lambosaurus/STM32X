@@ -102,16 +102,22 @@ void UART_Init(UART_t * uart, uint32_t baud, UART_Mode_t mode)
 	__HAL_UART_DISABLE(uart);
 	// Configure to standard settings: 8N1, no flow control.
 	uint32_t cr1 = (uint32_t)UART_WORDLENGTH_8B | UART_PARITY_NONE | UART_MODE_TX_RX | UART_OVERSAMPLING_16;
-	const uint32_t cr1msk = USART_CR1_M | USART_CR1_PCE | USART_CR1_PS | USART_CR1_TE | USART_CR1_RE | USART_CR1_OVER8;
+	uint32_t cr2 = UART_STOPBITS_1;
+	uint32_t cr3 = (uint32_t)UART_HWCONTROL_NONE | UART_ONE_BIT_SAMPLE_DISABLE;
+
+	if (mode & UART_Mode_Inverted) 		{ cr2 |= USART_CR2_RXINV | USART_CR2_TXINV; }
+	if (mode & UART_Mode_Swap) 			{ cr2 |= USART_CR2_SWAP; }
+	// The M bit here changes the frame size to 9 bits.
+	// The parity bit counts as part of the frame.
+	if (mode & UART_Mode_EvenParity) 	{ cr1 |= USART_CR1_PCE | USART_CR1_M0; }
+	if (mode & UART_Mode_OddParity) 	{ cr1 |= USART_CR1_PCE | USART_CR1_PS | USART_CR1_M0; }
+
+	const uint32_t cr1msk = USART_CR1_M0 | USART_CR1_M1 | USART_CR1_PCE | USART_CR1_PS | USART_CR1_TE | USART_CR1_RE | USART_CR1_OVER8;
 	MODIFY_REG(uart->Instance->CR1, cr1msk,	cr1);
 
-	uint32_t cr2 = UART_STOPBITS_1;
-	if (mode & UART_Mode_Inverted) 	{ cr2 |= USART_CR2_RXINV | USART_CR2_TXINV; }
-	if (mode & UART_Mode_Swap) 		{ cr2 |= USART_CR2_SWAP; }
 	const uint32_t cr2msk = USART_CR2_STOP | USART_CR2_RXINV | USART_CR2_TXINV | USART_CR2_SWAP | USART_CR2_LINEN | USART_CR2_CLKEN;
 	MODIFY_REG(uart->Instance->CR2, cr2msk, cr2);
 
-	uint32_t cr3 = (uint32_t)UART_HWCONTROL_NONE | UART_ONE_BIT_SAMPLE_DISABLE;
 	const uint32_t cr3msk = USART_CR3_RTSE | USART_CR3_CTSE | USART_CR3_ONEBIT | USART_CR3_SCEN | USART_CR3_HDSEL | USART_CR3_IREN;
 	MODIFY_REG(uart->Instance->CR3, cr3msk, cr3);
 
