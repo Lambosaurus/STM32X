@@ -74,8 +74,12 @@ uint32_t FLASH_GetPageCount(void)
 	return FLASH_PAGE_COUNT();
 }
 
-const uint32_t * FLASH_GetPage(uint32_t page)
+const uint32_t * FLASH_GetPage(int32_t page)
 {
+	if (page < 0)
+	{
+		page += FLASH_PAGE_COUNT();
+	}
 	return (const uint32_t *)(FLASH_BASE + (FLASH_PAGE_SIZE * page));
 }
 

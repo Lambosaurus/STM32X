@@ -34,7 +34,7 @@
  */
 
 uint32_t FLASH_GetPageCount(void);
-const uint32_t * FLASH_GetPage(uint32_t page);
+const uint32_t * FLASH_GetPage(int32_t page);
 
 // The erase is expected to target a page start address
 void FLASH_Erase(const uint32_t * address);
