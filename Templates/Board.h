@@ -4,6 +4,8 @@
 #define STM32L0
 //#define STM32F0
 //#define STM32G0
+//#define STM32WL
+//#define STM32C0
 
 // Core config
 //#define CORE_USE_TICK_IRQ
