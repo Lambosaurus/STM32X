@@ -94,7 +94,7 @@ static struct {
 
 void RTC_Init(void)
 {
-#if defined(STM32G0) || defined(STM32WL)
+#if defined(STM32G0) || defined(STM32WL) || defined(STM32C0)
 	__HAL_RCC_RTCAPB_CLK_ENABLE();
 #endif
 

@@ -35,6 +35,11 @@
 
 #define FLASH_LATENCY						FLASH_LATENCY_1
 
+#elif defined(STM32C0)
+#define CLK_HSI_FREQ						48000000
+
+#define FLASH_LATENCY						FLASH_LATENCY_1
+
 #elif defined(STM32G0) || defined(STM32WL)
 #define CLK_HSI_FREQ						16000000
 
@@ -84,14 +89,16 @@
 #else // CLK_USE_HSI
 
 #define CLK_USE_HSI
+#define CLK_SYSCLK_SRC			RCC_SYSCLKSOURCE_HSI
+#if !defined(STM32C0)
 #define CLK_PLL_SRC_FREQ		CLK_HSI_FREQ
 #define CLK_PLL_SRC				RCC_PLLSOURCE_HSI
-#define CLK_SYSCLK_SRC			RCC_SYSCLKSOURCE_HSI
+#endif
 
 #endif
 
 // Is PLL required?
-#if ((CLK_SYSCLK_FREQ != CLK_PLL_SRC_FREQ) && !(defined(RCC_SYSCLKSOURCE_MSI) && (CLK_SYSCLK_SRC == RCC_SYSCLKSOURCE_MSI)))
+#if ( !defined(STM32C0) && (CLK_SYSCLK_FREQ != CLK_PLL_SRC_FREQ) && !(defined(RCC_SYSCLKSOURCE_MSI) && (CLK_SYSCLK_SRC == RCC_SYSCLKSOURCE_MSI)))
 
 #if (defined(STM32G0) || defined(STM32WL)) && (CLK_PLL_SRC_FREQ > 16000000)
 #error "Changes required change RCC_PLLM to keep the PLL input in a 4-16MHz range"
@@ -269,9 +276,12 @@ void CLK_EnableADCCLK(void)
 	while(__HAL_RCC_GET_FLAG(RCC_FLAG_HSIRDY) == 0);
 #endif
 
+
 #if defined(STM32WL)
 	__HAL_RCC_ADC_CONFIG(RCC_ADCCLKSOURCE_HSI);
 #endif
+
+
 }
 
 void CLK_DisableADCCLK(void)
@@ -335,12 +345,14 @@ static void CLK_ResetBackupDomain(void)
 
 static void CLK_AccessBackupDomain(void)
 {
+#if !defined(STM32C0)
 	// Get access to backup domain
 	if (!_PWR_IS_DBP_SET())
 	{
 		_PWR_SET_DBP();
 		while (!_PWR_IS_DBP_SET());
 	}
+#endif
 }
 
 /*

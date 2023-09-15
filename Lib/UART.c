@@ -15,7 +15,7 @@
 #endif
 
 
-#if defined(STM32G0) || defined(STM32WL)
+#if defined(STM32G0) || defined(STM32WL) || defined(STM32C0)
 #define USART_CR1_RXNEIE				USART_CR1_RXNEIE_RXFNEIE
 #define USART_CR1_TXEIE					USART_CR1_TXEIE_TXFNFIE
 #define USART_ISR_RXNE					USART_ISR_RXNE_RXFNE
@@ -136,7 +136,7 @@ void UART_Init(UART_t * uart, uint32_t baud, UART_Mode_t mode)
 	else
 #endif
 	{
-#if defined(STM32G0) || defined(STM32WL)
+#if defined(STM32G0) || defined(STM32WL) || defined(STM32C0)
 		uart->Instance->BRR = UART_DIV_SAMPLING16(pclk, baud, UART_PRESCALER_DIV1);
 #else
 		uart->Instance->BRR = UART_DIV_SAMPLING16(pclk, baud);

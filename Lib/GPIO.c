@@ -14,7 +14,7 @@
 #define GPIO_MODER_MODE0		GPIO_MODER_MODER0
 #define GPIO_PUPDR_PUPD0		GPIO_PUPDR_PUPDR0
 
-#elif defined(STM32G0) || defined(STM32WL)
+#elif defined(STM32G0) || defined(STM32WL) || defined(STM32C0)
 #define GPIO_OSPEEDER_OSPEED0	GPIO_OSPEEDR_OSPEED0
 
 #define IMR						IMR1
@@ -170,7 +170,7 @@ static void GPIO_ConfigInterrupt(int gpio_index, int n, GPIO_IT_Dir_t dir)
 		__HAL_RCC_SYSCFG_CLK_ENABLE();
 #endif
 
-#if defined(STM32G0)
+#if defined(STM32G0) || defined(STM32C0)
 		uint32_t offset = (n & 0x3) * 8;
 		MODIFY_REG(EXTI->EXTICR[n >> 2], 0xF << offset, gpio_index << offset);
 #else

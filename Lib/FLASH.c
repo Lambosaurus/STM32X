@@ -26,7 +26,7 @@
 #define _FLASH_CR_LOCK				FLASH_CR_LOCK
 #define _FLASH_CR_ERASE				FLASH_CR_PER
 
-#elif defined(STM32G0) || defined(STM32WL)
+#elif defined(STM32G0) || defined(STM32WL) || defined(STM32C0)
 
 #define _FLASH_SET_CR(bit)			(FLASH->CR |= bit)
 #define _FLASH_CLR_CR(bit)			(FLASH->CR &= ~bit)
@@ -145,7 +145,7 @@ void FLASH_Write(const uint32_t * address, const uint32_t * data, uint32_t size)
 	}
 	_FLASH_CLR_CR(_FLASH_CR_PROG);
 
-#elif defined(STM32G0) || defined(STM32WL)
+#elif defined(STM32G0) || defined(STM32WL) || defined(STM32C0)
 	_FLASH_SET_CR(_FLASH_CR_PROG);
 	while (data_end - data_head >= (2 * sizeof(uint32_t)))
 	{
