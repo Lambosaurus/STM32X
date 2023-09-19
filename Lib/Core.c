@@ -8,10 +8,10 @@
  * PRIVATE DEFINITIONS
  */
 
-#if !defined(STM32C0)
-#define _CORE_GET_RST_FLAGS()	(RCC->CSR)
-#else //defined(STM32C0)
+#if defined(STM32C0)
 #define _CORE_GET_RST_FLAGS()	(RCC->CSR2)
+#else
+#define _CORE_GET_RST_FLAGS()	(RCC->CSR)
 #endif
 
 
@@ -42,9 +42,8 @@
 #define RCC_CSR_PORRSTF 					RCC_CSR_BORRSTF
 
 #elif defined(STM32C0)
-//#define RCC_CSR_PORRSTF 					RCC_CSR_PWRRSTF
-//#define CORE_VOLTAGE_RANGE					PWR_REGULATOR_VOLTAGE_SCALE1
-//#define __HAL_PWR_VOLTAGESCALING_CONFIG		HAL_PWREx_ControlVoltageScaling
+
+// Do I need Anything Here?
 
 #endif
 
