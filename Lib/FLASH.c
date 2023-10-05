@@ -90,7 +90,7 @@ void FLASH_Erase(const uint32_t * address)
 #elif defined(STM32F0)
     FLASH->AR = (uint32_t)address;
     _FLASH_SET_CR(FLASH_CR_STRT);
-#elif defined(STM32G0) || defined(STM32WL)
+#elif defined(STM32G0) || defined(STM32WL) || defined(STM32C0)
     uint32_t page_number = ((uint32_t)address - FLASH_BASE) / FLASH_PAGE_SIZE;
     MODIFY_REG(FLASH->CR, FLASH_CR_PNB, page_number << FLASH_CR_PNB_Pos);
     _FLASH_SET_CR(FLASH_CR_STRT);
@@ -184,7 +184,7 @@ static void FLASH_Unlock(void)
 #elif defined(STM32F0)
 	FLASH->KEYR |= FLASH_KEY1;
 	FLASH->KEYR |= FLASH_KEY2;
-#elif defined(STM32G0)  || defined(STM32WL)
+#elif defined(STM32G0)  || defined(STM32WL) || defined(STM32C0)
 	FLASH->KEYR = FLASH_KEY1;
 	FLASH->KEYR = FLASH_KEY2;
 #endif
