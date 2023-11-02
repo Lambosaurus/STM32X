@@ -5,6 +5,8 @@ This can be used for non-volatile data storage.
 
 EEPROM will not be available on all STM32 variants. The last flash page can be used as an alternative. See [FLASH](FLASH.md) for more info.
 
+The header is available [here](../Lib/EEPROM.h).
+
 # Usage
 
 First note that while flexible, EEPROM has write cycle limitations, in the order of 100,000 write cycles. If you continously write to EEPROM, eventually it will fail.

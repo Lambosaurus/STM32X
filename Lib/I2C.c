@@ -11,7 +11,7 @@
 // Filter configuration
 #define I2C_USE_ANALOGFILTER
 #define I2C_DIGITALFILTER_SIZE	0
-#define I2C_SCL_DUTY_PCT 33
+#define I2C_SCL_DUTY_PCT 60
 
 #ifdef I2C_USE_ANALOGFILTER
 // This can probably be calculated but it seems to match what ST use
@@ -29,8 +29,9 @@
 
 #define NS_TO_CYCLES(clk, ns)		(clk/(1000000000/ns))
 
-#define I2C_BUSY_TIMEOUT			10
-#define I2C_XFER_TIMEOUT			5
+#ifndef I2C_TIMEOUT
+#define I2C_TIMEOUT					5
+#endif
 
 #define I2C_READ_MODE				I2C_CR2_RD_WRN
 #define I2C_WRITE_MODE				0U
@@ -59,6 +60,7 @@ static bool I2C_WaitForRXNE(I2C_t * i2c);
 static inline void I2C_StartTransfer(I2C_t * i2c, uint8_t address, uint8_t size, uint32_t mode);
 
 static bool I2C_XferBlock(I2C_t * i2c, uint8_t address, uint8_t * data, uint32_t count, uint32_t rw, uint32_t endMode);
+static bool I2C_ScanAddress(I2C_t * i2c, uint8_t address);
 
 #ifdef I2C_USE_FASTMODEPLUS
 static uint32_t I2Cx_GetFMPBit(I2C_t * i2c);
@@ -68,19 +70,19 @@ static uint32_t I2Cx_GetFMPBit(I2C_t * i2c);
  * PRIVATE VARIABLES
  */
 
-#ifdef I2C1_GPIO
+#ifdef I2C1_PINS
 static I2C_t gI2C_1 = {
 	.Instance = I2C1
 };
 I2C_t * I2C_1 = &gI2C_1;
 #endif
-#ifdef I2C2_GPIO
+#ifdef I2C2_PINS
 static I2C_t gI2C_2 = {
 	.Instance = I2C2
 };
 I2C_t * I2C_2 = &gI2C_2;
 #endif
-#ifdef I2C3_GPIO
+#ifdef I2C3_PINS
 static I2C_t gI2C_3 = {
 	.Instance = I2C3
 };
@@ -163,91 +165,113 @@ bool I2C_Transfer(I2C_t * i2c, uint8_t address, const uint8_t * txdata, uint32_t
 
 bool I2C_Scan(I2C_t * i2c, uint8_t address)
 {
-	return I2C_Write(i2c, address, NULL, 0);
+	return I2C_WaitForIdle(i2c)
+		&& I2C_ScanAddress(i2c, address);
 }
 
 /*
  * PRIVATE FUNCTIONS
  */
 
-static bool I2C_XferBlock(I2C_t * i2c, uint8_t address, uint8_t * data, uint32_t count, uint32_t rw, uint32_t endMode)
+static bool I2C_ScanAddress(I2C_t * i2c, uint8_t address)
+{
+	address <<= 1;
+	I2C_StartTransfer(i2c, address, 0, I2C_WRITE_MODE | I2C_START_MODE | I2C_AUTOEND_MODE);
+
+	if (!I2C_WaitForFlag(i2c, I2C_FLAG_STOPF))
+	{
+		return false;
+	}
+
+	bool acked = !(_I2C_GET_FLAGS(i2c) & I2C_FLAG_AF);
+	__HAL_I2C_CLEAR_FLAG(i2c, I2C_FLAG_STOPF);
+	I2C_RESET_CR2(i2c);
+	return acked;
+}
+
+static bool I2C_XferChunk(I2C_t * i2c, uint8_t address, uint8_t * data, uint32_t count, uint32_t rw, uint32_t stopMode)
 {
 	// Correct the address.
-	address = address << 1;
-	if (rw == I2C_READ_MODE) { address |= 0x01; }
+	address = (rw == I2C_READ_MODE) ? (address << 1) | 0x01 : (address << 1);
 
-	// Default transaction parameters.
-	uint32_t startMode = I2C_START_MODE;
-	uint32_t stopMode = I2C_RELOAD_MODE;
-	uint32_t block = 255;
+	I2C_StartTransfer(i2c, address, count, rw | I2C_START_MODE | stopMode);
 
-	while (stopMode == I2C_RELOAD_MODE)
+	if (rw == I2C_READ_MODE)
 	{
-		if (count <= 255)
+		while (count-- > 0)
 		{
-			// This is the final block of data.
-			block = count;
-			stopMode = endMode;
-		}
-		count -= block;
-
-		I2C_StartTransfer(i2c, address, block, rw | startMode | stopMode);
-		startMode = I2C_NO_STARTSTOP; // Following loops will not have a start condition.
-
-		if (rw == I2C_READ_MODE)
-		{
-			while (block-- > 0)
+			if (!I2C_WaitForRXNE(i2c))
 			{
-				if (!I2C_WaitForRXNE(i2c))
-				{
-					return false;
-				}
-				*data++ = i2c->Instance->RXDR;
+				return false;
 			}
+			*data++ = i2c->Instance->RXDR;
 		}
-		else
+	}
+	else
+	{
+		while (count-- > 0)
 		{
-			while (block-- > 0)
+			if (!I2C_WaitForFlag(i2c, I2C_FLAG_TXIS))
 			{
-				if (!I2C_WaitForFlag(i2c, I2C_FLAG_TXIS))
-				{
-					return false;
-				}
-				i2c->Instance->TXDR = *data++;
+				return false;
 			}
-		}
-
-		uint32_t stopflag;
-		switch (stopMode)
-		{
-		case I2C_RELOAD_MODE:
-			stopflag = I2C_FLAG_TCR;
-			break;
-		case I2C_SOFTEND_MODE:
-			stopflag = I2C_FLAG_TC;
-			break;
-		default:
-		case I2C_AUTOEND_MODE:
-			stopflag = I2C_FLAG_STOPF;
-			break;
-		}
-		if (!I2C_WaitForFlag(i2c, stopflag))
-		{
-			return false;
+			i2c->Instance->TXDR = *data++;
 		}
 	}
 
-	__HAL_I2C_CLEAR_FLAG(i2c, I2C_FLAG_STOPF);
-	I2C_RESET_CR2(i2c);
+	uint32_t stopflag =
+#ifdef I2C_USE_LONG_TRANSFER
+			(stopMode == I2C_RELOAD_MODE) ? I2C_FLAG_TCR :
+#endif
+			(stopMode == I2C_SOFTEND_MODE) ? I2C_FLAG_TC : I2C_FLAG_STOPF;
+
+	if (!I2C_WaitForFlag(i2c, stopflag))
+	{
+		return false;
+	}
+
+#ifdef I2C_USE_LONG_TRANSFER
+	if (stopMode != I2C_RELOAD_MODE)
+	{
+#endif
+		__HAL_I2C_CLEAR_FLAG(i2c, I2C_FLAG_STOPF);
+		I2C_RESET_CR2(i2c);
+#ifdef I2C_USE_LONG_TRANSFER
+	}
+#endif
+
 	return true;
 }
+
+#ifdef I2C_USE_LONG_TRANSFER
+static bool I2C_XferBlock(I2C_t * i2c, uint8_t address, uint8_t * data, uint32_t count, uint32_t rw, uint32_t stopMode)
+{
+	while (count > 255)
+	{
+		if (!I2C_XferChunk(i2c, address, data, 255, rw, I2C_RELOAD_MODE))
+		{
+			return false;
+		}
+		count -= 255;
+		data += 255;
+	}
+	return I2C_XferChunk(i2c, address, data, count, rw, stopMode);
+}
+#else
+
+static bool I2C_XferBlock(I2C_t * i2c, uint8_t address, uint8_t * data, uint32_t count, uint32_t rw, uint32_t stopMode)
+{
+	return I2C_XferChunk(i2c, address, data, count, rw, stopMode);
+}
+
+#endif //I2C_LONG_TRANSFER
 
 static bool I2C_WaitForIdle(I2C_t * i2c)
 {
 	uint32_t start = CORE_GetTick();
     while (_I2C_GET_FLAGS(i2c) & I2C_FLAG_BUSY)
     {
-    	if (CORE_GetTick() - start > I2C_BUSY_TIMEOUT)
+    	if (CORE_GetTick() - start > I2C_TIMEOUT)
     	{
     		return false;
     	}
@@ -258,7 +282,7 @@ static bool I2C_WaitForIdle(I2C_t * i2c)
 static bool I2C_WaitForFlag(I2C_t * i2c, uint32_t flag)
 {
 	uint32_t start = CORE_GetTick();
-	while (CORE_GetTick() - start < I2C_XFER_TIMEOUT)
+	while (CORE_GetTick() - start < I2C_TIMEOUT)
 	{
 		if (_I2C_GET_FLAGS(i2c) & flag)
 		{
@@ -276,7 +300,7 @@ static bool I2C_WaitForRXNE(I2C_t * i2c)
 {
 	uint32_t start = CORE_GetTick();
 
-	while (CORE_GetTick() - start < I2C_XFER_TIMEOUT)
+	while (CORE_GetTick() - start < I2C_TIMEOUT)
 	{
 		uint32_t flags = _I2C_GET_FLAGS(i2c);
 		if (flags & I2C_FLAG_RXNE)
@@ -314,7 +338,7 @@ static bool I2C_IsAcknowledgeFailed(I2C_t * i2c)
   if (_I2C_GET_FLAGS(i2c) & I2C_FLAG_AF)
   {
     uint32_t start = CORE_GetTick();
-    while (CORE_GetTick() - start < I2C_XFER_TIMEOUT)
+    while (CORE_GetTick() - start < I2C_TIMEOUT)
     {
     	if (_I2C_GET_FLAGS(i2c) & I2C_FLAG_STOPF)
     	{
@@ -381,50 +405,50 @@ static uint32_t I2C_SelectTiming(uint32_t bitrate)
 
 static void I2Cx_Init(I2C_t * i2c)
 {
-#ifdef I2C1_GPIO
+#ifdef I2C1_PINS
 	if (i2c == I2C_1)
 	{
 		__HAL_RCC_I2C1_CLK_ENABLE();
-		GPIO_EnableAlternate(I2C1_GPIO, I2C1_PINS, GPIO_Flag_OpenDrain, I2C1_AF);
+		GPIO_EnableAlternate(I2C1_PINS, GPIO_Flag_OpenDrain, I2C1_AF);
 	}
 #endif
-#ifdef I2C2_GPIO
+#ifdef I2C2_PINS
 	if (i2c == I2C_2)
 	{
 		__HAL_RCC_I2C2_CLK_ENABLE();
-		GPIO_EnableAlternate(I2C2_GPIO, I2C2_PINS, GPIO_Flag_OpenDrain, I2C2_AF);
+		GPIO_EnableAlternate(I2C2_PINS, GPIO_Flag_OpenDrain, I2C2_AF);
 	}
 #endif
-#ifdef I2C3_GPIO
+#ifdef I2C3_PINS
 	if (i2c == I2C_3)
 	{
 		__HAL_RCC_I2C3_CLK_ENABLE();
-		GPIO_EnableAlternate(I2C3_GPIO, I2C3_PINS, GPIO_Flag_OpenDrain, I2C3_AF);
+		GPIO_EnableAlternate(I2C3_PINS, GPIO_Flag_OpenDrain, I2C3_AF);
 	}
 #endif
 }
 
 static void I2Cx_Deinit(I2C_t * i2c)
 {
-#ifdef I2C1_GPIO
+#ifdef I2C1_PINS
 	if (i2c == I2C_1)
 	{
 		__HAL_RCC_I2C1_CLK_DISABLE();
-		GPIO_Deinit(I2C1_GPIO, I2C1_PINS);
+		GPIO_Deinit(I2C1_PINS);
 	}
 #endif
-#ifdef I2C2_GPIO
+#ifdef I2C2_PINS
 	if (i2c == I2C_2)
 	{
 		__HAL_RCC_I2C2_CLK_DISABLE();
-		GPIO_Deinit(I2C2_GPIO, I2C2_PINS);
+		GPIO_Deinit(I2C2_PINS);
 	}
 #endif
-#ifdef I2C3_GPIO
+#ifdef I2C3_PINS
 	if (i2c == I2C_3)
 	{
 		__HAL_RCC_I2C3_CLK_DISABLE();
-		GPIO_Deinit(I2C3_GPIO, I2C3_PINS);
+		GPIO_Deinit(I2C3_PINS);
 	}
 #endif
 }
@@ -433,19 +457,19 @@ static void I2Cx_Deinit(I2C_t * i2c)
 static uint32_t I2Cx_GetFMPBit(I2C_t * i2c)
 {
 	uint32_t bit;
-#ifdef I2C1_GPIO
+#ifdef I2C1_PINS
 	if (i2c == I2C_1)
 	{
 		bit = I2C_FASTMODEPLUS_I2C1;
 	}
 #endif
-#ifdef I2C2_GPIO
+#ifdef I2C2_PINS
 	if (i2c == I2C_2)
 	{
 		bit = I2C_FASTMODEPLUS_I2C2;
 	}
 #endif
-#ifdef I2C3_GPIO
+#ifdef I2C3_PINS
 	if (i2c == I2C_3)
 	{
 		bit = I2C_FASTMODEPLUS_I2C3;

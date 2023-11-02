@@ -3,6 +3,8 @@ This module enables the UART module.
 
 The UART is operated in interrupt mode, and includes circular buffers for recieve and transmit.
 
+The header is available [here](../Lib/UART.h).
+
 # Usage
 
 The following demonstrates basic usage of the UART.

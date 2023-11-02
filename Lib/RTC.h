@@ -7,13 +7,19 @@
  * FUNCTIONAL TESTING
  * STM32L0: Y
  * STM32F0: N
+ * STM32G0: N
+ * STM32WL: N
  */
 
 /*
  * PUBLIC DEFINITIONS
  */
 
-#ifdef STM32L0
+#ifndef RTC_SUBSECOND_RES
+#define RTC_SUBSECOND_RES	256
+#endif
+
+#ifdef RTC_CR_ALRBE
 #define RTC_ALARMB_ENABLE
 #endif
 #ifdef RTC_CR_WUTE
@@ -28,6 +34,7 @@
  */
 
 typedef struct {
+	uint16_t millis;
 	uint8_t second;
 	uint8_t minute;
 	uint8_t hour;
@@ -74,6 +81,10 @@ void RTC_StopPeriod(void);
 #endif //RTC_WAKEUPTIMER_ENABLE
 
 #endif //RTC_USE_IRQS
+
+#ifdef RTC_USE_BINARY
+uint32_t RTC_ReadBinary(void);
+#endif
 
 /*
  * EXTERN DECLARATIONS

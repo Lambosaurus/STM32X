@@ -7,6 +7,8 @@
  * FUNCTIONAL TESTING
  * STM32L0: Y
  * STM32F0: N
+ * STM32G0: Y
+ * STM32WL: Y
  */
 
 /*
@@ -38,6 +40,8 @@ typedef enum {
 	UART_Mode_Default 	= 0,
 	UART_Mode_Inverted 	= (1 << 0),
 	UART_Mode_Swap		= (1 << 1),
+	UART_Mode_EvenParity = (1 << 2),
+	UART_Mode_OddParity = (1 << 3),
 } UART_Mode_t;
 
 /*
@@ -59,28 +63,29 @@ uint32_t UART_ReadCount(UART_t * uart);
 uint32_t UART_Read(UART_t * uart, uint8_t * data, uint32_t count);
 uint8_t UART_Pop(UART_t * uart);
 void UART_ReadFlush(UART_t * uart);
+uint32_t UART_Seek(UART_t * uart, uint8_t delimiter);
 
 
 /*
  * EXTERN DECLARATIONS
  */
 
-#ifdef UARTLP_GPIO
+#ifdef UARTLP_PINS
 extern UART_t * UART_LP;
 #endif
-#ifdef UART1_GPIO
+#ifdef UART1_PINS
 extern UART_t * UART_1;
 #endif
-#ifdef UART2_GPIO
+#ifdef UART2_PINS
 extern UART_t * UART_2;
 #endif
-#ifdef UART3_GPIO
+#ifdef UART3_PINS
 extern UART_t * UART_3;
 #endif
-#ifdef UART4_GPIO
+#ifdef UART4_PINS
 extern UART_t * UART_4;
 #endif
-#ifdef UART5_GPIO
+#ifdef UART5_PINS
 extern UART_t * UART_5;
 #endif
 

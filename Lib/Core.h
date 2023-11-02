@@ -7,6 +7,8 @@
  * FUNCTIONAL TESTING
  * STM32L0: Y
  * STM32F0: Y
+ * STM32G0: Y
+ * STM32WL: Y
  */
 
 /*
@@ -51,6 +53,6 @@ void CORE_OnTick(VoidFunction_t callback);
  * EXTERN DECLARATIONS
  */
 
-#include "Core.inl"
+#include "Core.inl.h"
 
 #endif //CORE_H

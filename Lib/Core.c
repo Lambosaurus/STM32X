@@ -10,20 +10,31 @@
 
 #define _CORE_GET_RST_FLAGS()	(RCC->CSR)
 
-#ifdef STM32L0
-#define _PWR_REGULATOR_MASK		 (PWR_CR_PDDS | PWR_CR_LPSDSR)
+#if defined(STM32L0)
+#define _PWR_SET_PWR_REGULATOR(x)	(MODIFY_REG(PWR->CR, (PWR_CR_PDDS | PWR_CR_LPSDSR), x))
 
 #if   (CLK_SYSCLK_FREQ <=  4194304)
-#define CORE_VOLTAGE_RANGE		PWR_REGULATOR_VOLTAGE_SCALE3 // 1V2 core
+#define CORE_VOLTAGE_RANGE					PWR_REGULATOR_VOLTAGE_SCALE3 // 1V2 core
 #elif (CLK_SYSCLK_FREQ <= 16000000)
-#define CORE_VOLTAGE_RANGE		PWR_REGULATOR_VOLTAGE_SCALE2 // 1V5 core
+#define CORE_VOLTAGE_RANGE					PWR_REGULATOR_VOLTAGE_SCALE2 // 1V5 core
 #else
-#define CORE_VOLTAGE_RANGE		PWR_REGULATOR_VOLTAGE_SCALE1 // 1V8 core
+#define CORE_VOLTAGE_RANGE					PWR_REGULATOR_VOLTAGE_SCALE1 // 1V8 core
 #endif
 
-#endif
-#ifdef STM32F0
-#define _PWR_REGULATOR_MASK		 PWR_CR_LPDS
+#elif defined(STM32F0)
+#define _PWR_SET_PWR_REGULATOR(x)			(MODIFY_REG(PWR->CR, PWR_CR_LPDS, x))
+
+#elif defined(STM32G0)
+#define _PWR_SET_PWR_REGULATOR(x)			(MODIFY_REG(PWR->CR1, PWR_CR1_LPR, x))
+#define RCC_CSR_PORRSTF 					RCC_CSR_PWRRSTF
+
+#define CORE_VOLTAGE_RANGE					PWR_REGULATOR_VOLTAGE_SCALE1
+#define __HAL_PWR_VOLTAGESCALING_CONFIG		HAL_PWREx_ControlVoltageScaling
+
+#elif defined(STM32WL)
+#define CORE_VOLTAGE_RANGE					PWR_REGULATOR_VOLTAGE_SCALE1
+#define _PWR_SET_PWR_REGULATOR(x)			(MODIFY_REG(PWR->CR1, PWR_CR1_LPR, x))
+#define RCC_CSR_PORRSTF 					RCC_CSR_BORRSTF
 #endif
 
 #define CORE_SYSTICK_FREQ	1000
@@ -58,18 +69,22 @@ void CORE_Init(void)
 {
 #if defined(STM32L0)
 	__HAL_FLASH_PREREAD_BUFFER_ENABLE();
-
 #elif defined(STM32F0)
 	__HAL_FLASH_PREFETCH_BUFFER_ENABLE();
+#elif defined(STM32WL)
+	//__HAL_FLASH_PREFETCH_BUFFER_ENABLE();
+	//__HAL_FLASH_INSTRUCTION_CACHE_ENABLE();
 #endif
+#if !defined(STM32WL)
 	__HAL_RCC_SYSCFG_CLK_ENABLE();
 	__HAL_RCC_PWR_CLK_ENABLE();
-#ifdef STM32L0
-#ifndef USB_ENABLE
-	// This seems to disrupt USB. Future investigation needed.
-	SET_BIT(PWR->CR, PWR_CR_ULP | PWR_CR_FWU); // Enable Ultra low power mode & Fast wakeup
-#endif
+#ifdef __HAL_PWR_VOLTAGESCALING_CONFIG
 	__HAL_PWR_VOLTAGESCALING_CONFIG(CORE_VOLTAGE_RANGE);
+#endif
+
+#if defined(DEBUG) && (defined(STM32WL))
+	HAL_DBGMCU_EnableDBGSleepMode();
+	HAL_DBGMCU_EnableDBGStopMode();
 #endif
 
 	CLK_InitSYSCLK();
@@ -96,13 +111,25 @@ void CORE_Stop(void)
 	// The tick may break the WFI if it occurs at the wrong time.
 	HAL_SuspendTick();
 
+#if defined(STM32WL)
+	MODIFY_REG(PWR->CR1, PWR_CR1_LPMS, PWR_LOWPOWERMODE_STOP2);
+#elif defined(STM32L0)
+	SET_BIT(PWR->CR, PWR_CR_ULP | PWR_CR_FWU);
+#endif
+
 	// Select the low power regulator
-	MODIFY_REG(PWR->CR, _PWR_REGULATOR_MASK, PWR_LOWPOWERREGULATOR_ON);
+	_PWR_SET_PWR_REGULATOR(PWR_LOWPOWERREGULATOR_ON);
+#endif
+
 	// WFI, but with the SLEEPDEEP bit set.
 	SET_BIT(SCB->SCR, SCB_SCR_SLEEPDEEP_Msk);
 	__WFI();
 	CLEAR_BIT(SCB->SCR, SCB_SCR_SLEEPDEEP_Msk);
-	MODIFY_REG(PWR->CR, _PWR_REGULATOR_MASK, PWR_MAINREGULATOR_ON);
+	_PWR_SET_PWR_REGULATOR(PWR_MAINREGULATOR_ON);
+
+#ifdef STM32L0
+	CLEAR_BIT(PWR->CR, PWR_CR_ULP | PWR_CR_FWU);
+#endif
 
 	// SYSCLK is defaulted to HSI on boot
 	CLK_InitSYSCLK();
@@ -181,20 +208,20 @@ void CORE_InitGPIO(void)
 	__HAL_RCC_GPIOA_CLK_ENABLE();
 #ifdef DEBUG
 	// SWCLK and SWDIO on PA13, PA14
-	GPIO_Deinit(GPIOA, GPIO_PIN_All & ~(GPIO_PIN_13 | GPIO_PIN_14));
+	GPIO_Deinit(GPIO_Port_A | (GPIO_Pin_All & ~(GPIO_Pin_13 | GPIO_Pin_14)));
 #else
-	GPIO_Deinit(GPIOA, GPIO_PIN_All);
+	GPIO_Deinit(GPIO_Port_A | GPIO_Pin_All);
 #endif
 
 	__HAL_RCC_GPIOB_CLK_ENABLE();
-	GPIO_Deinit(GPIOB, GPIO_PIN_All);
+	GPIO_Deinit(GPIO_Port_B | GPIO_Pin_All);
 
 	__HAL_RCC_GPIOC_CLK_ENABLE();
-	GPIO_Deinit(GPIOC, GPIO_PIN_All);
+	GPIO_Deinit(GPIO_Port_C | GPIO_Pin_All);
 
 #if defined(GPIOD)
 	__HAL_RCC_GPIOD_CLK_ENABLE();
-	GPIO_Deinit(GPIOD, GPIO_PIN_All);
+	GPIO_Deinit(GPIO_Port_D | GPIO_Pin_All);
 #endif
 }
 

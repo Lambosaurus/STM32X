@@ -7,6 +7,8 @@ This works 'out of the box' on windows using the standard drivers.
 
 This provides access to an abstract storage interface. This interface will have to be implemented by the user. An example of this would be an SD card or a virtual file system.
 
+The header is available [here](../../Lib/usb/msc/USB_MSC.h).
+
 # Usage
 
 The storage interface should be declared as below. Note that blocks are 512 byte segments of data.

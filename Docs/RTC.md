@@ -1,7 +1,9 @@
 # RTC
-This module enables the Read Time Clock.
+This module enables the Real Time Clock.
 
 Even when date and time tracking is not required, this module is useful for enabling wakeups from STOP mode - which is a requirement for lower power.
+
+The header is available [here](../Lib/RTC.h).
 
 # Usage
 
@@ -60,7 +62,7 @@ Note that the alarms can be generated each second/hour/minute/day. For more cust
 
 ## Timer:
 
-The RTC may also have an input timer. This can be used for higher frequency wakeups. Check your datasheet for the presence of this device.
+The RTC may also have an inbuilt timer. This can be used for higher frequency wakeups. Check your datasheet for the availability of this device.
 
 ```c
 RTC_Init();
@@ -73,6 +75,19 @@ while(1)
     ...
     CORE_Stop();
 }
+```
+
+## Binary counter:
+
+The RTC may support a free running binary counter. This can be enabled using `RTC_USE_BINARY`.
+
+```c
+RTC_Init();
+
+uint32_t start = RTC_ReadBinary();
+...
+uint32_t end = RTC_ReadBinary();
+uint32_t elapsed_ms =  (end - start) * 1000 / RTC_SUBSECOND_RES;
 ```
 
 ## Oscillator selection:
@@ -89,4 +104,6 @@ The following template can be used. Commented out definitions are optional.
 ```C
 // RTC configuration
 //#define RTC_USE_IRQS
+//#define RTC_SUBSECOND_RES	    256
+//#define RTC_USE_BINARY
 ```

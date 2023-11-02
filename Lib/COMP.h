@@ -5,13 +5,15 @@
 #include "GPIO.h"
 
 // Use this bit to detect whether the comparator modules are available for this MCU
-#ifdef COMP_CSR_COMPxEN
+#if defined(STM32L0) && defined(COMP_CSR_COMPxEN)
 #define COMP_ENABLED
 
 /*
  * FUNCTIONAL TESTING
  * STM32L0: Y
  * STM32F0: N
+ * STM32G0: N
+ * STM32WL: N
  */
 
 /*

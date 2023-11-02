@@ -4,7 +4,7 @@
 #ifdef USB_ENABLE
 #include "USB_EP.h"
 #include "USB_CTL.h"
-#include "USB_CLASS.h"
+#include "USB_Class.h"
 
 /*
  * PRIVATE DEFINITIONS
@@ -51,6 +51,11 @@ void USB_PCD_Init(void)
 	USB->LPMCSR |= USB_LPMCSR_LMPEN;
 	USB->LPMCSR |= USB_LPMCSR_LPMACK;
 #endif
+}
+
+void USB_PCD_Deinit(void)
+{
+	USB_EP_Deinit();
 }
 
 void USB_PCD_Start(void)

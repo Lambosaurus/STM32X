@@ -3,6 +3,8 @@ The Communications Device Class is a [USB](../USB.md) class.
 
 This works 'out of the box' on windows using the standard drivers. The interface is intended to be similar to the UART interface, and operates in a non-blocking manner. The USB_Write function is partially blocking - it will block if another USB_Write is not yet complete.
 
+The header is available [here](../../Lib/usb/cdc/USB_CDC.h).
+
 # Usage
 
 The following demonstrates an echoing program.

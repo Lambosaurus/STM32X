@@ -13,6 +13,13 @@
 
 #define WRITE_BIT(reg, bit, set)  (reg = (set) ? (reg | (bit)) : (reg & ~(bit)))
 
+#if defined(STM32L0)
+#define COMP_MODE					COMP_POWERMODE_MEDIUMSPEED
+#elif defined(STM32F0)
+#define COMP_MODE 					COMP_MODE_MEDIUMSPEED
+#define COMP_CSR_COMPxOUTVALUE		COMP_CSR_COMPxOUT
+#endif
+
 /*
  * PRIVATE TYPES
  */
@@ -45,7 +52,7 @@ COMP_t * COMP_2 = &gCOMP_2;
 void COMP_Init(COMP_t * comp, COMP_Input_t inputs)
 {
 	comp->Instance->CSR = inputs
-			| COMP_POWERMODE_MEDIUMSPEED
+			| COMP_MODE
 			| COMP_CSR_COMPxEN;
 }
 

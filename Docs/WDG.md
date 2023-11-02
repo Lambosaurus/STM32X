@@ -3,6 +3,8 @@ This provides control of the watchdog.
 
 This will reset the processor if the watchdog is not checked periodically. This can be used to protect your firmware from an unexpected firmware lockup.
 
+The header is available [here](../Lib/WDG.h).
+
 # Usage
 
 The used watchdog is the Independant Watchdog (IWDG). This is based off the LSI - even when an LSE is supplied. This means it cannot even be interrupted by clock disturbance.

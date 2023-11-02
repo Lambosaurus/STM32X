@@ -5,7 +5,6 @@
 #include "../USB_EP.h"
 #include "../USB_CTL.h"
 #include "Core.h"
-#include <string.h>
 
 /*
  * PRIVATE DEFINITIONS
@@ -38,7 +37,7 @@
 
 #define CDC_IN_EP                                   IN_EP(0)
 #define CDC_OUT_EP                                  OUT_EP(0)
-#define CDC_CMD_EP                                  OUT_EP(1)
+#define CDC_CMD_EP                                  IN_EP(1)
 
 #define CDC_BINTERVAL                          		0x10
 #define CDC_PACKET_SIZE								USB_PACKET_SIZE
@@ -166,7 +165,7 @@ void USB_CDC_Init(uint8_t config)
 	// Data endpoints
 	USB_EP_Open(CDC_IN_EP, USB_EP_TYPE_BULK, CDC_PACKET_SIZE, USB_CDC_TransmitDone);
 	USB_EP_Open(CDC_OUT_EP, USB_EP_TYPE_BULK, CDC_PACKET_SIZE, USB_CDC_Receive);
-	USB_EP_Open(CDC_CMD_EP, USB_EP_TYPE_BULK, CDC_CMD_PACKET_SIZE, USB_CDC_Receive);
+	USB_EP_Open(CDC_CMD_EP, USB_EP_TYPE_BULK, CDC_CMD_PACKET_SIZE, USB_CDC_TransmitDone);
 
 	USB_EP_Read(CDC_OUT_EP, gRxBuffer, CDC_PACKET_SIZE);
 
@@ -209,6 +208,11 @@ void USB_CDC_Write(const uint8_t * data, uint32_t count)
 			data += packet_size;
 		}
 	}
+}
+
+void USB_CDC_WriteStr(const char * str)
+{
+	USB_CDC_Write((const uint8_t *)str, strlen(str));
 }
 
 uint32_t USB_CDC_ReadReady(void)

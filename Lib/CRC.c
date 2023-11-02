@@ -21,7 +21,7 @@
  * PUBLIC FUNCTIONS
  */
 
-uint32_t CRC32(uint32_t crc, uint32_t * words, uint32_t size)
+uint32_t CRC32(uint32_t crc, const uint32_t * words, uint32_t size)
 {
 	__HAL_RCC_CRC_CLK_ENABLE();
 	WRITE_REG(CRC->INIT, crc);

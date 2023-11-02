@@ -42,6 +42,7 @@ void USB_CDC_Setup(USB_SetupRequest_t * req);
 uint32_t USB_CDC_ReadReady(void);
 uint32_t USB_CDC_Read(uint8_t * data, uint32_t count);
 void USB_CDC_Write(const uint8_t * data, uint32_t count);
+void USB_CDC_WriteStr(const char * str);
 
 /*
  * EXTERN DECLARATIONS
