@@ -59,6 +59,17 @@
 #define USB_ENDPOINTS					USB_HID_ENDPOINTS
 #define USB_INTERFACES					USB_HID_INTERFACES
 
+#elif defined(USB_CLASS_MTP)
+#include "mtp/USB_MTP.h"
+
+#define USB_CLASS_INIT(config)			USB_MTP_Init(config)
+#define USB_CLASS_DEINIT()				USB_MTP_Deinit()
+#define USB_CLASS_SETUP(request) 		USB_MTP_Setup(request)
+
+#define USB_CONFIG_DESCRIPTOR 			USB_MTP_CONFIG_DESC
+#define USB_ENDPOINTS					USB_MTP_ENDPOINTS
+#define USB_INTERFACES					USB_MTP_INTERFACES
+
 #else
 #error "No USB Class defined"
 #endif

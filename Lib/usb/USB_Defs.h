@@ -22,7 +22,7 @@
 #define USB_PRODUCT_STRING			"STM32X"
 #endif
 #ifndef USB_INTERFACE_STRING
-#define USB_INTERFACE_STRING		"STM32X Interface"
+#define USB_INTERFACE_STRING		"MTP"
 #endif
 #ifndef USB_CONFIGURATION_STRING
 #define USB_CONFIGURATION_STRING	"STM32X Config"
@@ -186,7 +186,7 @@
 	bInterfaceClass,			\
 	bInterfaceSubClass,			\
 	bInterfaceProtocol,			\
-	0x00
+	USB_IDX_INTERFACE_STR
 
 /*
  * Descriptor block for describing configurations
