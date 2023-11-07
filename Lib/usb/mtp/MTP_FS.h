@@ -7,7 +7,9 @@
  * PUBLIC DEFINITIONS
  */
 
-#define MTP_MAX_OBJECTS			16
+#ifndef USB_MTP_MAX_OBJECTS
+#define USB_MTP_MAX_OBJECTS			16
+#endif
 
 /*
  * PUBLIC TYPES
@@ -30,7 +32,7 @@ typedef MTP_File_t * (*MTP_NewFileCallback_t)(const char * name, uint32_t size);
 typedef struct {
 	bool in_session;
 	uint32_t next_id;
-	MTP_File_t * objects[MTP_MAX_OBJECTS];
+	MTP_File_t * objects[USB_MTP_MAX_OBJECTS];
 	MTP_NewFileCallback_t new_file_callback;
 	struct {
 		uint32_t offset;

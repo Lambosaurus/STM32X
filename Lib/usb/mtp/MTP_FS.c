@@ -108,7 +108,7 @@ void MTP_OnNewFile(MTP_t * mtp, MTP_NewFileCallback_t callback)
 
 uint32_t MTP_FreeObjects(MTP_t * mtp)
 {
-	uint32_t free = MTP_MAX_OBJECTS;
+	uint32_t free = USB_MTP_MAX_OBJECTS;
 	for (uint32_t i = 0; i < LENGTH(mtp->objects); i++)
 	{
 		if (mtp->objects[i] != NULL)
