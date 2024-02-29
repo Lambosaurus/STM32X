@@ -62,7 +62,7 @@ void SPI_Init(SPI_t * spi, uint32_t bitrate, SPI_Mode_t mode)
 			| (SPI_NSS_SOFT & SPI_CR1_SSM) | prescalar | SPI_FIRSTBIT_MSB | SPI_CRCCALCULATION_DISABLE;
 	uint32_t cr2 = ((SPI_NSS_SOFT >> 16u) & SPI_CR2_SSOE) | SPI_TIMODE_DISABLE;
 
-#ifdef STM32G0
+#if defined(STM32G0) || defined(STM32C0)
 	cr2 |= SPI_DATASIZE_8BIT | SPI_RXFIFO_THRESHOLD_QF;
 #else
 	cr1 |= SPI_DATASIZE_8BIT;
