@@ -89,7 +89,7 @@ static MTP_File_t gNewFile;
 
 MTP_File_t * USER_OnNewFile(const char * name, uint32_t size)
 {
-    if (size < 4096 && strlen(name) < sizeof(name))
+    if (size < 4096 && strlen(name) < sizeof(gNewFileName))
     {
         // Copy the supplied parameters
         strcpy(gNewFileName, name);
@@ -120,7 +120,7 @@ The module is dependant on definitions within `Board.h`.
 #define USB_ENABLE
 // USB MTP
 #define USB_CLASS_MTP
-// Configure the maximum number of file objects in a MTP_t * object.
+// Configure the maximum number of file objects in a MTP_t object.
 #define USB_MTP_MAX_OBJECTS	        8
 // This is required for windows to load the correct drivers.
 #define USB_INTERFACE_STRING		"MTP"
