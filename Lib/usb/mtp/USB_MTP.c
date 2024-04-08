@@ -2,7 +2,7 @@
 #include "USB_MTP.h"
 
 #ifdef USB_CLASS_MTP
-#include "CORE.h"
+#include "Core.h"
 #include "../USB_EP.h"
 #include "../USB_CTL.h"
 
