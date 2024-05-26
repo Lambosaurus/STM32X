@@ -86,11 +86,11 @@ The GPIO will be high while the timer value is less than the channels pulse valu
 TIM_Init(TIM_2, 256 * 10000, 255);
 
 // Route channel 1 to PA0, with a duty cycle of 50%
-TIM_EnablePwm(TIM_2, TIM_CH1, GPIOA, GPIO_PIN_0, GPIO_AF2_TIM2);
+TIM_EnablePwm(TIM_2, TIM_CH1, PA0, GPIO_AF2_TIM2);
 TIM_SetPulse(TIM_2, TIM_CH1, 127);
 
 // Route channel 2 to PA1, with a duty cycle of 100%
-TIM_EnablePwm(TIM_2, TIM_CH2, GPIOA, GPIO_PIN_1, GPIO_AF2_TIM2);
+TIM_EnablePwm(TIM_2, TIM_CH2, PA1, GPIO_AF2_TIM2);
 TIM_SetPulse(TIM_2, TIM_CH2, 256); 
 ```
 
