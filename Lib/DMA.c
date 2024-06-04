@@ -42,43 +42,43 @@ static void DMA_ConfigureMux(int n, uint32_t resource);
 static DMA_t gDMA_CH1 = {
 	.Instance = DMA1_Channel1
 };
-DMA_t * DMA_CH1 = &gDMA_CH1;
+DMA_t * const DMA_CH1 = &gDMA_CH1;
 #endif
 #ifdef DMA_CH2_ENABLE
 static DMA_t gDMA_CH2 = {
 	.Instance = DMA1_Channel2
 };
-DMA_t * DMA_CH2 = &gDMA_CH2;
+DMA_t * const DMA_CH2 = &gDMA_CH2;
 #endif
 #ifdef DMA_CH3_ENABLE
 static DMA_t gDMA_CH3 = {
 	.Instance = DMA1_Channel3
 };
-DMA_t * DMA_CH3 = &gDMA_CH3;
+DMA_t * const DMA_CH3 = &gDMA_CH3;
 #endif
 #ifdef DMA_CH4_ENABLE
 static DMA_t gDMA_CH4 = {
 	.Instance = DMA1_Channel4
 };
-DMA_t * DMA_CH4 = &gDMA_CH4;
+DMA_t * const DMA_CH4 = &gDMA_CH4;
 #endif
 #ifdef DMA_CH5_ENABLE
 static DMA_t gDMA_CH5 = {
 	.Instance = DMA1_Channel5
 };
-DMA_t * DMA_CH5 = &gDMA_CH5;
+DMA_t * const DMA_CH5 = &gDMA_CH5;
 #endif
 #ifdef DMA_CH6_ENABLE
 static DMA_t gDMA_CH6 = {
 	.Instance = DMA1_Channel6
 };
-DMA_t * DMA_CH6 = &gDMA_CH6;
+DMA_t * const DMA_CH6 = &gDMA_CH6;
 #endif
 #ifdef DMA_CH7_ENABLE
 static DMA_t gDMA_CH7 = {
 	.Instance = DMA1_Channel7
 };
-DMA_t * DMA_CH7 = &gDMA_CH7;
+DMA_t * const DMA_CH7 = &gDMA_CH7;
 #endif
 
 /*

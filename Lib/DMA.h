@@ -62,25 +62,25 @@ void DMA_Deinit(DMA_t * dma);
  */
 
 #ifdef DMA_CH1_ENABLE
-extern DMA_t * DMA_CH1;
+extern DMA_t * const DMA_CH1;
 #endif
 #ifdef DMA_CH2_ENABLE
-extern DMA_t * DMA_CH2;
+extern DMA_t * const DMA_CH2;
 #endif
 #ifdef DMA_CH3_ENABLE
-extern DMA_t * DMA_CH3;
+extern DMA_t * const DMA_CH3;
 #endif
 #ifdef DMA_CH4_ENABLE
-extern DMA_t * DMA_CH4;
+extern DMA_t * const DMA_CH4;
 #endif
 #ifdef DMA_CH5_ENABLE
-extern DMA_t * DMA_CH5;
+extern DMA_t * const DMA_CH5;
 #endif
 #ifdef DMA_CH6_ENABLE
-extern DMA_t * DMA_CH6;
+extern DMA_t * const DMA_CH6;
 #endif
 #ifdef DMA_CH7_ENABLE
-extern DMA_t * DMA_CH7;
+extern DMA_t * const DMA_CH7;
 #endif
 
 #endif //DMA_H
