@@ -49,6 +49,8 @@ CORE_ResetSource_t CORE_GetResetSource(void);
 void CORE_OnTick(VoidFunction_t callback);
 #endif
 
+const uint32_t * CORE_GetUID(void);
+
 /*
  * EXTERN DECLARATIONS
  */

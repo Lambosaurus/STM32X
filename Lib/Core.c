@@ -193,6 +193,11 @@ CORE_ResetSource_t CORE_GetResetSource(void)
     return src;
 }
 
+const uint32_t * CORE_GetUID(void)
+{
+	return (const uint32_t*)UID_BASE;
+}
+
 /*
  * PRIVATE FUNCTIONS
  */
