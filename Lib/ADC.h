@@ -76,8 +76,8 @@ void ADC_Stop(void);
 int32_t ADC_ReadDieTemp(void);
 uint32_t ADC_ReadVRef(void);
 
-// Use the die temperature as a noise source. For seeding random in absense of an RNG module.
-uint32_t ADC_ReadTempNoise(void);
+// Use the die temperature as a noise source.
+void ADC_ReadTempNoise(uint8_t * bfr, uint32_t size);
 
 // Utility
 uint32_t AIN_AinToMv(uint32_t ain);
