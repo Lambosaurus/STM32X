@@ -11,8 +11,14 @@
 #define DMA1_Channel4_7_IRQn			DMA1_Channel4_5_6_7_IRQn
 #define DMA1_Channel4_7_IRQHandler		DMA1_Channel4_5_6_7_IRQHandler
 #elif defined(STM32G0)
+#ifdef DMA1_Channel7
 #define DMA1_Channel4_7_IRQn			DMA1_Ch4_7_DMAMUX1_OVR_IRQn
 #define DMA1_Channel4_7_IRQHandler		DMA1_Ch4_7_DMAMUX1_OVR_IRQHandler
+#else // There are only 5 DMA channels - but its still the same IRQn signal...
+#define DMA1_Channel4_7_IRQn			DMA1_Ch4_5_DMAMUX1_OVR_IRQn
+#define DMA1_Channel4_7_IRQHandler		DMA1_Ch4_5_DMAMUX1_OVR_IRQHandler
+#define DMAMUX_ENABLE
+#endif
 #elif defined(STM32WL)
 #define DMAMUX_ENABLE
 #endif
@@ -182,9 +188,12 @@ static void DMAx_EnableIRQn(int n)
 
 static void DMAx_Init(DMA_t * dma)
 {
+	__DMA1_CLK_ENABLE();
 
 #ifdef DMAMUX_ENABLE
+#ifdef __HAL_RCC_DMAMUX1_CLK_ENABLE
 	__HAL_RCC_DMAMUX1_CLK_ENABLE();
+#endif //__HAL_RCC_DMAMUX1_CLK_ENABLE
 	uint32_t resource = 0;
 	switch (dma->index)
 	{
@@ -213,7 +222,6 @@ static void DMAx_Init(DMA_t * dma)
 	DMA_ConfigureMux(dma->index, resource);
 #endif //DMAMUX_ENABLE
 
-	__DMA1_CLK_ENABLE();
 	DMAx_EnableIRQn(dma->index);
 }
 
@@ -221,7 +229,9 @@ static void DMAx_Deinit(DMA_t * dma)
 {
 	__DMA1_CLK_DISABLE();
 #ifdef DMAMUX_ENABLE
+#ifdef __HAL_RCC_DMAMUX1_CLK_DISABLE
 	__HAL_RCC_DMAMUX1_CLK_DISABLE();
+#endif //__HAL_RCC_DMAMUX1_CLK_DISABLE
 #endif //DMAMUX_ENABLE
 }
 
