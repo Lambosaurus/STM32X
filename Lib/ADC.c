@@ -337,6 +337,23 @@ uint32_t ADC_ReadVRef(void)
 	return (VF_CAL_VREF * (uint32_t)VF_CAL_AIN) / ain;
 }
 
+void ADC_ReadTempNoise(uint8_t * bfr, uint32_t size)
+{
+	ADC_COMMON->CCR |= ADC_CCR_TSEN;
+	US_Delay(10);
+	while (size--)
+	{
+		uint8_t b = 0;
+		for (uint32_t i = 0; i < 8; i++)
+		{
+			b |= (ADC_Read(ADC_Channel_Temp) & 0x01) << i;
+		}
+		*bfr++ = b;
+	}
+
+	ADC_COMMON->CCR &= ~ADC_CCR_TSEN;
+}
+
 #ifdef ADC_DMA_CH
 
 void ADC_Start(ADC_Channel_t channel, uint16_t * buffer, uint32_t count, bool circular, ADC_Callback_t callback)

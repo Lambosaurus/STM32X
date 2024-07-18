@@ -63,10 +63,10 @@ void COMP_OnChange(COMP_t * comp, GPIO_IT_Dir_t dir, VoidFunction_t callback);
  */
 
 #ifdef COMP1_ENABLE
-extern COMP_t * COMP_1;
+extern COMP_t * const COMP_1;
 #endif
 #ifdef COMP2_ENABLE
-extern COMP_t * COMP_2;
+extern COMP_t * const COMP_2;
 #endif
 
 #endif //COMP_ENABLED

@@ -30,19 +30,19 @@ static uint32_t SPI_SelectPrescalar(SPI_t * spi, uint32_t target);
 static SPI_t gSPI_1 = {
 	.Instance = SPI1
 };
-SPI_t * SPI_1 = &gSPI_1;
+SPI_t * const SPI_1 = &gSPI_1;
 #endif
 #ifdef SPI2_PINS
 static SPI_t gSPI_2 = {
 	.Instance = SPI2
 };
-SPI_t * SPI_2 = &gSPI_2;
+SPI_t * const SPI_2 = &gSPI_2;
 #endif
 #ifdef SPI3_PINS
 static SPI_t gSPI_3 = {
 	.Instance = SPI3
 };
-SPI_t * SPI_3 = &gSPI_3;
+SPI_t * const SPI_3 = &gSPI_3;
 #endif
 
 

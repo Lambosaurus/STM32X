@@ -50,6 +50,11 @@ void EEPROM_Read(uint32_t offset, void * data, uint32_t size)
 	memcpy(data, eeprom, size);
 }
 
+const uint8_t * EEPROM_Get(uint32_t offset)
+{
+	return (uint8_t *)(DATA_EEPROM_BASE + offset);
+}
+
 /*
  * PRIVATE FUNCTIONS
  */

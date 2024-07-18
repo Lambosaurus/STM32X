@@ -53,37 +53,37 @@ static void UARTx_Deinit(UART_t * uart);
 static UART_t gUART_LP = {
 	.Instance = LPUART1
 };
-UART_t * UART_LP = &gUART_LP;
+UART_t * const UART_LP = &gUART_LP;
 #endif
 #ifdef UART1_PINS
 static UART_t gUART_1 = {
 	.Instance = USART1
 };
-UART_t * UART_1 = &gUART_1;
+UART_t * const UART_1 = &gUART_1;
 #endif
 #ifdef UART2_PINS
 static UART_t gUART_2 = {
 	.Instance = USART2
 };
-UART_t * UART_2 = &gUART_2;
+UART_t * const UART_2 = &gUART_2;
 #endif
 #ifdef UART3_PINS
 static UART_t gUART_3 = {
 	.Instance = USART3
 };
-UART_t * UART_3 = &gUART_3;
+UART_t * const UART_3 = &gUART_3;
 #endif
 #ifdef UART4_PINS
 static UART_t gUART_4 = {
 	.Instance = USART4
 };
-UART_t * UART_4 = &gUART_4;
+UART_t * const UART_4 = &gUART_4;
 #endif
 #ifdef UART5_PINS
 static UART_t gUART_5 = {
 	.Instance = USART5
 };
-UART_t * UART_5 = &gUART_5;
+UART_t * const UART_5 = &gUART_5;
 #endif
 
 /*

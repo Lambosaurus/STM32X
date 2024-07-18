@@ -42,24 +42,21 @@ uint32_t RNG_Read(void)
 
 void RNG_ReadBytes(uint8_t * bfr, uint32_t size)
 {
+	if (size == 0) { return; }
 	RNG_Init();
-	while (size)
+    uint32_t word = RNG_ReadWord();
+    switch (size % 4)
 	{
-		uint32_t word = RNG_ReadWord();
-		switch (size)
-		{
-		default:
-		case 4:
-			*bfr++ = word >> 24;
-		case 3:
-			*bfr++ = word >> 16;
-		case 2:
-			*bfr++ = word >> 8;
-		case 1:
-			*bfr++ = word;
-			break;
-		}
-		size = size < 4 ? 0 : size - 4;
+        do
+        {
+    case 0: *bfr++ = word >> 24;
+    case 3: *bfr++ = word >> 16;
+    case 2: *bfr++ = word >> 8;
+    case 1: *bfr++ = word;
+            size -= 4;
+            word = RNG_ReadWord();
+        }
+        while ((int32_t)size > 0);
 	}
 	RNG_Deinit();
 }

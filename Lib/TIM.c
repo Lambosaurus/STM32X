@@ -40,61 +40,61 @@ static void TIM_EnableOCx(TIM_t * tim, uint32_t oc, uint32_t mode);
 static TIM_t gTIM_1 = {
 	.Instance = TIM1
 };
-TIM_t * TIM_1 = &gTIM_1;
+TIM_t * const TIM_1 = &gTIM_1;
 #endif
 #ifdef TIM2_ENABLE
 static TIM_t gTIM_2 = {
 	.Instance = TIM2
 };
-TIM_t * TIM_2 = &gTIM_2;
+TIM_t * const TIM_2 = &gTIM_2;
 #endif
 #ifdef TIM3_ENABLE
 static TIM_t gTIM_3 = {
 	.Instance = TIM3
 };
-TIM_t * TIM_3 = &gTIM_3;
+TIM_t * const TIM_3 = &gTIM_3;
 #endif
 #ifdef TIM5_ENABLE
 static TIM_t gTIM_5 = {
 	.Instance = TIM5
 };
-TIM_t * TIM_5 = &gTIM_5;
+TIM_t * const TIM_5 = &gTIM_5;
 #endif
 #ifdef TIM6_ENABLE
 static TIM_t gTIM_6 = {
 	.Instance = TIM6
 };
-TIM_t * TIM_6 = &gTIM_6;
+TIM_t * const TIM_6 = &gTIM_6;
 #endif
 #ifdef TIM14_ENABLE
 static TIM_t gTIM_14 = {
 	.Instance = TIM14
 };
-TIM_t * TIM_14 = &gTIM_14;
+TIM_t * const TIM_14 = &gTIM_14;
 #endif
 #ifdef TIM16_ENABLE
 static TIM_t gTIM_16 = {
 	.Instance = TIM16
 };
-TIM_t * TIM_16 = &gTIM_16;
+TIM_t * const TIM_16 = &gTIM_16;
 #endif
 #ifdef TIM17_ENABLE
 static TIM_t gTIM_17 = {
 	.Instance = TIM17
 };
-TIM_t * TIM_17 = &gTIM_17;
+TIM_t * const TIM_17 = &gTIM_17;
 #endif
 #ifdef TIM21_ENABLE
 static TIM_t gTIM_21 = {
 	.Instance = TIM21
 };
-TIM_t * TIM_21 = &gTIM_21;
+TIM_t * const TIM_21 = &gTIM_21;
 #endif
 #ifdef TIM22_ENABLE
 static TIM_t gTIM_22 = {
 	.Instance = TIM22
 };
-TIM_t * TIM_22 = &gTIM_22;
+TIM_t * const TIM_22 = &gTIM_22;
 #endif
 
 

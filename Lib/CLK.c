@@ -43,7 +43,12 @@
 #elif defined(STM32G0) || defined(STM32WL)
 #define CLK_HSI_FREQ						16000000
 
+#ifdef RCC_PLLQ_SUPPORT
 #define __CLK_PLL_CONFIG(src, mul, div)		__HAL_RCC_PLL_CONFIG(src, RCC_PLLM_DIV1, mul, RCC_PLLP_DIV2, RCC_PLLQ_DIV2, div)
+#else
+#define __CLK_PLL_CONFIG(src, mul, div)		__HAL_RCC_PLL_CONFIG(src, RCC_PLLM_DIV1, mul, RCC_PLLP_DIV2, div)
+#endif
+
 // Todo: use this style of PLL config for other
 #define RCC_PLL_MULX_IS_VALID(x)			(x >= 8 && x <= 86)
 #define RCC_PLL_MULX(x)						(x)

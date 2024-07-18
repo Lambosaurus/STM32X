@@ -36,13 +36,13 @@
 static COMP_t gCOMP_1 = {
 	.Instance = COMP1,
 };
-COMP_t * COMP_1 = &gCOMP_1;
+COMP_t * const COMP_1 = &gCOMP_1;
 #endif
 #ifdef COMP2_ENABLE
 static COMP_t gCOMP_2 = {
 	.Instance = COMP2,
 };
-COMP_t * COMP_2 = &gCOMP_2;
+COMP_t * const COMP_2 = &gCOMP_2;
 #endif
 
 /*
