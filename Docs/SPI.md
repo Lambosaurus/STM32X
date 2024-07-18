@@ -37,7 +37,6 @@ The following template can be used.
 
 ```C
 // SPI configuration
-#define SPI1_GPIO		    GPIOB
-#define SPI1_PINS		    (GPIO_PIN_3 | GPIO_PIN_4 | GPIO_PIN_5)
+#define SPI1_PINS		    (PA3 | PA4 | PA5)
 #define SPI1_AF			    GPIO_AF0_SPI1
 ```
