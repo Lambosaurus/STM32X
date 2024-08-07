@@ -27,7 +27,7 @@ static bool Storage_Open(uint32_t * blk_count);
 static bool Storage_Read(uint8_t * bfr, uint32_t blk_addr, uint16_t blk_count);
 
 // Storage_Write:
-//    Read the requested data into the suppled buffer.
+//    Write the supplied data to the file
 //    Return true on success.
 //    This function may be NULL for a read only device.
 static bool Storage_Write(const uint8_t * bfr, uint32_t blk_addr, uint16_t blk_count);
@@ -45,7 +45,7 @@ The USB MSC device is run as below.
 // The storage may be mounted before USB_Init is called
 // Once USB_Init is called, the USB Host may request access to the storage at any time.
 // Mount NULL to declare no storage media.
-USB_Mount(&gStorage);
+USB_MSC_Mount(&gStorage);
 USB_Init();
 
 while (1)

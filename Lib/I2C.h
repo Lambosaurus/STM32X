@@ -49,13 +49,13 @@ bool I2C_Transfer(I2C_t * i2c, uint8_t address, const uint8_t * txdata, uint32_t
  * EXTERN DECLARATIONS
  */
 
-#ifdef I2C1_GPIO
+#ifdef I2C1_PINS
 extern I2C_t * I2C_1;
 #endif
-#ifdef I2C2_GPIO
+#ifdef I2C2_PINS
 extern I2C_t * I2C_2;
 #endif
-#ifdef I2C3_GPIO
+#ifdef I2C3_PINS
 extern I2C_t * I2C_3;
 #endif
 

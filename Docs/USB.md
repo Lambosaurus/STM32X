@@ -25,6 +25,7 @@ The provided functionality and other interfaces are dependant on the selected cl
 The following classes are supported:
 * [Communications Device](usb_class/CDC.md)
 * [Mass Storage](usb_class/MSC.md)
+* [Media Transport Protocol](usb_class/MTP.md)
 * [Human Interface](usb_class/HID.md)
 * [Composite Device](usb_class/Composite.md)
 

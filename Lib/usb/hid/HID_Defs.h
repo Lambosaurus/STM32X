@@ -10,6 +10,8 @@
  *
  * https://eleccelerator.com/tutorial-about-usb-hid-report-descriptors/
  *
+ * https://wiki.osdev.org/USB_Human_Interface_Devices
+ *
  */
 
 

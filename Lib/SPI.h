@@ -52,13 +52,13 @@ uint8_t SPI_TransferByte(SPI_t * spi, uint8_t data);
  */
 
 #ifdef SPI1_PINS
-extern SPI_t * SPI_1;
+extern SPI_t * const SPI_1;
 #endif
 #ifdef SPI2_PINS
-extern SPI_t * SPI_2;
+extern SPI_t * const SPI_2;
 #endif
 #ifdef SPI3_PINS
-extern SPI_t * SPI_3;
+extern SPI_t * const SPI_3;
 #endif
 
 

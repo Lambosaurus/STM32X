@@ -666,7 +666,9 @@ void USB_EP_IRQHandler(void)
 #endif
 			{
 				uint16_t count = (uint16_t)PCD_GET_EP_TX_CNT(USB, ep->num);
+				ep->xfer_count += count;
 				ep->xfer_len = ep->xfer_len > count ? ep->xfer_len - count : 0;
+
 				if (ep->xfer_len == 0)
 				{
 					// Transfer is complete
@@ -676,7 +678,6 @@ void USB_EP_IRQHandler(void)
 				{
 					// Transfer is not yet done
 					ep->xfer_buff += count;
-					ep->xfer_count += count;
 					USB_EP_StartIn(ep);
 				}
 			}

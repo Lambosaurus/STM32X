@@ -6,6 +6,7 @@
 #include "USB_Class.h"
 #include "USB_EP.h"
 #include "USB_PCD.h"
+#include "Core.h"
 
 
 /*
@@ -605,10 +606,9 @@ static void USB_CTL_IntToUnicode(uint32_t value, uint8_t * data, uint32_t size)
 
 static uint16_t USB_CTL_GetSerialDescriptor(uint8_t * data)
 {
-	uint32_t s0 = *((uint32_t*)(UID_BASE + 0));
-	uint32_t s1 = *((uint32_t*)(UID_BASE + 4));
-	uint32_t s2 = *((uint32_t*)(UID_BASE + 8));
-	s0 += s2;
+	const uint32_t * uid = CORE_GetUID();
+	uint32_t s0 = uid[0] + uid[2];
+	uint32_t s1 = uid[1];
 
 	// We are slamming our 96bit (12) UID into a 6 byte string.
 	// Is this a good idea??

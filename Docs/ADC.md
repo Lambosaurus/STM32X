@@ -128,7 +128,6 @@ void main()
 }
 ```
 
-
 # Board
 
 The module is dependant on  definitions within `Board.h`
@@ -140,6 +139,7 @@ Commented out definitons are optional.
 //#define ADC_VREF	3300
 
 // Optionally enable DMA
-//#define ADC_DMA_CH    DMA_CH_1
+//#define ADC_DMA_CH        DMA_CH_1
 //#define DMA_CH1_ENABLE
+//#define DMA_CH1_RESOURCE  0x0005
 ```

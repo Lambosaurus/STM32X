@@ -71,22 +71,22 @@ uint32_t UART_Seek(UART_t * uart, uint8_t delimiter);
  */
 
 #ifdef UARTLP_PINS
-extern UART_t * UART_LP;
+extern UART_t * const UART_LP;
 #endif
 #ifdef UART1_PINS
-extern UART_t * UART_1;
+extern UART_t * const UART_1;
 #endif
 #ifdef UART2_PINS
-extern UART_t * UART_2;
+extern UART_t * const UART_2;
 #endif
 #ifdef UART3_PINS
-extern UART_t * UART_3;
+extern UART_t * const UART_3;
 #endif
 #ifdef UART4_PINS
-extern UART_t * UART_4;
+extern UART_t * const UART_4;
 #endif
 #ifdef UART5_PINS
-extern UART_t * UART_5;
+extern UART_t * const UART_5;
 #endif
 
 #endif //UART_H
