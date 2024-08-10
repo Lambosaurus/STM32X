@@ -8,15 +8,9 @@
  * PRIVATE DEFINITIONS
  */
 
-#if defined(STM32C0)
-#define _CORE_GET_RST_FLAGS()	(RCC->CSR2)
-#else
-#define _CORE_GET_RST_FLAGS()	(RCC->CSR)
-#endif
-
-
 #if defined(STM32L0)
-#define _PWR_SET_PWR_REGULATOR(x)	(MODIFY_REG(PWR->CR, (PWR_CR_PDDS | PWR_CR_LPSDSR), x))
+#define _CORE_GET_RST_FLAGS()				(RCC->CSR)
+#define _PWR_SET_PWR_REGULATOR(x)			(MODIFY_REG(PWR->CR, (PWR_CR_PDDS | PWR_CR_LPSDSR), x))
 
 #if   (CLK_SYSCLK_FREQ <=  4194304)
 #define CORE_VOLTAGE_RANGE					PWR_REGULATOR_VOLTAGE_SCALE3 // 1V2 core
@@ -27,9 +21,11 @@
 #endif
 
 #elif defined(STM32F0)
+#define _CORE_GET_RST_FLAGS()				(RCC->CSR)
 #define _PWR_SET_PWR_REGULATOR(x)			(MODIFY_REG(PWR->CR, PWR_CR_LPDS, x))
 
 #elif defined(STM32G0)
+#define _CORE_GET_RST_FLAGS()				(RCC->CSR)
 #define _PWR_SET_PWR_REGULATOR(x)			(MODIFY_REG(PWR->CR1, PWR_CR1_LPR, x))
 #define RCC_CSR_PORRSTF 					RCC_CSR_PWRRSTF
 
@@ -37,13 +33,20 @@
 #define __HAL_PWR_VOLTAGESCALING_CONFIG		HAL_PWREx_ControlVoltageScaling
 
 #elif defined(STM32WL)
+#define _CORE_GET_RST_FLAGS()				(RCC->CSR)
 #define CORE_VOLTAGE_RANGE					PWR_REGULATOR_VOLTAGE_SCALE1
 #define _PWR_SET_PWR_REGULATOR(x)			(MODIFY_REG(PWR->CR1, PWR_CR1_LPR, x))
 #define RCC_CSR_PORRSTF 					RCC_CSR_BORRSTF
 
 #elif defined(STM32C0)
-
-// Do I need Anything Here?
+#define _CORE_GET_RST_FLAGS()				(RCC->CSR2)
+#define RCC_CSR_LPWRRSTF 					RCC_CSR2_LPWRRSTF
+#define RCC_CSR_WWDGRSTF 					RCC_CSR2_WWDGRSTF
+#define RCC_CSR_IWDGRSTF 					RCC_CSR2_IWDGRSTF
+#define RCC_CSR_SFTRSTF 					RCC_CSR2_SFTRSTF
+#define RCC_CSR_OBLRSTF 					RCC_CSR2_OBLRSTF
+#define RCC_CSR_PORRSTF						RCC_CSR2_PWRRSTF
+#define RCC_CSR_PINRSTF						RCC_CSR2_PINRSTF
 
 #endif
 
@@ -127,8 +130,7 @@ void CORE_Stop(void)
 #elif defined(STM32L0)
 	SET_BIT(PWR->CR, PWR_CR_ULP | PWR_CR_FWU);
 #endif
-
-#if !defined(STM32C0)
+#ifdef _PWR_SET_PWR_REGULATOR
 	// Select the low power regulator
 	_PWR_SET_PWR_REGULATOR(PWR_LOWPOWERREGULATOR_ON);
 #endif
@@ -137,10 +139,10 @@ void CORE_Stop(void)
 	SET_BIT(SCB->SCR, SCB_SCR_SLEEPDEEP_Msk);
 	__WFI();
 	CLEAR_BIT(SCB->SCR, SCB_SCR_SLEEPDEEP_Msk);
-#if !defined(STM32C0)
+
+#ifdef _PWR_SET_PWR_REGULATOR
 	_PWR_SET_PWR_REGULATOR(PWR_MAINREGULATOR_ON);
 #endif
-
 #ifdef STM32L0
 	CLEAR_BIT(PWR->CR, PWR_CR_ULP | PWR_CR_FWU);
 #endif
@@ -176,50 +178,35 @@ CORE_ResetSource_t CORE_GetResetSource(void)
 {
 	uint32_t csr = _CORE_GET_RST_FLAGS();
 	CORE_ResetSource_t src;
-
-	#if !defined(STM32C0)
-	// Low-Power Reset Flag
-	if (csr & RCC_CSR_LPWRRSTF) {
-		src = CORE_ResetSource_Standby;
-	// Window Watchdog + Independent Window Watchdog Reset Flag
-	} else if (csr & (RCC_CSR_WWDGRSTF | RCC_CSR_IWDGRSTF)) {		// Join both watchdog sources together.
-		src = CORE_ResetSource_Watchdog;
-	// Software + Option Byte Loader Reset Flag
-	} else if (csr & (RCC_CSR_SFTRSTF | RCC_CSR_OBLRSTF)) {
-		src = CORE_ResetSource_Software;							// Joining Option byte load rst and software rst for now.
-	// POR/PDR Reset Flag
-	} else if (csr & RCC_CSR_PORRSTF) {
-		src = CORE_ResetSource_PowerOn;
-	// Pin Reset Flag
-	} else if (csr & RCC_CSR_PINRSTF) {
-		src = CORE_ResetSource_Pin;
-	} else {
-		src = CORE_ResetSource_UNKNOWN;
-	}
-	#else // defined(STM32C0)
-	// Low-Power Reset Flag
-	if (csr & RCC_CSR2_LPWRRSTF) {
-		src = CORE_ResetSource_Standby;
-	// Window Watchdog + Independent Window Watchdog Reset Flag
-	} else if (csr & (RCC_CSR2_WWDGRSTF | RCC_CSR2_IWDGRSTF)) {  	// Join both watchdog sources together.
-		src = CORE_ResetSource_Watchdog;
-	// Software + Option Byte Loader Reset Flag
-	} else if (csr & (RCC_CSR2_SFTRSTF | RCC_CSR2_OBLRSTF)) { 		// Joining Option byte load rst and software rst for now.
-		src = CORE_ResetSource_Software;
-	// BOR or POR/PDR Reset Flag
-	} else if (csr & RCC_CSR2_PWRRSTF) {
-		src = CORE_ResetSource_PowerOn;
-	// Pin Reset Flag
-	} else if (csr & RCC_CSR2_PINRSTF) {
-		src = CORE_ResetSource_Pin;
-	} else {
-		src = CORE_ResetSource_UNKNOWN;
-	}
-	#endif
-
-	// Flags will persist unless cleared
-	__HAL_RCC_CLEAR_RESET_FLAGS();
-	return src;
+    if (csr & RCC_CSR_LPWRRSTF)
+    {
+    	src = CORE_ResetSource_Standby;
+    }
+    else if (csr & (RCC_CSR_WWDGRSTF | RCC_CSR_IWDGRSTF))
+    {
+    	// Join both watchdog sources together.
+        src = CORE_ResetSource_Watchdog;
+    }
+    else if (csr & (RCC_CSR_SFTRSTF | RCC_CSR_OBLRSTF))
+    {
+    	// Joining Option byte load rst and software rst for now.
+    	src = CORE_ResetSource_Software;
+    }
+    else if (csr & RCC_CSR_PORRSTF)
+    {
+    	src = CORE_ResetSource_PowerOn;
+    }
+    else if (csr & RCC_CSR_PINRSTF)
+    {
+    	src = CORE_ResetSource_Pin;
+    }
+    else
+    {
+        src = CORE_ResetSource_UNKNOWN;
+    }
+    // Flags will persist unless cleared
+    __HAL_RCC_CLEAR_RESET_FLAGS();
+    return src;
 }
 
 const uint32_t * CORE_GetUID(void)

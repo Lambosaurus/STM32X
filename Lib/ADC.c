@@ -117,11 +117,11 @@
 #define ADC_CLOCK_FREQ				(48000000 / 6) // 48MHz HSI div 4.
 #define ADC_SMPR_DEFAULT			ADC_SAMPLETIME_160CYCLES_5 // Gives ~ 20us sample time
 
-#define ADC_FLAG_ALL				(ADC_FLAG_RDY || ADC_FLAG_CCRDY || ADC_FLAG_EOSMP || ADC_FLAG_EOC || ADC_FLAG_EOS || ADC_FLAG_OVR || ADC_FLAG_AWD1 || ADC_FLAG_AWD2 || ADC_FLAG_AWD3)
+#define ADC_FLAG_ALL				(ADC_FLAG_RDY | ADC_FLAG_CCRDY | ADC_FLAG_EOSMP | ADC_FLAG_EOC | ADC_FLAG_EOS | ADC_FLAG_OVR | ADC_FLAG_AWD1 | ADC_FLAG_AWD2 | ADC_FLAG_AWD3)
 
 #define TS_CAL1_AIN					(*((uint16_t*)0x1FFF7568))
 #define TS_CAL1_DEG					30
-#define TS_AVG_SLOPE				2.53
+#define TS_AVG_SLOPE				2.530 // mV per degrees
 #define TS_CAL_VREF					3000
 
 #define VF_CAL_AIN					(*((uint16_t*)0x1FFF756A))
@@ -141,6 +141,7 @@
 #define __HAL_ADC_DISABLE(adc)		((adc)->Instance->CR |= ADC_CR_ADDIS)
 
 #endif
+
 
 // There is a conversion time of 12.5 cycles. The .5 is wrapped into the constant.
 #define ADC_CLKS(sample_clks)		(sample_clks + 13)
@@ -209,7 +210,6 @@ void ADC_Init(void)
 		| ADC_RESOLUTION_12B;
 
 	ADCx->CFGR2 = 0;
-
 	// Configure the default sampling rate
 	MODIFY_REG(ADCx->SMPR, ADC_SMPR_SMPR, ADC_SMPR_DEFAULT);
 
@@ -284,7 +284,7 @@ void ADC_Deinit(void)
 	while(ADCx->CR & ADC_CR_ADEN);
 
 	ADCx->IER = 0;
-	__HAL_ADC_CLEAR_FLAG(&gADC, ADC_FLAG_ALL );
+	__HAL_ADC_CLEAR_FLAG(&gADC, ADC_FLAG_ALL);
 
 #ifdef ADC_CR_ADVREGEN
 	ADCx->CR &= ~ADC_CR_ADVREGEN;
@@ -320,10 +320,10 @@ int32_t ADC_ReadDieTemp(void)
 
 	// The temp sensor is not ratiometric, so the vref must be adjusted for.
 	ain = ain * ADC_VREF / TS_CAL_VREF;
-	#if !defined(STM32C0)
+	#ifdef TS_CAL2_DEG
 	return ((ain - TS_CAL1_AIN) * (TS_CAL2_DEG - TS_CAL1_DEG) / (TS_CAL2_AIN - TS_CAL1_AIN)) + TS_CAL1_DEG;
 	#else
-	return ((ain - TS_CAL1_AIN)/((TS_AVG_SLOPE*4096)/3000) + TS_CAL1_DEG);
+	return ((ain - TS_CAL1_AIN) * TS_CAL_VREF / (int32_t)(TS_AVG_SLOPE * ADC_MAX) + TS_CAL1_DEG);
 	#endif
 }
 

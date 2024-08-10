@@ -37,6 +37,7 @@
 #define CRITICAL_SECTION_END()  __set_PRIMASK(primask_bit)
 
 #define FIRST_BIT_INDEX(x) 		(__builtin_ffs(x) - 1)
+#define LAST_BIT_INDEX(x) 		(31 - __builtin_clz(x))
 
 #define IS_POWER_OF_2(x)		(!((x - 1) & x))
 

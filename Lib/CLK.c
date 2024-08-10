@@ -94,27 +94,29 @@
 #else // CLK_USE_HSI
 
 #define CLK_USE_HSI
-#define CLK_SYSCLK_SRC			RCC_SYSCLKSOURCE_HSI
-#if !defined(STM32C0)
 #define CLK_PLL_SRC_FREQ		CLK_HSI_FREQ
 #define CLK_PLL_SRC				RCC_PLLSOURCE_HSI
-#endif
+#define CLK_SYSCLK_SRC			RCC_SYSCLKSOURCE_HSI
 
 #endif
 
 // Is PLL required?
-#if ( !defined(STM32C0) && (CLK_SYSCLK_FREQ != CLK_PLL_SRC_FREQ) && !(defined(RCC_SYSCLKSOURCE_MSI) && (CLK_SYSCLK_SRC == RCC_SYSCLKSOURCE_MSI)))
+#if ((CLK_SYSCLK_FREQ != CLK_PLL_SRC_FREQ) && !(defined(RCC_SYSCLKSOURCE_MSI) && (CLK_SYSCLK_SRC == RCC_SYSCLKSOURCE_MSI)))
 
 #if (defined(STM32G0) || defined(STM32WL)) && (CLK_PLL_SRC_FREQ > 16000000)
-#error "Changes required change RCC_PLLM to keep the PLL input in a 4-16MHz range"
+#error "Changes required: change RCC_PLLM to keep the PLL input in a 4-16MHz range"
 #endif
 
 #define CLK_USE_PLL
+
+#if defined(STM32C0)
+#error "STM32C0 series does not have a PLL. Set CLK_SYSCLK_FREQ to selected HSI or HSE frequency (usually 48MHz)"
+#endif
+
 #include "CLK_PLL.inl.h"
 #undef 	CLK_SYSCLK_SRC
 #define CLK_SYSCLK_SRC			RCC_SYSCLKSOURCE_PLLCLK
-
-#endif
+#endif //CLK_USE_PLL
 
 /*
  * PRIVATE TYPES
@@ -284,12 +286,9 @@ void CLK_EnableADCCLK(void)
 	while(__HAL_RCC_GET_FLAG(RCC_FLAG_HSIRDY) == 0);
 #endif
 
-
 #if defined(STM32WL)
 	__HAL_RCC_ADC_CONFIG(RCC_ADCCLKSOURCE_HSI);
 #endif
-
-
 }
 
 void CLK_DisableADCCLK(void)
