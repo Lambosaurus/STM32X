@@ -303,9 +303,8 @@ static void USB_CDC_Control(uint8_t cmd, uint8_t* data, uint16_t length)
 	case CDC_GET_LINE_CODING:
 		memcpy(data, gCDC.lineCoding, sizeof(gCDC.lineCoding));
 		break;
-
 	case CDC_SET_CONTROL_LINE_STATE:
-		gCDC.dtr = data[0] & 0x01;
+		gCDC.dtr = ((USB_SetupRequest_t*)data)->wValue & 0x0001;
 		break;
 
 	case CDC_SEND_ENCAPSULATED_COMMAND:
