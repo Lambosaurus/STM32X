@@ -408,7 +408,7 @@ static void I2Cx_Init(I2C_t * i2c)
 #ifdef I2C1_PINS
 	if (i2c == I2C_1)
 	{
-#ifdef __HAL_RCC_I2C1_CONFIG
+#ifdef STM32F0
 		__HAL_RCC_I2C1_CONFIG(RCC_CFGR3_I2C1SW_SYSCLK);
 #endif
 		__HAL_RCC_I2C1_CLK_ENABLE();
