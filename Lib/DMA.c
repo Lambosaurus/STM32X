@@ -11,14 +11,19 @@
 #define DMA1_Channel4_7_IRQn			DMA1_Channel4_5_6_7_IRQn
 #define DMA1_Channel4_7_IRQHandler		DMA1_Channel4_5_6_7_IRQHandler
 #elif defined(STM32G0)
-#ifdef DMA1_Channel7
+#define DMAMUX_ENABLE
+
+#if defined(DMA2_Channel1)
+#define DMA1_Channel4_7_IRQn			DMA1_Ch4_7_DMA2_Ch1_5_DMAMUX1_OVR_IRQn
+#define DMA1_Channel4_7_IRQHandler 		DMA1_Ch4_7_DMA2_Ch1_5_DMAMUX1_OVR_IRQHandler
+#elif defined(DMA1_Channel7)
 #define DMA1_Channel4_7_IRQn			DMA1_Ch4_7_DMAMUX1_OVR_IRQn
 #define DMA1_Channel4_7_IRQHandler		DMA1_Ch4_7_DMAMUX1_OVR_IRQHandler
 #else // There are only 5 DMA channels - but its still the same IRQn signal...
 #define DMA1_Channel4_7_IRQn			DMA1_Ch4_5_DMAMUX1_OVR_IRQn
 #define DMA1_Channel4_7_IRQHandler		DMA1_Ch4_5_DMAMUX1_OVR_IRQHandler
-#define DMAMUX_ENABLE
 #endif
+
 #elif defined(STM32WL)
 #define DMAMUX_ENABLE
 #endif
