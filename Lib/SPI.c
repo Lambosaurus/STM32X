@@ -93,6 +93,7 @@ void SPI_Write(SPI_t * spi, const uint8_t * data, uint32_t count)
 		_SPI_TX(spi, data[i]);
 	}
 	while (__HAL_SPI_GET_FLAG(spi, SPI_FLAG_BSY));
+	(void)_SPI_RX(spi);
 	__HAL_SPI_CLEAR_OVRFLAG(spi);
 }
 
