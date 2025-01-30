@@ -11,6 +11,10 @@
  * PRIVATE DEFINITIONS
  */
 
+#ifdef STM32G0
+#define USB_IRQn		USB_UCPD1_2_IRQn
+#endif
+
 /*
  * PRIVATE TYPES
  */
