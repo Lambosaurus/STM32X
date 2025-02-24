@@ -347,7 +347,7 @@ static void UARTx_Init(UART_t * uart)
 		HAL_NVIC_SetPriority(USART5_IRQn, UART_IRQ_PRIO, UART_IRQ_PRIO);
 	}
 #endif
-#ifdef UART5_PINS
+#ifdef UART6_PINS
 	if (uart == UART_6)
 	{
 		__HAL_RCC_USART6_CLK_ENABLE();
@@ -387,7 +387,7 @@ static void UARTx_Deinit(UART_t * uart)
 #ifdef UART3_PINS
 	if (uart == UART_3)
 	{
-		HAL_NVIC_DisableIRQ(USART3_IRQn);
+		//HAL_NVIC_DisableIRQ(USART3_IRQn);
 		__HAL_RCC_USART3_CLK_DISABLE();
 		GPIO_Deinit(UART3_PINS);
 	}
@@ -396,7 +396,7 @@ static void UARTx_Deinit(UART_t * uart)
 	if (uart == UART_4)
 	{
 		// TODO: Handle IRQ contention between UART_4 & UART_5
-		HAL_NVIC_DisableIRQ(USART4_IRQn);
+		//HAL_NVIC_DisableIRQ(USART4_IRQn);
 		__HAL_RCC_USART4_CLK_DISABLE();
 		GPIO_Deinit(UART4_PINS);
 	}
@@ -404,7 +404,7 @@ static void UARTx_Deinit(UART_t * uart)
 #ifdef UART5_PINS
 	if (uart == UART_5)
 	{
-		HAL_NVIC_DisableIRQ(USART5_IRQn);
+		//HAL_NVIC_DisableIRQ(USART5_IRQn);
 		__HAL_RCC_USART5_CLK_DISABLE();
 		GPIO_Deinit(UART5_PINS);
 	}
@@ -412,7 +412,7 @@ static void UARTx_Deinit(UART_t * uart)
 #ifdef UART6_PINS
 	if (uart == UART_6)
 	{
-		HAL_NVIC_DisableIRQ(USART6_IRQn);
+		//HAL_NVIC_DisableIRQ(USART6_IRQn);
 		__HAL_RCC_USART6_CLK_DISABLE();
 		GPIO_Deinit(UART6_PINS);
 	}
