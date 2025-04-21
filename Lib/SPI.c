@@ -91,6 +91,8 @@ void SPI_Write(SPI_t * spi, const uint8_t * data, uint32_t count)
 	{
 		while (!__HAL_SPI_GET_FLAG(spi, SPI_FLAG_TXE));
 		_SPI_TX(spi, data[i]);
+		while (!__HAL_SPI_GET_FLAG(spi, SPI_FLAG_RXNE));
+		(void)_SPI_RX(spi);
 	}
 	while (__HAL_SPI_GET_FLAG(spi, SPI_FLAG_BSY));
 	(void)_SPI_RX(spi);
@@ -137,19 +139,9 @@ uint8_t SPI_TransferByte(SPI_t * spi, uint8_t byte)
 
 static uint32_t SPI_SelectPrescalar(SPI_t * spi, uint32_t target)
 {
-	// Div clock by 2, because the prescalars start at 2
-	uint32_t clk = CLK_GetPCLKFreq() >> 1;
-	uint32_t actual;
-	uint32_t k;
-	for (k = 0; k <= 0x7; k++)
-	{
-		actual = clk >> k;
-		if (actual <= target)
-		{
-			break;
-		}
-	}
-	spi->bitrate = actual;
+	uint32_t src_freq = CLK_GetPCLKFreq();
+	spi->bitrate = target;
+	uint32_t k = CLK_SelectPrescalar(src_freq, 2, 2 << 7, &spi->bitrate);
 	return k << SPI_CR1_BR_Pos;
 }
 

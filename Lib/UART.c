@@ -30,6 +30,13 @@
 #define USART3_IRQn			USART3_4_IRQn
 #define USART4_IRQn			USART3_4_IRQn
 #define USART_3_4_IRQ_JOIN
+#elif defined(STM32G0)
+#define USART2_IRQn			USART2_LPUART2_IRQn
+#define USART3_IRQn			USART3_4_5_6_LPUART1_IRQn
+#define USART4_IRQn			USART3_4_5_6_LPUART1_IRQn
+#define USART5_IRQn			USART3_4_5_6_LPUART1_IRQn
+#define USART6_IRQn			USART3_4_5_6_LPUART1_IRQn
+#define USART_3_6_IRQ_JOIN
 #endif
 
 #define __UART_RX_ENABLE(uart) 	(uart->Instance->CR1 |= USART_CR1_RXNEIE)
@@ -93,6 +100,12 @@ static UART_t gUART_5 = {
 	.Instance = USART5
 };
 UART_t * const UART_5 = &gUART_5;
+#endif
+#ifdef UART6_PINS
+static UART_t gUART_6 = {
+	.Instance = USART6
+};
+UART_t * const UART_6 = &gUART_6;
 #endif
 
 /*
@@ -334,6 +347,15 @@ static void UARTx_Init(UART_t * uart)
 		HAL_NVIC_SetPriority(USART5_IRQn, UART_IRQ_PRIO, UART_IRQ_PRIO);
 	}
 #endif
+#ifdef UART6_PINS
+	if (uart == UART_6)
+	{
+		__HAL_RCC_USART6_CLK_ENABLE();
+		GPIO_EnableAlternate(UART6_PINS, 0, UART6_AF);
+		HAL_NVIC_EnableIRQ(USART6_IRQn);
+		HAL_NVIC_SetPriority(USART6_IRQn, UART_IRQ_PRIO, UART_IRQ_PRIO);
+	}
+#endif
 }
 
 static void UARTx_Deinit(UART_t * uart)
@@ -365,7 +387,7 @@ static void UARTx_Deinit(UART_t * uart)
 #ifdef UART3_PINS
 	if (uart == UART_3)
 	{
-		HAL_NVIC_DisableIRQ(USART3_IRQn);
+		//HAL_NVIC_DisableIRQ(USART3_IRQn);
 		__HAL_RCC_USART3_CLK_DISABLE();
 		GPIO_Deinit(UART3_PINS);
 	}
@@ -374,7 +396,7 @@ static void UARTx_Deinit(UART_t * uart)
 	if (uart == UART_4)
 	{
 		// TODO: Handle IRQ contention between UART_4 & UART_5
-		HAL_NVIC_DisableIRQ(USART4_IRQn);
+		//HAL_NVIC_DisableIRQ(USART4_IRQn);
 		__HAL_RCC_USART4_CLK_DISABLE();
 		GPIO_Deinit(UART4_PINS);
 	}
@@ -382,9 +404,17 @@ static void UARTx_Deinit(UART_t * uart)
 #ifdef UART5_PINS
 	if (uart == UART_5)
 	{
-		HAL_NVIC_DisableIRQ(USART5_IRQn);
+		//HAL_NVIC_DisableIRQ(USART5_IRQn);
 		__HAL_RCC_USART5_CLK_DISABLE();
 		GPIO_Deinit(UART5_PINS);
+	}
+#endif
+#ifdef UART6_PINS
+	if (uart == UART_6)
+	{
+		//HAL_NVIC_DisableIRQ(USART6_IRQn);
+		__HAL_RCC_USART6_CLK_DISABLE();
+		GPIO_Deinit(UART6_PINS);
 	}
 #endif
 }
@@ -453,15 +483,18 @@ void USART2_IRQHandler(void)
 }
 #endif
 
-#ifndef USART_3_4_IRQ_JOIN
+#if !(defined(USART_3_4_IRQ_JOIN) || defined(USART_3_6_IRQ_JOIN))
 #ifdef UART3_PINS
 void USART3_IRQHandler(void)
 {
 	UART_IRQHandler(UART_3);
 }
 #endif
-#else //USART_3_4_IRQ_JOIN
-#if defined(UART3_PINS) || defined(UART4_PINS)
+#endif // USART_3_4_IRQ_JOIN || USART_3_6_IRQ_JOIN
+
+
+#ifdef USART_3_4_IRQ_JOIN
+#if (defined(UART3_PINS) || defined(UART4_PINS))
 void USART3_4_IRQHandler(void)
 {
 #ifdef UART3_PINS
@@ -473,6 +506,7 @@ void USART3_4_IRQHandler(void)
 }
 #endif
 #endif //USART_3_4_IRQ_JOIN
+
 
 #ifdef USART_4_5_IRQ_JOIN
 #if defined(UART4_PINS) || defined(UART5_PINS)
@@ -488,3 +522,22 @@ void USART4_5_IRQHandler(void)
 #endif
 #endif //USART_4_5_IRQ_JOIN
 
+#ifdef USART_3_6_IRQ_JOIN
+#if defined(UART3_PINS) || defined(UART4_PINS) || defined(UART5_PINS) || defined(UART6_PINS)
+void USART3_4_5_6_LPUART1_IRQHandler(void)
+{
+#ifdef UART3_PINS
+	UART_IRQHandler(UART_3);
+#endif
+#ifdef UART4_PINS
+	UART_IRQHandler(UART_4);
+#endif
+#ifdef UART5_PINS
+	UART_IRQHandler(UART_5);
+#endif
+#ifdef UART6_PINS
+	UART_IRQHandler(UART_6);
+#endif
+}
+#endif
+#endif //USART_3_6_IRQ_JOIN

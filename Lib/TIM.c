@@ -113,6 +113,11 @@ void TIM_Init(TIM_t * tim, uint32_t freq, uint32_t reload)
 
 	TIM_SetFreq(tim, freq);
 	TIM_SetReload(tim, reload);
+
+#ifdef __HAL_TIM_MOE_ENABLE
+	// Main output enable, required for timers with a break/dead-time generator.
+	__HAL_TIM_MOE_ENABLE(tim);
+#endif
 }
 
 void TIM_SetFreq(TIM_t * tim, uint32_t freq)
@@ -217,21 +222,6 @@ static void TIM_EnableOCx(TIM_t * tim, uint32_t oc, uint32_t mode)
 		break;
 	}
 	TIM_ENABLE_CCx(tim, oc);
-
-	//if(IS_TIM_CCXN_INSTANCE(tim->Instance, TIM_CHANNEL_1))
-	//{
-	//	MODIFY_REG(tmpccer, TIM_CCER_CC1NP, TIM_OCNPOLARITY_LOW);
-	//	tmpccer &= ~TIM_CCER_CC1NE;
-	//}
-
-	//if(IS_TIM_BREAK_INSTANCE(TIMx))
-	//{
-	//	uint32_t tmpcr2 =  TIMx->CR2;
-	//	MODIFY_REG(tmpcr2, TIM_CR2_OIS1 | TIM_CR2_OIS1N, TIM_OCIDLESTATE_SET | TIM_OCNIDLESTATE_SET);
-	//	TIMx->CR2 = tmpcr2;
-	//}
-
-
 }
 
 static void TIM_Reload(TIM_t * tim)

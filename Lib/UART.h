@@ -88,5 +88,8 @@ extern UART_t * const UART_4;
 #ifdef UART5_PINS
 extern UART_t * const UART_5;
 #endif
+#ifdef UART6_PINS
+extern UART_t * const UART_6;
+#endif
 
 #endif //UART_H

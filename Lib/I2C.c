@@ -8,6 +8,11 @@
  * PRIVATE DEFINITIONS
  */
 
+#if defined(STM32F0)
+#define I2C1_CLK		RCC_I2C1CLKSOURCE_SYSCLK
+#endif
+
+
 // Filter configuration
 #define I2C_USE_ANALOGFILTER
 #define I2C_DIGITALFILTER_SIZE	0
@@ -408,8 +413,8 @@ static void I2Cx_Init(I2C_t * i2c)
 #ifdef I2C1_PINS
 	if (i2c == I2C_1)
 	{
-#ifdef __HAL_RCC_I2C1_CONFIG
-		__HAL_RCC_I2C1_CONFIG(RCC_CFGR3_I2C1SW_SYSCLK);
+#ifdef I2C1_CLK
+		__HAL_RCC_I2C1_CONFIG(I2C1_CLK);
 #endif
 		__HAL_RCC_I2C1_CLK_ENABLE();
 		GPIO_EnableAlternate(I2C1_PINS, GPIO_Flag_OpenDrain, I2C1_AF);

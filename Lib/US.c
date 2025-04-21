@@ -11,6 +11,12 @@
  * PRIVATE DEFINITIONS
  */
 
+#if defined(STM32G0)
+#define TUNED_FACTOR	14032
+#else
+#define TUNED_FACTOR	11225
+#endif
+
 #ifdef US_ENABLE
 #if ((US_RES) & (US_RES - 1))
 #error "US resolution must be a power of 2"
@@ -60,7 +66,7 @@ void __attribute__((optimize("-Os"))) US_Delay(uint32_t us)
 {
 	// -Os will generate a straight forward output.
 	// 11225 is our tuned factor.
-	volatile uint32_t i = (us * (CLK_GetHCLKFreq() >> 10)) / 11225;
+	volatile uint32_t i = (us * (CLK_GetHCLKFreq() >> 10)) / TUNED_FACTOR;
 	while(i--);
 }
 
