@@ -27,7 +27,7 @@
 
 // Initialisation
 void LPTIM_Init(uint32_t freq, uint32_t reload);
-void LPTIM_Deinit();
+void LPTIM_Deinit(void);
 void LPTIM_SetFreq(uint32_t freq);
 void LPTIM_SetReload(uint32_t reload);
 

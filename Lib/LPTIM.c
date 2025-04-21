@@ -48,6 +48,12 @@ void LPTIM_Init(uint32_t freq, uint32_t reload)
 	LPTIM_SetReload(reload);
 }
 
+void LPTIM_Deinit(void)
+{
+	LPTIM1->CR &= ~LPTIM_CR_ENABLE;
+	__HAL_RCC_LPTIM1_CLK_DISABLE();
+}
+
 void LPTIM_SetReload(uint32_t reload)
 {
 	LPTIM1->ARR = reload;
@@ -63,12 +69,6 @@ void LPTIM_Start()
 void LPTIM_Stop(void)
 {
 	LPTIM1->CR &= ~LPTIM_CR_ENABLE;
-}
-
-void LPTIMDeinit(void)
-{
-	LPTIM1->CR &= ~LPTIM_CR_ENABLE;
-	__HAL_RCC_LPTIM1_CLK_DISABLE();
 }
 
 uint32_t LPTIM_Read(void)
