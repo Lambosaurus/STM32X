@@ -151,7 +151,7 @@ void TIM_OnPulse(TIM_t * tim, TIM_Channel_t ch, VoidFunction_t callback)
 void TIM_EnablePwm(TIM_t * tim, TIM_Channel_t ch, GPIO_Pin_t pins, uint32_t af)
 {
 	// TIM_CCMR1_OC1PE is the output compare preload
-	TIM_EnableOCx(tim, ch, TIM_OCMODE_PWM2 | TIM_CCMR1_OC1PE | TIM_OCFAST_ENABLE);
+	TIM_EnableOCx(tim, ch, TIM_OCMODE_PWM1 | TIM_CCMR1_OC1PE | TIM_OCFAST_ENABLE);
 	GPIO_EnableAlternate(pins, 0, af);
 }
 
