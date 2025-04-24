@@ -50,6 +50,7 @@ The [CORE](Docs/CORE.md) module provides a lot of basic functionality, and shoul
 * [RTC](Docs/RTC.md)
 * [WDG](Docs/WDG.md)
 * [US](Docs/US.md)
+* [LPTIM](Docs/LPTIM.md)
 
 ### Storage:
 * [FLASH](Docs/FLASH.md)
