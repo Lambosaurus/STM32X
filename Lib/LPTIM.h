@@ -33,8 +33,12 @@ void LPTIM_SetReload(uint32_t reload);
 
 // Base counter features
 void LPTIM_Start(void);
-void LPTIM_Stop(void);
 uint32_t LPTIM_Read(void);
+
+// IRQ features.
+void LPTIM_OnReload(VoidFunction_t callback);
+void LPTIM_OnCompare(uint32_t value, VoidFunction_t callback);
+void LPTIM_StopCompare(void);
 
 /*
  * EXTERN DECLARATIONS
