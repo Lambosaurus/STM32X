@@ -93,8 +93,13 @@ void LPTIM_OnReload(VoidFunction_t callback)
 
 void LPTIM_OnCompare(uint32_t value, VoidFunction_t callback)
 {
+	LPTIM1->IER &= ~LPTIM_IER_CMPMIE;
+
 	gLPTIM.onCompare = callback;
+	LPTIM1->ICR = LPTIM_FLAG_CMPOK;
 	LPTIM1->CMP = value;
+	while (!(LPTIM1->ISR & LPTIM_FLAG_CMPOK));
+
 	LPTIM1->IER |= LPTIM_IER_CMPMIE;
 }
 
