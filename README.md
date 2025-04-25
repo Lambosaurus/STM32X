@@ -42,6 +42,7 @@ The [CORE](Docs/CORE.md) module provides a lot of basic functionality, and shoul
 
 ### Analog:
 * [ADC](Docs/ADC.md)
+* [DAC](Docs/DAC.md)
 * [COMP](Docs/COMP.md)
 * [TSC](Docs/TSC.md)
 
