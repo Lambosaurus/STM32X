@@ -9,7 +9,7 @@ The header is available [here](../Lib/WDG.h).
 
 The used watchdog is the Independant Watchdog (IWDG). This is based off the LSI - even when an LSE is supplied. This means it cannot even be interrupted by clock disturbance.
 
-The watchdog has a maximum period of ~14s that can be used.
+The maximum supported period is 28333ms.
 
 ```c
 // Create a watchdog with a period of 50ms

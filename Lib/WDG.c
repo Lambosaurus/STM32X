@@ -1,18 +1,12 @@
 
 #include "WDG.h"
-
+#include "CLK.h"
 
 /*
  * PRIVATE DEFINITIONS
  */
 
-// Note, if the prescalar is adjusted, so must the freq
-#define IWDG_PRESCALAR		IWDG_PRESCALER_128
-#define IWDG_FREQUENCY		(LSI_VALUE / 128)
 #define IWDG_RELOAD_MAX		0xFFF
-
-// Using div 128, this gives a max period of ~14s
-// And a resolution of ~3ms
 
 /*
  * PRIVATE TYPES
@@ -35,10 +29,11 @@ void WDG_Init(uint32_t period)
 	IWDG->KR = IWDG_KEY_ENABLE;
 	IWDG->KR = IWDG_KEY_WRITE_ACCESS_ENABLE;
 
-	IWDG->PR = IWDG_PRESCALAR;
+	uint32_t freq = (IWDG_RELOAD_MAX * 1000) / period;
+	IWDG->PR = CLK_SelectPrescalar( LSI_VALUE, 4, 256, &freq);
 
 	// +1 to prevent timer being shorter than expected.
-	uint32_t reload = (IWDG_FREQUENCY * period / 1000) + 1;
+	uint32_t reload = (freq * period / 1000) + 1;
 	if (reload > IWDG_RELOAD_MAX) { reload = IWDG_RELOAD_MAX; }
 
 	IWDG->RLR = reload;
