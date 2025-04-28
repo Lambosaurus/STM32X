@@ -80,10 +80,9 @@ The following template can be used. Commented out definitions are optional.
 
 ```C
 // I2C configuration
-#define I2C1_GPIO			GPIOB
-#define I2C1_PINS			(GPIO_PIN_6 | GPIO_PIN_7)
-#define I2C1_AF			    GPIO_AF1_I2C1
-//#define USE_I2C_FASTMODEPLUS
+#define I2C1_PINS		(PB6 | PB7)
+#define I2C1_AF			GPIO_AF1_I2C1
+//#define I2C_USE_FASTMODEPLUS
 //#define I2C_USE_LONG_TRANSFER
 //#define I2C_TIMEOUT       10
 ```

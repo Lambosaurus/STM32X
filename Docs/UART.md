@@ -105,8 +105,7 @@ The following template can be used. Commented out definitions are optional.
 
 ```C
 // UART Config
-#define UART1_GPIO		GPIOA
-#define UART1_PINS		(GPIO_PIN_9 | GPIO_PIN_10)
-#define UART1_AF		    GPIO_AF4_USART1
-//#define UART_BFR_SIZE     128
+#define UART1_PINS		(PA9 | PA10)
+#define UART1_AF		GPIO_AF4_USART1
+#define UART_BFR_SIZE   128
 ```

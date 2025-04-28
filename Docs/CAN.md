@@ -64,8 +64,7 @@ The following template can be used. Commented out settings are optional.
 
 ```C
 // CAN configuration
-#define CAN_GPIO		GPIOA
-#define CAN_PINS		(GPIO_PIN_8 | GPIO_PIN_9)
+#define CAN_PINS		(PA8 | PA99)
 #define CAN_AF          GPIO_AF4_CAN
 
 // This will enable both FIFO's, to increase RX capacity.
