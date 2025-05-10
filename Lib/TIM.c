@@ -1,6 +1,7 @@
 
 #include "TIM.h"
 #include "CLK.h"
+#include "IRQ.h"
 
 /*
  * PRIVATE DEFINITIONS
@@ -13,6 +14,9 @@
 
 #define TIM_GET_IRQ_SOURCES(tim)	(tim->Instance->SR & tim->Instance->DIER)
 
+#ifndef TIM_IQR_PRIO
+#define TIM_IQR_PRIO 	0
+#endif
 
 /*
  * PRIVATE TYPES
@@ -25,10 +29,6 @@
 static void TIMx_Init(TIM_t * tim);
 static void TIMx_Deinit(TIM_t * tim);
 static void TIM_Reload(TIM_t * tim);
-
-#ifdef TIM_USE_IRQS
-static void TIM_IRQHandler(TIM_t * tim);
-#endif //TIM_USE_IRQS
 
 static void TIM_EnableOCx(TIM_t * tim, uint32_t oc, uint32_t mode);
 
@@ -243,73 +243,73 @@ static void TIMx_Init(TIM_t * tim)
 #ifdef TIM1_ENABLE
 	if (tim == TIM_1)
 	{
-		HAL_NVIC_EnableIRQ(TIM1_BRK_UP_TRG_COM_IRQn);
-		HAL_NVIC_EnableIRQ(TIM1_CC_IRQn);
 		__HAL_RCC_TIM1_CLK_ENABLE();
+		IRQ_Enable(IRQ_No_TIM1_COM, TIM_IQR_PRIO);
+		IRQ_Enable(IRQ_No_TIM1, TIM_IQR_PRIO);
 	}
 
 #endif
 #ifdef TIM2_ENABLE
 	if (tim == TIM_2)
 	{
-		HAL_NVIC_EnableIRQ(TIM2_IRQn);
 		__HAL_RCC_TIM2_CLK_ENABLE();
+		IRQ_Enable(IRQ_No_TIM2, TIM_IQR_PRIO);
 	}
 #endif
 #ifdef TIM3_ENABLE
 	if (tim == TIM_3)
 	{
-		HAL_NVIC_EnableIRQ(TIM3_IRQn);
 		__HAL_RCC_TIM3_CLK_ENABLE();
+		IRQ_Enable(IRQ_No_TIM3, TIM_IQR_PRIO);
 	}
 #endif
 #ifdef TIM5_ENABLE
 	if (tim == TIM_5)
 	{
-		HAL_NVIC_EnableIRQ(TIM5_IRQn);
 		__HAL_RCC_TIM5_CLK_ENABLE();
+		IRQ_Enable(IRQ_No_TIM5, TIM_IQR_PRIO);
 	}
 #endif
 #ifdef TIM6_ENABLE
 	if (tim == TIM_6)
 	{
-		HAL_NVIC_EnableIRQ(TIM6_IRQn);
 		__HAL_RCC_TIM6_CLK_ENABLE();
+		IRQ_Enable(IRQ_No_TIM6, TIM_IQR_PRIO);
 	}
 #endif
 #ifdef TIM14_ENABLE
 	if (tim == TIM_14)
 	{
-		HAL_NVIC_EnableIRQ(TIM14_IRQn);
 		__HAL_RCC_TIM14_CLK_ENABLE();
+		IRQ_Enable(IRQ_No_TIM14, TIM_IQR_PRIO);
 	}
 #endif
 #ifdef TIM16_ENABLE
 	if (tim == TIM_16)
 	{
-		HAL_NVIC_EnableIRQ(TIM16_IRQn);
 		__HAL_RCC_TIM16_CLK_ENABLE();
+		IRQ_Enable(IRQ_No_TIM16, TIM_IQR_PRIO);
 	}
 #endif
 #ifdef TIM17_ENABLE
 	if (tim == TIM_17)
 	{
-		HAL_NVIC_EnableIRQ(TIM17_IRQn);
 		__HAL_RCC_TIM17_CLK_ENABLE();
+		IRQ_Enable(IRQ_No_TIM17, TIM_IQR_PRIO);
 	}
 #endif
 #ifdef TIM21_ENABLE
 	if (tim == TIM_21)
 	{
-		HAL_NVIC_EnableIRQ(TIM21_IRQn);
 		__HAL_RCC_TIM21_CLK_ENABLE();
+		IRQ_Enable(IRQ_No_TIM21, TIM_IQR_PRIO);
 	}
 #endif
 #ifdef TIM22_ENABLE
 	if (tim == TIM_22)
 	{
-		HAL_NVIC_EnableIRQ(TIM22_IRQn);
 		__HAL_RCC_TIM22_CLK_ENABLE();
+		IRQ_Enable(IRQ_No_TIM22, TIM_IQR_PRIO);
 	}
 #endif
 }
@@ -320,71 +320,60 @@ static void TIMx_Deinit(TIM_t * tim)
 #ifdef TIM1_ENABLE
 	if (tim == TIM_1)
 	{
-		HAL_NVIC_DisableIRQ(TIM1_BRK_UP_TRG_COM_IRQn);
-		HAL_NVIC_DisableIRQ(TIM1_CC_IRQn);
 		__HAL_RCC_TIM1_CLK_DISABLE();
 	}
 #endif
 #ifdef TIM2_ENABLE
 	if (tim == TIM_2)
 	{
-		HAL_NVIC_DisableIRQ(TIM2_IRQn);
 		__HAL_RCC_TIM2_CLK_DISABLE();
 	}
 #endif
 #ifdef TIM3_ENABLE
 	if (tim == TIM_3)
 	{
-		HAL_NVIC_DisableIRQ(TIM3_IRQn);
 		__HAL_RCC_TIM3_CLK_DISABLE();
 	}
 #endif
 #ifdef TIM5_ENABLE
 	if (tim == TIM_5)
 	{
-		HAL_NVIC_DisableIRQ(TIM5_IRQn);
 		__HAL_RCC_TIM5_CLK_DISABLE();
 	}
 #endif
 #ifdef TIM6_ENABLE
 	if (tim == TIM_6)
 	{
-		HAL_NVIC_DisableIRQ(TIM6_IRQn);
 		__HAL_RCC_TIM6_CLK_DISABLE();
 	}
 #endif
 #ifdef TIM14_ENABLE
 	if (tim == TIM_14)
 	{
-		HAL_NVIC_DisableIRQ(TIM14_IRQn);
 		__HAL_RCC_TIM14_CLK_DISABLE();
 	}
 #endif
 #ifdef TIM16_ENABLE
 	if (tim == TIM_16)
 	{
-		HAL_NVIC_DisableIRQ(TIM16_IRQn);
 		__HAL_RCC_TIM16_CLK_DISABLE();
 	}
 #endif
 #ifdef TIM17_ENABLE
 	if (tim == TIM_17)
 	{
-		HAL_NVIC_DisableIRQ(TIM17_IRQn);
 		__HAL_RCC_TIM17_CLK_DISABLE();
 	}
 #endif
 #ifdef TIM21_ENABLE
 	if (tim == TIM_21)
 	{
-		HAL_NVIC_DisableIRQ(TIM21_IRQn);
 		__HAL_RCC_TIM21_CLK_DISABLE();
 	}
 #endif
 #ifdef TIM22_ENABLE
 	if (tim == TIM_22)
 	{
-		HAL_NVIC_DisableIRQ(TIM22_IRQn);
 		__HAL_RCC_TIM22_CLK_DISABLE();
 	}
 #endif
@@ -396,7 +385,7 @@ static void TIMx_Deinit(TIM_t * tim)
 
 #ifdef TIM_USE_IRQS
 
-static void TIM_IRQHandler(TIM_t * tim)
+void TIM_IRQHandler(TIM_t * tim)
 {
 	uint32_t irqs = TIM_GET_IRQ_SOURCES(tim);
 	if(irqs & TIM_FLAG_CC1)
@@ -425,71 +414,6 @@ static void TIM_IRQHandler(TIM_t * tim)
 		tim->ReloadCallback();
 	}
 }
-
-#ifdef TIM1_ENABLE
-void TIM1_BRK_UP_TRG_COM_IRQHandler(void)
-{
-	TIM_IRQHandler(TIM_1);
-}
-void TIM1_CC_IRQHandler(void)
-{
-	TIM_IRQHandler(TIM_1);
-}
-#endif
-#ifdef TIM2_ENABLE
-void TIM2_IRQHandler(void)
-{
-	TIM_IRQHandler(TIM_2);
-}
-#endif
-#ifdef TIM3_ENABLE
-void TIM3_IRQHandler(void)
-{
-	TIM_IRQHandler(TIM_3);
-}
-#endif
-#ifdef TIM5_ENABLE
-void TIM5_IRQHandler(void)
-{
-	TIM_IRQHandler(TIM_5);
-}
-#endif
-#ifdef TIM6_ENABLE
-void TIM6_IRQHandler(void)
-{
-	TIM_IRQHandler(TIM_6);
-}
-#endif
-#ifdef TIM14_ENABLE
-void TIM14_IRQHandler(void)
-{
-	TIM_IRQHandler(TIM_14);
-}
-#endif
-#ifdef TIM16_ENABLE
-void TIM16_IRQHandler(void)
-{
-	TIM_IRQHandler(TIM_16);
-}
-#endif
-#ifdef TIM17_ENABLE
-void TIM17_IRQHandler(void)
-{
-	TIM_IRQHandler(TIM_17);
-}
-#endif
-#ifdef TIM21_ENABLE
-void TIM21_IRQHandler(void)
-{
-	TIM_IRQHandler(TIM_21);
-}
-#endif
-#ifdef TIM22_ENABLE
-void TIM22_IRQHandler(void)
-{
-	TIM_IRQHandler(TIM_22);
-}
-#endif
 
 #endif //TIM_USE_IRQS
 

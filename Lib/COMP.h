@@ -56,6 +56,7 @@ bool COMP_Read(COMP_t * comp);
 
 #ifdef COMP_USE_IRQS
 void COMP_OnChange(COMP_t * comp, GPIO_IT_Dir_t dir, VoidFunction_t callback);
+void COMP_IRQHandler(void);
 #endif
 
 /*

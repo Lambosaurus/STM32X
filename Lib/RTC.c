@@ -21,9 +21,6 @@
 
 #elif defined(STM32G0)
 
-#define RTC_IRQn							RTC_TAMP_IRQn
-#define RTC_IRQHandler						RTC_TAMP_IRQHandler
-
 #define ISR									ICSR
 #define RTC_ISR_INIT						RTC_ICSR_INIT
 #define RTC_ISR_WUTWF						RTC_ICSR_WUTWF
@@ -36,8 +33,6 @@
                                               (((RTC->SR & (1U << (((uint16_t)(flag)) & RTC_FLAG_MASK))) != 0U)))
 
 #elif defined(STM32WL)
-
-#define RTC_SPLIT_ALARM_WKUP
 
 #define ISR									ICSR
 #define RTC_ISR_INIT						RTC_ICSR_INIT
@@ -61,6 +56,10 @@
 
 #endif
 
+
+#ifndef RTC_IRQ_PRIO
+#define RTC_IRQ_PRIO	0
+#endif
 
 /*
  * PRIVATE TYPES
@@ -135,11 +134,9 @@ void RTC_Init(void)
 	__HAL_RTC_ALARM_EXTI_ENABLE_RISING_EDGE();
 #endif
 
-#ifdef RTC_SPLIT_ALARM_WKUP
-	HAL_NVIC_EnableIRQ(RTC_Alarm_IRQn);
-	HAL_NVIC_EnableIRQ(RTC_WKUP_IRQn);
-#else
-	HAL_NVIC_EnableIRQ(RTC_IRQn);
+	IRQ_Enable(IRQ_No_RTC, RTC_IRQ_PRIO);
+#ifdef STM32WL
+	IRQ_Enable(IRQ_No_RTC_WKUP, RTC_IRQ_PRIO);
 #endif
 #endif
 
@@ -149,13 +146,11 @@ void RTC_Init(void)
 void RTC_Deinit(void)
 {
 #ifdef RTC_USE_IRQS
-#ifdef RTC_SPLIT_ALARM_WKUP
-	HAL_NVIC_DisableIRQ(RTC_Alarm_IRQn);
-	HAL_NVIC_DisableIRQ(RTC_WKUP_IRQn);
-#else
-	HAL_NVIC_DisableIRQ(RTC_IRQn);
+	IRQ_Disable(IRQ_No_RTC);
+#ifdef STM32WL
+	IRQ_Disable(IRQ_No_RTC_WKUP);
 #endif
-#endif
+#endif //RTC_USE_IRQS
 	_RTC_WRITEPROTECTION_DISABLE();
 	RTC_EnterInit();
 
@@ -448,23 +443,11 @@ void RTC_IRQHandler(void)
 	}
 }
 
-#elif defined(SMT32G0)
+#elif defined(SMT32G0) || defined(STM32WL)
 
 void RTC_IRQHandler(void)
 {
 	RTC_CheckWakeupTimer();
-	RTC_CheckAlarms();
-}
-
-#elif defined(STM32WL)
-
-void RTC_WKUP_IRQHandler(void)
-{
-	RTC_CheckWakeupTimer();
-}
-
-void RTC_Alarm_IRQHandler(void)
-{
 	RTC_CheckAlarms();
 }
 

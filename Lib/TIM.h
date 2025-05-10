@@ -8,7 +8,7 @@
  * FUNCTIONAL TESTING
  * STM32L0: Y
  * STM32F0: N
- * STM32G0: N
+ * STM32G0: Y
  * STM32WL: N
  */
 
@@ -56,10 +56,10 @@ void TIM_SetPulse(TIM_t * tim, TIM_Channel_t ch, uint32_t pulse);
 #ifdef TIM_USE_IRQS
 void TIM_OnReload(TIM_t * tim, VoidFunction_t callback);
 void TIM_OnPulse(TIM_t * tim, TIM_Channel_t ch, VoidFunction_t callback);
+void TIM_IRQHandler(TIM_t * tim);
 #endif //TIM_USE_IRQS
 
 void TIM_EnablePwm(TIM_t * tim, TIM_Channel_t ch, GPIO_Pin_t pins, uint32_t af);
-
 
 /*
  * EXTERN DECLARATIONS

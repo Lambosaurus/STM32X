@@ -45,6 +45,7 @@ uint32_t LPTIM_Read(LPTIM_t * tim);
 void LPTIM_OnReload(LPTIM_t * tim, VoidFunction_t callback);
 void LPTIM_OnPulse(LPTIM_t * tim, uint32_t value, VoidFunction_t callback);
 void LPTIM_StopPulse(LPTIM_t * tim);
+void LPTIM_IRQHandler(LPTIM_t * tim);
 #endif //LPTIM_USE_IRQS
 
 /*

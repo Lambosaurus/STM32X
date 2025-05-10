@@ -172,6 +172,7 @@ static inline void GPIO_Deinit(GPIO_Pin_t pins);
 // Note: 	The IRQ will not be deinitialised on GPIO_Deinit.
 // 			To safely reuse the IO, call GPIO_OnChange(gpio, pin, GPIO_IT_None, NULL);
 void GPIO_OnChange(GPIO_Pin_t pin, GPIO_IT_Dir_t dir, VoidFunction_t callback);
+void GPIO_IRQHandler(uint32_t n);
 #endif //GPIO_USE_IRQS
 
 // Outputs

@@ -53,6 +53,8 @@ typedef enum {
 void DMA_Init(DMA_t * dma, void * peripheral, void * bfr, uint32_t length, DMA_Flags_t flags, DMA_Callback_t callback);
 void DMA_Deinit(DMA_t * dma);
 
+void DMA_IRQHandler(DMA_t * dma);
+
 /*
  * PUBLIC FUNCTIONS
  */
