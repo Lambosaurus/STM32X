@@ -6,6 +6,7 @@
 #include "COMP.h"
 #include "DMA.h"
 #include "GPIO.h"
+#include "LPTIM.h"
 #include "RTC.h"
 #include "TIM.h"
 #include "UART.h"
@@ -51,12 +52,12 @@
 //void WWDG_IRQHandler(void);
 //void PVD_VDDIO2_IRQHandler(void);
 
-#ifdef RTC_USE_IRQS
+#if defined(RTC_USE_IRQS)
 void RTC_TAMP_IRQHandler(void)
 {
 	RTC_IRQHandler();
 }
-#endif //RTC_USE_IRQS
+#endif //defined(RTC_USE_IRQS)
 
 //void FLASH_IRQHandler(void);
 //void RCC_CRS_IRQHandler(void);
@@ -130,12 +131,12 @@ void EXTI4_15_IRQHandler(void)
 }
 #endif // GPIO_IRQ4_ENABLE .. GPIO_IRQ15_ENABLE
 
-#ifdef USB_ENABLE
+#if defined(USB_ENABLE)
 void USB_UCPD1_2_IRQHandler(void)
 {
 	USB_IRQHandler();
 }
-#endif //USB_ENABLE
+#endif //defined(USB_ENABLE)
 
 #if defined(DMA_CH1_ENABLE)
 void DMA1_Channel1_IRQHandler(void)
@@ -269,19 +270,19 @@ void TIM17_FDCAN_IT1_IRQHandler(void)
 //void SPI1_IRQHandler(void);
 //void SPI2_3_IRQHandler(void);
 
-#if UART1_PINS
+#if defined(UART1_PINS)
 void USART1_IRQHandler(void)
 {
 	UART_IRQHandler(UART_1);
 }
-#endif // UART1_PINS
+#endif // defined(UART1_PINS)
 
-#if UART2_PINS
+#ifdef defined(UART2_PINS)
 void USART2_LPUART2_IRQHandler(void)
 {
 	UART_IRQHandler(UART_2);
 }
-#endif //UART2_PINS
+#endif //defined(UART2_PINS)
 
 #if defined(UART3_PINS) || defined(UART4_PINS) || defined(UART5_PINS) || defined(UART6_PINS) || defined(LPUART_PINS)
 void USART3_4_5_6_LPUART1_IRQHandler(void)
