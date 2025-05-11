@@ -244,8 +244,8 @@ static void TIMx_Init(TIM_t * tim)
 	if (tim == TIM_1)
 	{
 		__HAL_RCC_TIM1_CLK_ENABLE();
-		IRQ_Enable(IRQ_No_TIM1_COM, TIM_IQR_PRIO);
 		IRQ_Enable(IRQ_No_TIM1, TIM_IQR_PRIO);
+		IRQ_Enable(IRQ_No_TIM1_CC, TIM_IQR_PRIO);
 	}
 
 #endif

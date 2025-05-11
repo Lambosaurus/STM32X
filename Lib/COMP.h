@@ -6,7 +6,7 @@
 
 // Use this bit to detect whether the comparator modules are available for this MCU
 #if defined(STM32L0) && defined(COMP_CSR_COMPxEN)
-#define COMP_ENABLED
+#define COMP_ENABLE
 
 /*
  * FUNCTIONAL TESTING
@@ -70,5 +70,5 @@ extern COMP_t * const COMP_1;
 extern COMP_t * const COMP_2;
 #endif
 
-#endif //COMP_ENABLED
+#endif //COMP_ENABLE
 #endif //COMP_H

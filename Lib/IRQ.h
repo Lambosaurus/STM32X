@@ -22,7 +22,44 @@
 #if defined(STM32L0)
 #error "Please enter IRQ numbers for L0 devices"
 #elif defined(STM32F0)
-#error "Please enter IRQ numbers for F0 devices"
+
+typedef enum {
+	IRQ_No_Systick 		= -1,
+	IRQ_No_WWDG			= 0,
+	IRQ_No_RTC			= 2,
+	IRQ_No_FLASH		= 3,
+	IRQ_No_EXTI0		= 5,
+	IRQ_No_EXTI2		= 6,
+	IRQ_No_EXTI4		= 7,
+	IRQ_No_TSC			= 8,
+	IRQ_No_DMA1_CH1		= 9,
+	IRQ_No_DMA1_CH2		= 10,
+	IRQ_No_DMA1_CH4 	= 11,
+	IRQ_No_ADC1			= 12,
+	IRQ_No_COMP			= 12,
+	IRQ_No_TIM1			= 13,
+	IRQ_No_TIM1_CC		= 14,
+	IRQ_No_TIM2			= 15,
+	IRQ_No_TIM3			= 16,
+	IRQ_No_TIM6			= 17,
+	IRQ_No_DAC			= 17,
+	IRQ_No_TIM7			= 18,
+	IRQ_No_TIM14		= 19,
+	IRQ_No_TIM15		= 20,
+	IRQ_No_TIM16		= 21,
+	IRQ_No_TIM17		= 22,
+	IRQ_No_I2C1			= 23,
+	IRQ_No_I2C2			= 24,
+	IRQ_No_SPI1			= 25,
+	IRQ_No_SPI2			= 26,
+	IRQ_No_UART1		= 27,
+	IRQ_No_UART2		= 28,
+	IRQ_No_UART3		= 29,
+	IRQ_No_UART4		= 29,
+	IRQ_No_CEC			= 30,
+	IRQ_No_CAN			= 30,
+	IRQ_No_USB			= 31,
+} IRQ_No_t;
 
 #elif defined(STM32G0)
 
@@ -56,9 +93,9 @@ typedef enum {
 	IRQ_No_TIM14		= 19,
 	IRQ_No_TIM15		= 20,
 	IRQ_No_TIM16		= 21,
-	IRQ_No_FDCAN_IT0  	= 21,
+	IRQ_No_CAN  		= 21,
 	IRQ_No_TIM17		= 22,
-	IRQ_No_FDCAN_IT1  	= 22,
+	IRQ_No_CAN_IT1  	= 22,
 	IRQ_No_I2C1			= 23,
 	IRQ_No_I2C2			= 24,
 	IRQ_No_I2C3			= 24,

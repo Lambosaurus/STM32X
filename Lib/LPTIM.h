@@ -3,6 +3,9 @@
 
 #include "STM32X.h"
 
+#if defined(STM32L0) || defined(STM32G0) || defined(STM32WL)
+#define LPTIM_ENABLE
+
 /*
  * FUNCTIONAL TESTING
  * STM32L0: Y
@@ -59,4 +62,5 @@ extern LPTIM_t * const LPTIM_1;
 extern LPTIM_t * const LPTIM_2;
 #endif
 
+#endif //COMP_ENABLED
 #endif //LPTIM_H

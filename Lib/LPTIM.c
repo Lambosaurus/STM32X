@@ -1,5 +1,8 @@
 
 #include "LPTIM.h"
+
+#ifdef LPTIM_ENABLE
+
 #include "CLK.h"
 #include "IRQ.h"
 
@@ -189,4 +192,5 @@ void LPTIM_IRQHandler(LPTIM_t * tim)
 
 #endif //LPTIM_USE_IRQS
 
+#endif //LPTIM_ENABLE
 

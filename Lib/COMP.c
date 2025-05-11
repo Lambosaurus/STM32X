@@ -1,7 +1,7 @@
 
 #include "COMP.h"
 
-#ifdef COMP_ENABLED
+#ifdef COMP_ENABLE
 
 /*
  * PRIVATE DEFINITIONS
@@ -122,4 +122,4 @@ void COMP_IRQHandler(void)
 #endif //COMP_USE_IRQS
 
 
-#endif // COMP_ENABLED
+#endif // COMP_ENABLE
