@@ -16,9 +16,6 @@
  * PRIVATE DEFINITIONS
  */
 
-// Here is where we do horrible bodges to get the IRQ names correct....
-// Let the IRQ handlers use the most inclusive names, and these defines can fix it.
-
 /*
  * INTERRUPT HANDLERS
  */
@@ -152,12 +149,31 @@ void LPTIM1_IRQHandler(void)
 }
 #endif //defined(LPTIM_USE_IRQS) && defined(LPTIM1_ENABLE)
 
+#if defined(UART4_PINS) || defined(UART5_PINS)
+void USART4_5_IRQHandler(void)
+{
+#ifdef UART4_PINS
+	UART_IRQHandler(UART_4);
+#endif
+#ifdef UART5_PINS
+	UART_IRQHandler(UART_5);
+#endif
+}
+#endif //defined(UART4_PINS) || defined(UART5_PINS)
+
 #if defined(TIM_USE_IRQS) && defined(TIM2_ENABLE)
 void TIM2_IRQHandler(void)
 {
 	TIM_IRQHandler(TIM_2);
 }
 #endif //defined(TIM_USE_IRQS) && defined(TIM2_ENABLE)
+
+#if defined(TIM_USE_IRQS) && defined(TIM3_ENABLE)
+void TIM3_IRQHandler(void)
+{
+	TIM_IRQHandler(TIM_3);
+}
+#endif //defined(TIM_USE_IRQS) && defined(TIM3_ENABLE)
 
 #if defined(TIM_USE_IRQS) && defined(TIM6_ENABLE)
 void TIM6_DAC_IRQHandler(void)
@@ -166,12 +182,21 @@ void TIM6_DAC_IRQHandler(void)
 }
 #endif //defined(TIM_USE_IRQS) && defined(TIM6_ENABLE)
 
+#if defined(TIM_USE_IRQS) && defined(TIM7_ENABLE)
+void TIM7_IRQHandler(void)
+{
+	TIM_IRQHandler(TIM_7);
+}
+#endif //defined(TIM_USE_IRQS) && defined(TIM7_ENABLE)
+
 #if defined(TIM_USE_IRQS) && defined(TIM21_ENABLE)
 void TIM21_IRQHandler(void)
 {
 	TIM_IRQHandler(TIM_21);
 }
 #endif //defined(TIM_USE_IRQS) && defined(TIM21_ENABLE)
+
+//void I2C3_IRQHandler(void);
 
 #if defined(TIM_USE_IRQS) && defined(TIM22_ENABLE)
 void TIM22_IRQHandler(void)
