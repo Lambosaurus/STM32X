@@ -277,7 +277,7 @@ void USART1_IRQHandler(void)
 }
 #endif // defined(UART1_PINS)
 
-#ifdef defined(UART2_PINS)
+#if defined(UART2_PINS)
 void USART2_LPUART2_IRQHandler(void)
 {
 	UART_IRQHandler(UART_2);

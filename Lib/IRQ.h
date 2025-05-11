@@ -5,9 +5,9 @@
 
 /*
  * FUNCTIONAL TESTING
- * STM32L0: N
- * STM32F0: N
- * STM32G0: N
+ * STM32L0: Y
+ * STM32F0: Y
+ * STM32G0: Y
  * STM32WL: N
  */
 
@@ -20,7 +20,38 @@
  */
 
 #if defined(STM32L0)
-#error "Please enter IRQ numbers for L0 devices"
+
+typedef enum {
+	IRQ_No_Systick 		= -1,
+	IRQ_No_WWDG			= 0,
+	IRQ_No_RTC			= 2,
+	IRQ_No_FLASH		= 3,
+	IRQ_No_EXTI0		= 5,
+	IRQ_No_EXTI2		= 6,
+	IRQ_No_EXTI4		= 7,
+	IRQ_No_TSC			= 8,
+	IRQ_No_DMA1_CH1		= 9,
+	IRQ_No_DMA1_CH2		= 10,
+	IRQ_No_DMA1_CH4 	= 11,
+	IRQ_No_ADC1			= 12,
+	IRQ_No_COMP			= 12,
+	IRQ_No_LPTIM1		= 13,
+	IRQ_No_TIM2			= 15,
+	IRQ_No_TIM6			= 17,
+	IRQ_No_DAC			= 17,
+	IRQ_No_TIM21		= 20,
+	IRQ_No_TIM22		= 22,
+	IRQ_No_I2C1			= 23,
+	IRQ_No_I2C2			= 24,
+	IRQ_No_SPI1			= 25,
+	IRQ_No_SPI2			= 26,
+	IRQ_No_UART1		= 27,
+	IRQ_No_UART2		= 28,
+	IRQ_No_RNG			= 29,
+	IRQ_No_LPUART1		= 29,
+	IRQ_No_USB			= 31,
+} IRQ_No_t;
+
 #elif defined(STM32F0)
 
 typedef enum {

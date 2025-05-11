@@ -1,6 +1,7 @@
 
 #include "RTC.h"
 #include "CLK.h"
+#include "IRQ.h"
 
 /*
  * PRIVATE DEFINITIONS

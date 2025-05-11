@@ -6,6 +6,7 @@
 #include "COMP.h"
 #include "DMA.h"
 #include "GPIO.h"
+#include "LPTIM.h"
 #include "RTC.h"
 #include "TIM.h"
 #include "UART.h"
@@ -144,17 +145,12 @@ void ADC1_COMP_IRQHandler(void)
 }
 #endif //COMP_USE_IRQS
 
-#if defined(TIM_USE_IRQS) && defined(TIM1_ENABLE)
-void TIM1_BRK_UP_TRG_COM_IRQHandler(void)
+#if defined(LPTIM_USE_IRQS) && defined(LPTIM1_ENABLE)
+void LPTIM1_IRQHandler(void)
 {
-	TIM_IRQHandler(TIM_1);
+	LPTIM_IRQHandler(LPTIM_1);
 }
-
-void TIM1_CC_IRQHandler(void)
-{
-	TIM_IRQHandler(TIM_1);
-}
-#endif //defined(TIM_USE_IRQS) && defined(TIM1_ENABLE)
+#endif //defined(LPTIM_USE_IRQS) && defined(LPTIM1_ENABLE)
 
 #if defined(TIM_USE_IRQS) && defined(TIM2_ENABLE)
 void TIM2_IRQHandler(void)
@@ -163,13 +159,6 @@ void TIM2_IRQHandler(void)
 }
 #endif //defined(TIM_USE_IRQS) && defined(TIM2_ENABLE)
 
-#if defined(TIM_USE_IRQS) && defined(TIM3_ENABLE)
-void TIM3_IRQHandler(void)
-{
-	TIM_IRQHandler(TIM_3);
-}
-#endif //defined(TIM_USE_IRQS) && defined(TIM3_ENABLE)
-
 #if defined(TIM_USE_IRQS) && defined(TIM6_ENABLE)
 void TIM6_DAC_IRQHandler(void)
 {
@@ -177,40 +166,19 @@ void TIM6_DAC_IRQHandler(void)
 }
 #endif //defined(TIM_USE_IRQS) && defined(TIM6_ENABLE)
 
-#if defined(TIM_USE_IRQS) && defined(TIM7_ENABLE)
-void TIM7_IRQHandler(void)
+#if defined(TIM_USE_IRQS) && defined(TIM21_ENABLE)
+void TIM21_IRQHandler(void)
 {
-	TIM_IRQHandler(TIM_7);
+	TIM_IRQHandler(TIM_21);
 }
-#endif //defined(TIM_USE_IRQS) && defined(TIM7_ENABLE)
+#endif //defined(TIM_USE_IRQS) && defined(TIM21_ENABLE)
 
-#if defined(TIM_USE_IRQS) && defined(TIM14_ENABLE)
-void TIM14_IRQHandler(void)
+#if defined(TIM_USE_IRQS) && defined(TIM22_ENABLE)
+void TIM22_IRQHandler(void)
 {
-	TIM_IRQHandler(TIM_14);
+	TIM_IRQHandler(TIM_22);
 }
-#endif //defined(TIM_USE_IRQS) && defined(TIM14_ENABLE)
-
-#if defined(TIM_USE_IRQS) && defined(TIM15_ENABLE)
-void TIM15_IRQHandler(void)
-{
-	TIM_IRQHandler(TIM_15);
-}
-#endif //defined(TIM_USE_IRQS) && defined(TIM15_ENABLE)
-
-#if defined(TIM_USE_IRQS) && defined(TIM16_ENABLE)
-void TIM16_IRQHandler(void)
-{
-	TIM_IRQHandler(TIM_16);
-}
-#endif //defined(TIM_USE_IRQS) && defined(TIM16_ENABLE)
-
-#if defined(TIM_USE_IRQS) && defined(TIM17_ENABLE)
-void TIM17_IRQHandler(void)
-{
-	TIM_IRQHandler(TIM_17);
-}
-#endif //defined(TIM_USE_IRQS) && defined(TIM17_ENABLE)
+#endif //defined(TIM_USE_IRQS) && defined(TIM22_ENABLE)
 
 //void I2C1_IRQHandler(void);
 //void I2C2_IRQHandler(void);
@@ -231,17 +199,12 @@ void USART2_IRQHandler(void)
 }
 #endif //defined(UART2_PINS)
 
-#if defined(UART3_PINS) || defined(UART4_PINS)
-void USART3_4_IRQHandler(void)
+#if defined(UARTLP_PINS)
+void RNG_LPUART1_IRQHandler(void)
 {
-#ifdef UART3_PINS
-	UART_IRQHandler(UART_3);
-#endif
-#ifdef UART4_PINS
-	UART_IRQHandler(UART_4);
-#endif
+	UART_IRQHandler(UART_LP);
 }
-#endif //defined(UART3_PINS) || defined(UART4_PINS)
+#endif //defined(UARTLP_PINS)
 
 //void CEC_CAN_IRQHandler(void);
 //void USB_IRQHandler(void); // Allow this to be defined in USB.h
