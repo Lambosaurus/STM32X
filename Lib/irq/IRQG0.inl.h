@@ -41,7 +41,15 @@
 #endif
 
 #ifndef DMA2
+#ifndef DMA1_Channel6
 #define DMA1_Ch4_7_DMA2_Ch1_5_DMAMUX1_OVR_IRQHandler		DMA1_Ch4_5_DMAMUX1_OVR_IRQHandler
+#else
+#define DMA1_Ch4_7_DMA2_Ch1_5_DMAMUX1_OVR_IRQHandler		DMA1_Ch4_7_DMAMUX1_OVR_IRQHandler
+#endif // DMA1_Channel6
+#endif //DMA2
+
+#ifndef UART5
+#define USART3_4_5_6_LPUART1_IRQHandler	USART3_4_IRQHandler
 #endif
 
 /*

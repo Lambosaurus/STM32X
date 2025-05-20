@@ -3,7 +3,7 @@
 
 #include "STM32X.h"
 
-#if defined(STM32L0) || defined(STM32G0) || defined(STM32WL)
+#if defined(LPTIM1) || defined(LPTIM2)
 #define LPTIM_ENABLE
 
 /*
