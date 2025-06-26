@@ -305,12 +305,10 @@ static void CANx_Init(void)
 {
 	__HAL_RCC_CAN1_CLK_ENABLE();
 	GPIO_EnableAlternate(CAN_PINS, 0, CAN_AF);
-	//HAL_NVIC_EnableIRQ(CEC_CAN_IRQn);
 }
 
 static void CANx_Deinit(void)
 {
-	//HAL_NVIC_DisableIRQ(CEC_CAN_IRQn);
 	__HAL_RCC_CAN1_CLK_DISABLE();
 	GPIO_Deinit(CAN_PINS);
 }

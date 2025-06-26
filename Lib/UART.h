@@ -66,6 +66,8 @@ void UART_ReadFlush(UART_t * uart);
 uint32_t UART_Seek(UART_t * uart, uint8_t delimiter);
 
 
+void UART_IRQHandler(UART_t * uart);
+
 /*
  * EXTERN DECLARATIONS
  */

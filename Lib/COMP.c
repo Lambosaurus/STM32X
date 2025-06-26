@@ -1,7 +1,7 @@
 
 #include "COMP.h"
 
-#ifdef COMP_ENABLED
+#ifdef COMP_ENABLE
 
 /*
  * PRIVATE DEFINITIONS
@@ -18,6 +18,10 @@
 #elif defined(STM32F0)
 #define COMP_MODE 					COMP_MODE_MEDIUMSPEED
 #define COMP_CSR_COMPxOUTVALUE		COMP_CSR_COMPxOUT
+#endif
+
+#ifndef COMP_IRQ_PRIO
+#define COMP_IRQ_PRIO 	0
 #endif
 
 /*
@@ -83,7 +87,7 @@ void COMP_OnChange(COMP_t * comp, GPIO_IT_Dir_t dir, VoidFunction_t callback)
 	WRITE_REG(EXTI->PR, exti);
 	SET_BIT(EXTI->IMR, exti);
 
-	HAL_NVIC_EnableIRQ(COMP_IRQn);
+	IRQ_Enable(IRQ_No_COMP, COMP_IRQ_PRIO);
 }
 #endif //COMP_USE_IRQS
 
@@ -96,7 +100,7 @@ void COMP_OnChange(COMP_t * comp, GPIO_IT_Dir_t dir, VoidFunction_t callback)
  */
 
 #ifdef COMP_USE_IRQS
-static inline void COMP_IRQHandler(COMP_t * comp, uint32_t exti)
+static inline void COMPx_IRQHandler(COMP_t * comp, uint32_t exti)
 {
 	if(EXTI->PR & exti)
 	{
@@ -105,17 +109,17 @@ static inline void COMP_IRQHandler(COMP_t * comp, uint32_t exti)
 	}
 }
 
-void ADC1_COMP_IRQHandler(void)
+void COMP_IRQHandler(void)
 {
 	// This will have to be shared with the ADC handler at some point...
 #ifdef COMP1_ENABLE
-	COMP_IRQHandler(COMP_1, COMP_EXTI_LINE_COMP1);
+	COMPx_IRQHandler(COMP_1, COMP_EXTI_LINE_COMP1);
 #endif
 #ifdef COMP2_ENABLE
-	COMP_IRQHandler(COMP_2, COMP_EXTI_LINE_COMP2);
+	COMPx_IRQHandler(COMP_2, COMP_EXTI_LINE_COMP2);
 #endif
 }
-#endif
+#endif //COMP_USE_IRQS
 
 
-#endif // COMP_ENABLED
+#endif // COMP_ENABLE

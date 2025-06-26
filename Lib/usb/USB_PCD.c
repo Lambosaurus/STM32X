@@ -13,7 +13,6 @@
 #ifdef STM32G0
 #define USB					USB_DRD_FS
 #define USB_CNTR_FRES		USB_CNTR_USBRST
-#define USB_IRQHandler		USB_UCPD1_2_IRQHandler
 #endif
 
 #define USB_GET_IRQ() 		(USB->ISTR)

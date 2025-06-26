@@ -1,19 +1,14 @@
 
 #include "LPTIM.h"
+
+#ifdef LPTIM_ENABLE
+
 #include "CLK.h"
+#include "IRQ.h"
 
 /*
  * PRIVATE DEFINITIONS
  */
-
-
-#ifdef STM32G0
-#define LPTIM1_IRQn				TIM6_DAC_LPTIM1_IRQn
-#define LPTIM2_IRQn 			TIM7_LPTIM2_IRQn
-
-#define LPTIM1_IRQHandler		TIM6_DAC_LPTIM1_IRQHandler
-#define LPTIM2_IRQHandler		TIM7_LPTIM2_IRQHandler
-#endif
 
 #ifdef CLK_USE_LSE
 #define LPTIM1_CLK_SRC	RCC_LPTIM1CLKSOURCE_LSE
@@ -21,6 +16,10 @@
 #else
 #define LPTIM1_CLK_SRC	RCC_LPTIM1CLKSOURCE_LSI
 #define LPTIM2_CLK_SRC 	RCC_LPTIM2CLKSOURCE_LSI
+#endif
+
+#ifndef LPTIM_IRQ_PRIO
+#define LPTIM_IRQ_PRIO	0
 #endif
 
 /*
@@ -138,7 +137,7 @@ static void LPTIMx_Init(LPTIM_t * tim)
 	{
 		__HAL_RCC_LPTIM1_CONFIG(LPTIM1_CLK_SRC);
 		__HAL_RCC_LPTIM1_CLK_ENABLE();
-		HAL_NVIC_EnableIRQ(LPTIM1_IRQn);
+		IRQ_Enable(IRQ_No_LPTIM1, LPTIM_IRQ_PRIO);
 	}
 
 #endif
@@ -147,7 +146,7 @@ static void LPTIMx_Init(LPTIM_t * tim)
 	{
 		__HAL_RCC_LPTIM2_CONFIG(LPTIM2_CLK_SRC);
 		__HAL_RCC_LPTIM2_CLK_ENABLE();
-		HAL_NVIC_EnableIRQ(LPTIM2_IRQn);
+		IRQ_Enable(IRQ_No_LPTIM2, LPTIM_IRQ_PRIO);
 	}
 #endif
 }
@@ -176,7 +175,7 @@ static void LPTIMx_Deinit(LPTIM_t * tim)
 
 #ifdef LPTIM_USE_IRQS
 
-static void LPTIM_IRQHandler(LPTIM_t * tim)
+void LPTIM_IRQHandler(LPTIM_t * tim)
 {
 	uint32_t isr = tim->Instance->ISR & tim->Instance->IER;
 	if (isr & LPTIM_ISR_ARRM)
@@ -191,20 +190,7 @@ static void LPTIM_IRQHandler(LPTIM_t * tim)
 	}
 }
 
-#ifdef LPTIM1_ENABLE
-void LPTIM1_IRQHandler(void)
-{
-	LPTIM_IRQHandler(LPTIM_1);
-}
-#endif //LPTIM1_ENABLE
-
-#ifdef LPTIM2_ENABLE
-void LPTIM2_IRQHandler(void)
-{
-	LPTIM_IRQHandler(LPTIM_2);
-}
-#endif //LPTIM2_ENABLE
-
 #endif //LPTIM_USE_IRQS
 
+#endif //LPTIM_ENABLE
 

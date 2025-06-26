@@ -1,5 +1,6 @@
 
 #include "DMA.h"
+#include "IRQ.h"
 
 /*
  * PRIVATE DEFINITIONS
@@ -7,27 +8,13 @@
 
 #define DMAx	DMA1
 
-#if defined(STM32L0) || defined(STM32F0)
-#define DMA1_Channel4_7_IRQn			DMA1_Channel4_5_6_7_IRQn
-#define DMA1_Channel4_7_IRQHandler		DMA1_Channel4_5_6_7_IRQHandler
-#elif defined(STM32G0)
-#define DMAMUX_ENABLE
-
-#if defined(DMA2_Channel1)
-#define DMA1_Channel4_7_IRQn			DMA1_Ch4_7_DMA2_Ch1_5_DMAMUX1_OVR_IRQn
-#define DMA1_Channel4_7_IRQHandler 		DMA1_Ch4_7_DMA2_Ch1_5_DMAMUX1_OVR_IRQHandler
-#elif defined(DMA1_Channel7)
-#define DMA1_Channel4_7_IRQn			DMA1_Ch4_7_DMAMUX1_OVR_IRQn
-#define DMA1_Channel4_7_IRQHandler		DMA1_Ch4_7_DMAMUX1_OVR_IRQHandler
-#else // There are only 5 DMA channels - but its still the same IRQn signal...
-#define DMA1_Channel4_7_IRQn			DMA1_Ch4_5_DMAMUX1_OVR_IRQn
-#define DMA1_Channel4_7_IRQHandler		DMA1_Ch4_5_DMAMUX1_OVR_IRQHandler
-#endif
-
-#elif defined(STM32WL)
+#if defined(STM32G0) || defined(STM32WL)
 #define DMAMUX_ENABLE
 #endif
 
+#ifndef DMA_IRQ_PRIO
+#define DMA_IRQ_PRIO	1
+#endif
 
 /*
  * PRIVATE TYPES
@@ -174,20 +161,11 @@ static void DMAx_EnableIRQn(int n)
 {
 	// Note, n = 0 corresponds to DMA1_Channel1_IRQn
 #if defined(STM32WL)
-	  HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn + n);
+	IRQ_Enable(IRQ_No_DMA1_CH1 + n, DMA_IRQ_PRIO);
 #else
-	if (n < 1)
-	{
-		HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
-	}
-	else if (n < 3)
-	{
-		HAL_NVIC_EnableIRQ(DMA1_Channel2_3_IRQn);
-	}
-	else
-	{
-		HAL_NVIC_EnableIRQ(DMA1_Channel4_7_IRQn);
-	}
+	if (n < 1) 		{ IRQ_Enable(IRQ_No_DMA1_CH1, DMA_IRQ_PRIO); }
+	else if (n < 3) { IRQ_Enable(IRQ_No_DMA1_CH2, DMA_IRQ_PRIO);	}
+	else 			{ IRQ_Enable(IRQ_No_DMA1_CH4, DMA_IRQ_PRIO); }
 #endif
 }
 
@@ -240,8 +218,13 @@ static void DMAx_Deinit(DMA_t * dma)
 #endif //DMAMUX_ENABLE
 }
 
-static void DMA_IRQHandler(DMA_t * dma, uint32_t flag_it)
+/*
+ * INTERRUPT ROUTINES
+ */
+
+void DMA_IRQHandler(DMA_t * dma)
 {
+	uint32_t flag_it = DMAx->ISR;
 	uint32_t source_it = dma->Instance->CCR;
 	uint32_t flag_pos = dma->index << 2;
 
@@ -282,100 +265,3 @@ static void DMA_IRQHandler(DMA_t * dma, uint32_t flag_it)
 	}
 }
 
-/*
- * INTERRUPT ROUTINES
- */
-
-#if defined(DMA_CH1_ENABLE)
-void DMA1_Channel1_IRQHandler(void)
-{
-	uint32_t flag_it = DMAx->ISR;
-	DMA_IRQHandler(DMA_CH1, flag_it);
-}
-#endif //defined(DMA_CH1_ENABLE)
-
-#if defined(STM32WL)
-
-#if defined(DMA_CH2_ENABLE)
-void DMA1_Channel2_IRQHandler(void)
-{
-	uint32_t flag_it = DMAx->ISR;
-	DMA_IRQHandler(DMA_CH2, flag_it);
-}
-#endif //defined(DMA_CH2_ENABLE)
-
-#if defined(DMA_CH3_ENABLE)
-void DMA1_Channel3_IRQHandler(void)
-{
-	uint32_t flag_it = DMAx->ISR;
-	DMA_IRQHandler(DMA_CH3, flag_it);
-}
-#endif //defined(DMA_CH3_ENABLE)
-
-#if defined(DMA_CH4_ENABLE)
-void DMA1_Channel4_IRQHandler(void)
-{
-	uint32_t flag_it = DMAx->ISR;
-	DMA_IRQHandler(DMA_CH4, flag_it);
-}
-#endif //defined(DMA_CH4_ENABLE)
-
-#if defined(DMA_CH5_ENABLE)
-void DMA1_Channel5_IRQHandler(void)
-{
-	uint32_t flag_it = DMAx->ISR;
-	DMA_IRQHandler(DMA_CH5, flag_it);
-}
-#endif //defined(DMA_CH5_ENABLE)
-
-#if defined(DMA_CH6_ENABLE)
-void DMA1_Channel6_IRQHandler(void)
-{
-	uint32_t flag_it = DMAx->ISR;
-	DMA_IRQHandler(DMA_CH6, flag_it);
-}
-#endif //defined(DMA_CH6_ENABLE)
-
-#if defined(DMA_CH7_ENABLE)
-void DMA1_Channel7_IRQHandler(void)
-{
-	uint32_t flag_it = DMAx->ISR;
-	DMA_IRQHandler(DMA_CH7, flag_it);
-}
-#endif //defined(DMA_CH7_ENABLE)
-
-#else //!STM32WL
-
-#if defined(DMA_CH2_ENABLE) || defined(DMA_CH3_ENABLE)
-void DMA1_Channel2_3_IRQHandler(void)
-{
-	uint32_t flag_it = DMAx->ISR;
-#ifdef DMA_CH2_ENABLE
-	DMA_IRQHandler(DMA_CH2, flag_it);
-#endif
-#ifdef DMA_CH3_ENABLE
-	DMA_IRQHandler(DMA_CH3, flag_it);
-#endif
-}
-#endif //defined(DMA_CH1_ENABLE) || defined(DMA_CH2_ENABLE)
-
-#if defined(DMA_CH4_ENABLE) || defined(DMA_CH5_ENABLE) || defined(DMA_CH6_ENABLE) || defined(DMA_CH7_ENABLE)
-void DMA1_Channel4_7_IRQHandler(void)
-{
-	uint32_t flag_it = DMAx->ISR;
-#ifdef DMA_CH4_ENABLE
-	DMA_IRQHandler(DMA_CH4, flag_it);
-#endif
-#ifdef DMA_CH5_ENABLE
-	DMA_IRQHandler(DMA_CH5, flag_it);
-#endif
-#ifdef DMA_CH6_ENABLE
-	DMA_IRQHandler(DMA_CH6, flag_it);
-#endif
-#ifdef DMA_CH7_ENABLE
-	DMA_IRQHandler(DMA_CH7, flag_it);
-#endif
-}
-#endif
-
-#endif
