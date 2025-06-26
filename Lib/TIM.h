@@ -83,6 +83,9 @@ extern TIM_t * const TIM_6;
 #ifdef TIM14_ENABLE
 extern TIM_t * const TIM_14;
 #endif
+#ifdef TIM15_ENABLE
+extern TIM_t * const TIM_15;
+#endif
 #ifdef TIM16_ENABLE
 extern TIM_t * const TIM_16;
 #endif

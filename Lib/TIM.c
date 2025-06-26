@@ -72,6 +72,12 @@ static TIM_t gTIM_14 = {
 };
 TIM_t * const TIM_14 = &gTIM_14;
 #endif
+#ifdef TIM15_ENABLE
+static TIM_t gTIM_15 = {
+	.Instance = TIM15
+};
+TIM_t * const TIM_15 = &gTIM_15;
+#endif
 #ifdef TIM16_ENABLE
 static TIM_t gTIM_16 = {
 	.Instance = TIM16
@@ -284,6 +290,13 @@ static void TIMx_Init(TIM_t * tim)
 		IRQ_Enable(IRQ_No_TIM14, TIM_IQR_PRIO);
 	}
 #endif
+#ifdef TIM15_ENABLE
+	if (tim == TIM_15)
+	{
+		__HAL_RCC_TIM15_CLK_ENABLE();
+		IRQ_Enable(IRQ_No_TIM15, TIM_IQR_PRIO);
+	}
+#endif
 #ifdef TIM16_ENABLE
 	if (tim == TIM_16)
 	{
@@ -351,6 +364,12 @@ static void TIMx_Deinit(TIM_t * tim)
 	if (tim == TIM_14)
 	{
 		__HAL_RCC_TIM14_CLK_DISABLE();
+	}
+#endif
+#ifdef TIM15_ENABLE
+	if (tim == TIM_15)
+	{
+		__HAL_RCC_TIM15_CLK_DISABLE();
 	}
 #endif
 #ifdef TIM16_ENABLE
