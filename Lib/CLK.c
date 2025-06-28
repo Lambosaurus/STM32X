@@ -265,6 +265,9 @@ void CLK_DisableLSO(void)
 
 void CLK_EnableADCCLK(void)
 {
+#if defined(STM32G0)
+	__HAL_RCC_ADC_CONFIG(RCC_ADCCLKSOURCE_HSI);
+#endif
 	// ADC CLK is driven off the HSI on STM32L0
 #if (!defined(STM32F0)) && !defined(CLK_USE_HSI)
 	__HAL_RCC_HSI_ENABLE();
