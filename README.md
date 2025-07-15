@@ -32,6 +32,7 @@ The [CORE](Docs/CORE.md) module provides a lot of basic functionality, and shoul
 * [CORE](Docs/CORE.md)
 * [CLK](Docs/CLK.md)
 * [GPIO](Docs/GPIO.md)
+* [IRQ](Docs/IRQ.md)
 
 ### Connectivity:
 * [UART](Docs/UART.md)

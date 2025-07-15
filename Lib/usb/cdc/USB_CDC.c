@@ -120,7 +120,7 @@ __ALIGNED(4) const uint8_t cUSB_CDC_ConfigDescriptor[USB_CDC_CONFIG_DESC_SIZE] =
 	0x24,                     // bDescriptorType: CS_INTERFACE
 	0x01,                     // bDescriptorSubtype: Call Management Func Desc
 	0x00,                     // bmCapabilities: D0+D1
-	0x01,                     // bDataInterface: 1
+	USB_CDC_INTERFACE_BASE + 1, // bDataInterface: 1
 
 	// ACM Functional Descriptor
 	0x04,                     // bFunctionLength
@@ -132,8 +132,8 @@ __ALIGNED(4) const uint8_t cUSB_CDC_ConfigDescriptor[USB_CDC_CONFIG_DESC_SIZE] =
 	0x05,                     // bFunctionLength
 	0x24,                     // bDescriptorType: CS_INTERFACE
 	0x06,                     // bDescriptorSubtype: Union func desc
-	0x00,                     // bMasterInterface: Communication class interface
-	0x01,                     // bSlaveInterface0: Data Class Interface
+	USB_CDC_INTERFACE_BASE + 0, // bMasterInterface: Communication class interface
+	USB_CDC_INTERFACE_BASE + 1, // bSlaveInterface0: Data Class Interface
 
 	// Endpoint 2 Descriptor
 	USB_DESCR_BLOCK_ENDPOINT(CDC_CMD_EP, 0x03, CDC_CMD_PACKET_SIZE, CDC_BINTERVAL),

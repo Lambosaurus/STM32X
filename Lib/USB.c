@@ -3,6 +3,7 @@
 #ifdef USB_ENABLE
 
 #include "CLK.h"
+#include "IRQ.h"
 #include "usb/USB_PCD.h"
 #include "usb/USB_CTL.h"
 
@@ -11,8 +12,8 @@
  * PRIVATE DEFINITIONS
  */
 
-#ifdef STM32G0
-#define USB_IRQn		USB_UCPD1_2_IRQn
+#ifndef USB_IRQ_PRIO
+#define USB_IRQ_PRIO	2
 #endif
 
 /*
@@ -64,14 +65,13 @@ bool USB_IsEnumerated(void)
 static void USBx_Init(void)
 {
 	__HAL_RCC_USB_CLK_ENABLE();
-	HAL_NVIC_SetPriority(USB_IRQn, 1, 1);
-	HAL_NVIC_EnableIRQ(USB_IRQn);
+	IRQ_Enable(IRQ_No_USB, USB_IRQ_PRIO);
 }
 
 static void USBx_Deinit(void)
 {
+	IRQ_Disable(IRQ_No_USB);
 	__HAL_RCC_USB_CLK_DISABLE();
-	HAL_NVIC_DisableIRQ(USB_IRQn);
 }
 
 /*

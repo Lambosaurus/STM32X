@@ -8,6 +8,7 @@
  * STM32L0: Y
  * STM32F0: Y
  * STM32G0: Y
+ * STM32WL: Y
  */
 
 /*
@@ -65,6 +66,10 @@ typedef enum {
 	GPIO_Port_B = (1 << 16),
 	GPIO_Port_C = (2 << 16),
 	GPIO_Port_D = (3 << 16),
+	GPIO_Port_E = (4 << 16),
+	GPIO_Port_F = (5 << 16),
+	GPIO_Port_G = (6 << 16),
+	GPIO_Port_H = (7 << 16),
 
 	GPIO_Pin_0  = (1 <<  0),
 	GPIO_Pin_1  = (1 <<  1),
@@ -152,6 +157,23 @@ typedef enum {
 	PD14 = GPIO_Port_D | GPIO_Pin_14,
 	PD15 = GPIO_Port_D | GPIO_Pin_15,
 
+	PH0  = GPIO_Port_H | GPIO_Pin_0,
+	PH1  = GPIO_Port_H | GPIO_Pin_1,
+	PH2  = GPIO_Port_H | GPIO_Pin_2,
+	PH3  = GPIO_Port_H | GPIO_Pin_3,
+	PH4  = GPIO_Port_H | GPIO_Pin_4,
+	PH5  = GPIO_Port_H | GPIO_Pin_5,
+	PH6  = GPIO_Port_H | GPIO_Pin_6,
+	PH7  = GPIO_Port_H | GPIO_Pin_7,
+	PH8  = GPIO_Port_H | GPIO_Pin_8,
+	PH9  = GPIO_Port_H | GPIO_Pin_9,
+	PH10 = GPIO_Port_H | GPIO_Pin_10,
+	PH11 = GPIO_Port_H | GPIO_Pin_11,
+	PH12 = GPIO_Port_H | GPIO_Pin_12,
+	PH13 = GPIO_Port_H | GPIO_Pin_13,
+	PH14 = GPIO_Port_H | GPIO_Pin_14,
+	PH15 = GPIO_Port_H | GPIO_Pin_15,
+
 } GPIO_Pin_t;
 
 
@@ -172,6 +194,7 @@ static inline void GPIO_Deinit(GPIO_Pin_t pins);
 // Note: 	The IRQ will not be deinitialised on GPIO_Deinit.
 // 			To safely reuse the IO, call GPIO_OnChange(gpio, pin, GPIO_IT_None, NULL);
 void GPIO_OnChange(GPIO_Pin_t pin, GPIO_IT_Dir_t dir, VoidFunction_t callback);
+void GPIO_IRQHandler(uint32_t n);
 #endif //GPIO_USE_IRQS
 
 // Outputs

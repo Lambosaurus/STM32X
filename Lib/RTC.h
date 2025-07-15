@@ -8,7 +8,7 @@
  * STM32L0: Y
  * STM32F0: N
  * STM32G0: N
- * STM32WL: N
+ * STM32WL: Y
  */
 
 /*
@@ -79,6 +79,8 @@ void RTC_StopAlarm(RTC_Alarm_t alarm);
 void RTC_OnPeriod(uint32_t ms, VoidFunction_t callback);
 void RTC_StopPeriod(void);
 #endif //RTC_WAKEUPTIMER_ENABLE
+
+void RTC_IRQHandler(void);
 
 #endif //RTC_USE_IRQS
 

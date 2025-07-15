@@ -60,9 +60,6 @@
 #define RCC_PLL_SYSCLK						RCC_PLLRCLK
 #endif
 
-#define RCC_CSR_RTCSEL						RCC_BDCR_RTCSEL
-#define CSR									BDCR
-
 #if defined(STM32WL)
 // If the RNG module is required - then crank it.
 #define CLK_RNG_MSI_RANGE					RCC_MSIRANGE_6
@@ -268,6 +265,9 @@ void CLK_DisableLSO(void)
 
 void CLK_EnableADCCLK(void)
 {
+#if defined(STM32G0)
+	__HAL_RCC_ADC_CONFIG(RCC_ADCCLKSOURCE_HSI);
+#endif
 	// ADC CLK is driven off the HSI on STM32L0
 #if (!defined(STM32F0)) && !defined(CLK_USE_HSI)
 	__HAL_RCC_HSI_ENABLE();
@@ -331,10 +331,17 @@ uint32_t CLK_SelectPrescalar(uint32_t src_freq, uint32_t div_min, uint32_t div_m
 static void CLK_ResetBackupDomain(void)
 {
 	// RTC Clock selection can be changed only if the Backup Domain is reset
+#if defined(STM32G0)
+	uint32_t bdcr = (RCC->BDCR & ~(RCC_BDCR_RTCSEL));
+	__HAL_RCC_BACKUPRESET_FORCE();
+	__HAL_RCC_BACKUPRESET_RELEASE();
+	RCC->BDCR = bdcr;
+#else
 	uint32_t csr = (RCC->CSR & ~(RCC_CSR_RTCSEL));
 	__HAL_RCC_BACKUPRESET_FORCE();
 	__HAL_RCC_BACKUPRESET_RELEASE();
 	RCC->CSR = csr;
+#endif
 }
 #endif
 

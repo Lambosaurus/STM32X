@@ -1,8 +1,10 @@
 
 #include "UART.h"
+
 #include "Core.h"
 #include "GPIO.h"
 #include "CLK.h"
+#include "IRQ.h"
 
 /*
  * PRIVATE DEFINITIONS
@@ -14,29 +16,15 @@
 #error "UART_BFR_SIZE must be a power of two"
 #endif
 
+#ifndef USART_CR1_M0
+#define USART_CR1_M0 USART_CR1_M
+#endif
 
 #if defined(STM32G0) || defined(STM32WL)
 #define USART_CR1_RXNEIE				USART_CR1_RXNEIE_RXFNEIE
 #define USART_CR1_TXEIE					USART_CR1_TXEIE_TXFNFIE
 #define USART_ISR_RXNE					USART_ISR_RXNE_RXFNE
 #define USART_ISR_TXE					USART_ISR_TXE_TXFNF
-#endif
-
-#if defined(STM32L0)
-#define USART4_IRQn			USART4_5_IRQn
-#define USART5_IRQn			USART4_5_IRQn
-#define USART_4_5_IRQ_JOIN
-#elif defined(STM32F0)
-#define USART3_IRQn			USART3_4_IRQn
-#define USART4_IRQn			USART3_4_IRQn
-#define USART_3_4_IRQ_JOIN
-#elif defined(STM32G0)
-#define USART2_IRQn			USART2_LPUART2_IRQn
-#define USART3_IRQn			USART3_4_5_6_LPUART1_IRQn
-#define USART4_IRQn			USART3_4_5_6_LPUART1_IRQn
-#define USART5_IRQn			USART3_4_5_6_LPUART1_IRQn
-#define USART6_IRQn			USART3_4_5_6_LPUART1_IRQn
-#define USART_3_6_IRQ_JOIN
 #endif
 
 #define __UART_RX_ENABLE(uart) 	(uart->Instance->CR1 |= USART_CR1_RXNEIE)
@@ -134,7 +122,7 @@ void UART_Init(UART_t * uart, uint32_t baud, UART_Mode_t mode)
 	if (mode & UART_Mode_EvenParity) 	{ cr1 |= USART_CR1_PCE | USART_CR1_M0; }
 	if (mode & UART_Mode_OddParity) 	{ cr1 |= USART_CR1_PCE | USART_CR1_PS | USART_CR1_M0; }
 
-	const uint32_t cr1msk = USART_CR1_M0 | USART_CR1_M1 | USART_CR1_PCE | USART_CR1_PS | USART_CR1_TE | USART_CR1_RE | USART_CR1_OVER8;
+	const uint32_t cr1msk = USART_CR1_M | USART_CR1_PCE | USART_CR1_PS | USART_CR1_TE | USART_CR1_RE | USART_CR1_OVER8;
 	MODIFY_REG(uart->Instance->CR1, cr1msk,	cr1);
 
 	const uint32_t cr2msk = USART_CR2_STOP | USART_CR2_RXINV | USART_CR2_TXINV | USART_CR2_SWAP | USART_CR2_LINEN | USART_CR2_CLKEN;
@@ -298,8 +286,7 @@ static void UARTx_Init(UART_t * uart)
 	{
 		__HAL_RCC_LPUART1_CLK_ENABLE();
 		GPIO_EnableAlternate(UARTLP_PINS, 0, UARTLP_AF);
-		HAL_NVIC_EnableIRQ(LPUART1_IRQn);
-		HAL_NVIC_SetPriority(LPUART1_IRQn, UART_IRQ_PRIO, UART_IRQ_PRIO);
+		IRQ_Enable(IRQ_No_LPUART1, UART_IRQ_PRIO);
 	}
 #endif
 #ifdef UART1_PINS
@@ -307,8 +294,7 @@ static void UARTx_Init(UART_t * uart)
 	{
 		__HAL_RCC_USART1_CLK_ENABLE();
 		GPIO_EnableAlternate(UART1_PINS, 0, UART1_AF);
-		HAL_NVIC_EnableIRQ(USART1_IRQn);
-		HAL_NVIC_SetPriority(USART1_IRQn, UART_IRQ_PRIO, UART_IRQ_PRIO);
+		IRQ_Enable(IRQ_No_UART1, UART_IRQ_PRIO);
 	}
 #endif
 #ifdef UART2_PINS
@@ -316,8 +302,7 @@ static void UARTx_Init(UART_t * uart)
 	{
 		__HAL_RCC_USART2_CLK_ENABLE();
 		GPIO_EnableAlternate(UART2_PINS, 0, UART2_AF);
-		HAL_NVIC_EnableIRQ(USART2_IRQn);
-		HAL_NVIC_SetPriority(USART2_IRQn, UART_IRQ_PRIO, UART_IRQ_PRIO);
+		IRQ_Enable(IRQ_No_UART2, UART_IRQ_PRIO);
 	}
 #endif
 #ifdef UART3_PINS
@@ -325,8 +310,7 @@ static void UARTx_Init(UART_t * uart)
 	{
 		__HAL_RCC_USART3_CLK_ENABLE();
 		GPIO_EnableAlternate(UART3_PINS, 0, UART3_AF);
-		HAL_NVIC_EnableIRQ(USART3_IRQn);
-		HAL_NVIC_SetPriority(USART3_IRQn, UART_IRQ_PRIO, UART_IRQ_PRIO);
+		IRQ_Enable(IRQ_No_UART3, UART_IRQ_PRIO);
 	}
 #endif
 #ifdef UART4_PINS
@@ -334,8 +318,7 @@ static void UARTx_Init(UART_t * uart)
 	{
 		__HAL_RCC_USART4_CLK_ENABLE();
 		GPIO_EnableAlternate(UART4_PINS, 0, UART4_AF);
-		HAL_NVIC_EnableIRQ(USART4_IRQn);
-		HAL_NVIC_SetPriority(USART4_IRQn, UART_IRQ_PRIO, UART_IRQ_PRIO);
+		IRQ_Enable(IRQ_No_UART4, UART_IRQ_PRIO);
 	}
 #endif
 #ifdef UART5_PINS
@@ -343,8 +326,7 @@ static void UARTx_Init(UART_t * uart)
 	{
 		__HAL_RCC_USART5_CLK_ENABLE();
 		GPIO_EnableAlternate(UART5_PINS, 0, UART5_AF);
-		HAL_NVIC_EnableIRQ(USART5_IRQn);
-		HAL_NVIC_SetPriority(USART5_IRQn, UART_IRQ_PRIO, UART_IRQ_PRIO);
+		IRQ_Enable(IRQ_No_UART5, UART_IRQ_PRIO);
 	}
 #endif
 #ifdef UART6_PINS
@@ -352,8 +334,7 @@ static void UARTx_Init(UART_t * uart)
 	{
 		__HAL_RCC_USART6_CLK_ENABLE();
 		GPIO_EnableAlternate(UART6_PINS, 0, UART6_AF);
-		HAL_NVIC_EnableIRQ(USART6_IRQn);
-		HAL_NVIC_SetPriority(USART6_IRQn, UART_IRQ_PRIO, UART_IRQ_PRIO);
+		IRQ_Enable(IRQ_No_UART6, UART_IRQ_PRIO);
 	}
 #endif
 }
@@ -363,7 +344,6 @@ static void UARTx_Deinit(UART_t * uart)
 #ifdef UARTLP_PINS
 	if (uart == UART_LP)
 	{
-		HAL_NVIC_DisableIRQ(LPUART1_IRQn);
 		__HAL_RCC_LPUART1_CLK_DISABLE();
 		GPIO_Deinit(UARTLP_PINS);
 	}
@@ -371,7 +351,6 @@ static void UARTx_Deinit(UART_t * uart)
 #ifdef UART1_PINS
 	if (uart == UART_1)
 	{
-		HAL_NVIC_DisableIRQ(USART1_IRQn);
 		__HAL_RCC_USART1_CLK_DISABLE();
 		GPIO_Deinit(UART1_PINS);
 	}
@@ -379,7 +358,6 @@ static void UARTx_Deinit(UART_t * uart)
 #ifdef UART2_PINS
 	if (uart == UART_2)
 	{
-		HAL_NVIC_DisableIRQ(USART2_IRQn);
 		__HAL_RCC_USART2_CLK_DISABLE();
 		GPIO_Deinit(UART2_PINS);
 	}
@@ -387,7 +365,6 @@ static void UARTx_Deinit(UART_t * uart)
 #ifdef UART3_PINS
 	if (uart == UART_3)
 	{
-		//HAL_NVIC_DisableIRQ(USART3_IRQn);
 		__HAL_RCC_USART3_CLK_DISABLE();
 		GPIO_Deinit(UART3_PINS);
 	}
@@ -395,8 +372,6 @@ static void UARTx_Deinit(UART_t * uart)
 #ifdef UART4_PINS
 	if (uart == UART_4)
 	{
-		// TODO: Handle IRQ contention between UART_4 & UART_5
-		//HAL_NVIC_DisableIRQ(USART4_IRQn);
 		__HAL_RCC_USART4_CLK_DISABLE();
 		GPIO_Deinit(UART4_PINS);
 	}
@@ -404,7 +379,6 @@ static void UARTx_Deinit(UART_t * uart)
 #ifdef UART5_PINS
 	if (uart == UART_5)
 	{
-		//HAL_NVIC_DisableIRQ(USART5_IRQn);
 		__HAL_RCC_USART5_CLK_DISABLE();
 		GPIO_Deinit(UART5_PINS);
 	}
@@ -412,7 +386,6 @@ static void UARTx_Deinit(UART_t * uart)
 #ifdef UART6_PINS
 	if (uart == UART_6)
 	{
-		//HAL_NVIC_DisableIRQ(USART6_IRQn);
 		__HAL_RCC_USART6_CLK_DISABLE();
 		GPIO_Deinit(UART6_PINS);
 	}
@@ -422,7 +395,6 @@ static void UARTx_Deinit(UART_t * uart)
 /*
  * INTERRUPT ROUTINES
  */
-
 
 void UART_IRQHandler(UART_t *uart)
 {
@@ -463,81 +435,3 @@ void UART_IRQHandler(UART_t *uart)
 	}
 }
 
-
-#ifdef UARTLP_PINS
-void LPUART1_IRQHandler(void)
-{
-	UART_IRQHandler(UART_LP);
-}
-#endif
-#ifdef UART1_PINS
-void USART1_IRQHandler(void)
-{
-	UART_IRQHandler(UART_1);
-}
-#endif
-#ifdef UART2_PINS
-void USART2_IRQHandler(void)
-{
-	UART_IRQHandler(UART_2);
-}
-#endif
-
-#if !(defined(USART_3_4_IRQ_JOIN) || defined(USART_3_6_IRQ_JOIN))
-#ifdef UART3_PINS
-void USART3_IRQHandler(void)
-{
-	UART_IRQHandler(UART_3);
-}
-#endif
-#endif // USART_3_4_IRQ_JOIN || USART_3_6_IRQ_JOIN
-
-
-#ifdef USART_3_4_IRQ_JOIN
-#if (defined(UART3_PINS) || defined(UART4_PINS))
-void USART3_4_IRQHandler(void)
-{
-#ifdef UART3_PINS
-	UART_IRQHandler(UART_3);
-#endif
-#ifdef UART4_PINS
-	UART_IRQHandler(UART_4);
-#endif
-}
-#endif
-#endif //USART_3_4_IRQ_JOIN
-
-
-#ifdef USART_4_5_IRQ_JOIN
-#if defined(UART4_PINS) || defined(UART5_PINS)
-void USART4_5_IRQHandler(void)
-{
-#ifdef UART4_PINS
-	UART_IRQHandler(UART_4);
-#endif
-#ifdef UART5_PINS
-	UART_IRQHandler(UART_5);
-#endif
-}
-#endif
-#endif //USART_4_5_IRQ_JOIN
-
-#ifdef USART_3_6_IRQ_JOIN
-#if defined(UART3_PINS) || defined(UART4_PINS) || defined(UART5_PINS) || defined(UART6_PINS)
-void USART3_4_5_6_LPUART1_IRQHandler(void)
-{
-#ifdef UART3_PINS
-	UART_IRQHandler(UART_3);
-#endif
-#ifdef UART4_PINS
-	UART_IRQHandler(UART_4);
-#endif
-#ifdef UART5_PINS
-	UART_IRQHandler(UART_5);
-#endif
-#ifdef UART6_PINS
-	UART_IRQHandler(UART_6);
-#endif
-}
-#endif
-#endif //USART_3_6_IRQ_JOIN
