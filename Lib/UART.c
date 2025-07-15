@@ -16,6 +16,10 @@
 #error "UART_BFR_SIZE must be a power of two"
 #endif
 
+#ifndef USART_CR1_M0
+#define USART_CR1_M0 USART_CR1_M
+#endif
+
 #if defined(STM32G0) || defined(STM32WL)
 #define USART_CR1_RXNEIE				USART_CR1_RXNEIE_RXFNEIE
 #define USART_CR1_TXEIE					USART_CR1_TXEIE_TXFNFIE
@@ -118,7 +122,7 @@ void UART_Init(UART_t * uart, uint32_t baud, UART_Mode_t mode)
 	if (mode & UART_Mode_EvenParity) 	{ cr1 |= USART_CR1_PCE | USART_CR1_M0; }
 	if (mode & UART_Mode_OddParity) 	{ cr1 |= USART_CR1_PCE | USART_CR1_PS | USART_CR1_M0; }
 
-	const uint32_t cr1msk = USART_CR1_M0 | USART_CR1_M1 | USART_CR1_PCE | USART_CR1_PS | USART_CR1_TE | USART_CR1_RE | USART_CR1_OVER8;
+	const uint32_t cr1msk = USART_CR1_M | USART_CR1_PCE | USART_CR1_PS | USART_CR1_TE | USART_CR1_RE | USART_CR1_OVER8;
 	MODIFY_REG(uart->Instance->CR1, cr1msk,	cr1);
 
 	const uint32_t cr2msk = USART_CR2_STOP | USART_CR2_RXINV | USART_CR2_TXINV | USART_CR2_SWAP | USART_CR2_LINEN | USART_CR2_CLKEN;
