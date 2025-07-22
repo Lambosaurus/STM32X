@@ -229,6 +229,11 @@ void CORE_InitGPIO(void)
 	GPIO_Deinit(GPIO_Port_D | GPIO_Pin_All);
 #endif
 
+#if defined(GPIOF)
+	__HAL_RCC_GPIOF_CLK_ENABLE();
+	GPIO_Deinit(GPIO_Port_F | GPIO_Pin_All);
+#endif
+
 #if defined(GPIOH)
 	__HAL_RCC_GPIOH_CLK_ENABLE();
 #endif
