@@ -1,9 +1,10 @@
 # CORE
 This module provides control of the processors power states, and sets up the system tick.
 
-`CORE_Init()` should **always** be the first function run.
-
 The header is available [here](../Lib/Core.h).
+
+> [!IMPORTANT]
+> `CORE_Init()` should always be the first function run.
 
 # Usage
 
@@ -32,17 +33,27 @@ void main(void)
 }
 ```
 
-## Sleep modes:
-`CORE_Idle()` is just a wrapper for the WFI instruction.
-* This will return immediately when interrupts occurr, making it ideal for event driven systems
-* Systick is an interrupt, so this will return at least every millisecond (assuming `CORE_SYSTICK_FREQ` is 1000), making it ideal for polled systems.
-* This functions use is optional, but its encouraged: as it reduces the power consumption of compared to a busy wait.
-* All clocks and peripherals are left running as expected.
+## Sleep mode:
+`CORE_Idle()` is just a wrapper for the WFI instruction. This puts the CPU into a low power state. This should be favored over busy waiting.
 
-`CORE_Stop()` is similar to CORE_Idle, but with the following adjustments:
-* Systick is disabled. Note that this means CORE_GetTick() will not reflect the passed time.
-* SYSCLK is disabled. This means that most clocked peripherals will stop functioning. See the datasheet on STOP mode for more information.
-* Stop mode should ideally be used in conjuction with RTC module and its alarms. See [RTC](RTC.md) for more information.
+> [!TIP]  
+> This function will return immediately when interrupts occurr, making it ideal for event driven systems.
+
+> [!TIP]  
+> SYSTICK is an interrupt source, so CORE_Idle will run for at most one millisecond (assuming `CORE_SYSTICK_FREQ` is 1000).
+
+## Stop mode:
+
+`CORE_Stop()` puts the CPU int an ultra-low power state, and suspends all high speed peripheral clocks. This should be used for low power applications.
+
+> [!IMPORTANT]  
+> The system tick is stalled during stop mode, so `CORE_GetTick()` cannot be used as a timebase when stopped. This also means stop mode may run indefinitely until an event occurrs.
+
+> [!TIP]  
+> Stop mode is normally used in conjunction with the [RTC](RTC.md) or a [LPTIM](LPTIM.md) to serve as a wakeup source.
+
+> [!TIP]  
+> Because SYSTICK is disabled, most peripherals will be stalled while in stop mode. Best practice is to deinitialise these peripherals before entering stop mode.
 
 ## System tick:
 
@@ -77,7 +88,10 @@ while(1)
 ## Reset
 `CORE_Reset()` triggers a NVIC_SystemReset(). This completely restarts the processor and all peripherals. The sole exception is the [RTC](RTC.md).
 
-The source of the last reset can also be fetched using `CORE_GetResetSource()`. If used, this should be called once on boot directly after `CORE_Init()`. Subsequent calls may be invalid.
+The source of the last reset can also be fetched using `CORE_GetResetSource()`.
+
+> [!WARNING]  
+> Subsequent calls to `CORE_GetResetSource` are not guaranteed to be valid. This should ideally be read once on boot.
 
 # Board
 

@@ -1,13 +1,12 @@
 # IRQ
 This module provides helpers for managing the interrupt request handlers.
 
-The user should not interract with this module directly.
-
 The header is available [here](../Lib/IRQ.h).
 
-# Usage
+> [!TIP]
+> This module is primarially for internal use by other modules.
 
-Usage of the module functions are **NOT** expected of the user in normal circumstances. It intended for internal use by other libraries.
+# Usage
 
 ## IRQ numbers
 
@@ -18,7 +17,8 @@ This module defines the IRQ request numbers and handler callbacks. Note that an 
 IRQ_Enable(IRQ_No_UART1, 0);
 ```
 
-Note that priority control for shared interrupts will result in the last enabled peripheral setting the priority. This is poor behavior, but probably rare enough not to be a concern.
+> [!WARNING]  
+> Priority control for shared interrupts will result in the last enabled module setting the priority. This is poor behavior, but probably rare enough not to be a concern.
 
 # Maintenance
 

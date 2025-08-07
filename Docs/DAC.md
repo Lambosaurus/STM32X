@@ -5,7 +5,10 @@ The header is available [here](../Lib/DAC.h).
 
 # Usage
 
-Refer to the datasheet for how the DAC channels map to the pins. Note that these pins must be left in analog mode. See [GPIO](GPIO.md) for more info.
+Refer to the datasheet for how the DAC channels map to the pins.
+
+> [!NOTE]  
+> DAC pins should be left in analog mode. See [GPIO](GPIO.md) for more info.
 
 Once initialised, the DAC channels become output. These are written with a 12 bit value, ie 0 to `DAC_MAX`.
 

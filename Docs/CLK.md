@@ -5,11 +5,15 @@ The users primarially interaction with this module will be configuring the clock
 
 The header is available [here](../Lib/CLK.h).
 
+> [!TIP]
+> This module is primarially for internal use by other modules. The user is only expected to configure this module via the `Board.h` file.
+
 # Usage
 
 ## Functions
 
-Usage of the module functions are **NOT** expected of the user in normal circumstances. It is primarially for internal use of other libraries. `CLK_Init()` will be called within the [CORE](CORE.md) module, and should not be called by the user.
+> [!NOTE]  
+>  `CLK_Init()` will be called within the [CORE](CORE.md) module, and should not be called by the user.
 
 The clock frequencies can be queried via the following functions.
 ```C
@@ -44,7 +48,8 @@ The presense of an external low speed oscillator (LSE) can be specifed using the
 //#define CLK_LSE_BYPASS
 ```
 
-In the absence of the LSE, the internal LSI will be automatically used.
+> [!NOTE]  
+> In the absence of the LSE, the internal LSI will be automatically used.
 
 ## High speed oscillators:
 
@@ -57,13 +62,15 @@ The presense of an external high speed oscillator (HSE) can be specified using t
 #define CLK_HSE_FREQ    8000000
 ```
 
-In the absence of the HSE, the internal HSI  will be automatically used.
+> [!NOTE]  
+> In the absence of the HSE, the internal HSI will be automatically used.
 
 ## SYSCLK and PLL configuration
 
 The PLL will be automatically configued to achieve the required system clock frequency. The PLL will use the HSI or HSE if available, or will be disabled if the system clock already matches the HSI/HSE.
 
-The PLL multiplication and division factors will be automatically computed - but may need user assistance for some combinations. Specifiy the multiplier only if required.
+> [!IMPORTANT]
+> The PLL multiplication and division factors will be automatically computed - but may need user assistance for some combinations. Specifiy the multiplier only if required.
 
 ```C
 // CLK PLL configuration
@@ -73,7 +80,7 @@ The PLL multiplication and division factors will be automatically computed - but
 
 ## Medium speed oscillator:
 
-A internal medium speed oscillator (MSI) may be used as a source for the system clock **instead of** the high speed oscillators and PLL. This significantly reduces power consumption, but is very limiting.
+A internal medium speed oscillator (MSI) may be used as a source for the system clock instead of the high speed oscillators and PLL. This significantly reduces power consumption, but is very limiting.
 
 ```C
 // CLK MSI configuration
@@ -81,4 +88,5 @@ A internal medium speed oscillator (MSI) may be used as a source for the system 
 #define CLK_SYSCLK_FREQ   4194304
 ```
 
-The MSI may be configured to other speeds, but are not availale in STM32X yet.
+> [!WARNING]  
+> The MSI is very poorly supported in STM32X, and currently only some frequencies and series are supported.

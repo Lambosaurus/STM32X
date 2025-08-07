@@ -7,9 +7,11 @@ The header is available [here](../Lib/I2C.h).
 
 # Usage
 
-The I2C frequency can be arbitrary, but the `I2C_Mode_t` enum is provided for convenience.
+> [!TIP]  
+> The I2C frequency can be arbitrary, but the `I2C_Mode_t` enum is provided for convenience.
 
-Note that the device address should be specified as a 7 bit address. The R/W bit is automatically set.
+> [!NOTE]
+> The device address should be specified as a 7 bit address. The R/W bit is automatically set.
 
 ```c
 I2C_Init(I2C_1, I2C_Mode_Fast);
@@ -66,6 +68,7 @@ The maximum size of an I2C transfer is by default limited to 255 bytes.
 
 This can be overridden using the `I2C_USE_LONG_TRANSFER` definition to add support for longer blocks.
 
+> [!NOTE]  
 > The transfer size is per read/write block. A transfer of 255 bytes tx followed by 255 bytes rx is permitted.
 
 ## I2C Timeouts

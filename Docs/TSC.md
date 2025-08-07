@@ -7,7 +7,8 @@ The header is available [here](../Lib/TSC.h).
 
 # Usage
 
-Understanding how the groups and channels are laid out on your processor is critical to using this peripheral. Note that each pin has a specific group and channel.
+> [!TIP]  
+> Understanding how the groups and channels are laid out on your processor is critical to using this peripheral. Note that each pin has a specific group and channel.
 
 `TSC_EnableCapacitor` is used to enable the sampling capacitor. One sampling capacitor should be enabled for each group.
 

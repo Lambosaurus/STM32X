@@ -8,8 +8,10 @@ The header is available [here](../Lib/CRC.h).
 
 No initialisation of this module is required.
 
-Note that the size is specified in bytes, not words.
 The default polynomial of `0x4C11DB7` is used.
+
+> [!NOTE]
+> The size is specified in bytes, not words.
 
 ```C
 uint32_t page1[] = { 0x00000001, 0x00000002, 0x00000003, 0x00000004 };

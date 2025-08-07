@@ -6,9 +6,14 @@ The header is available [here](../Lib/ADC.h).
 # Usage
 
 `ADC_Read()` can be used to do an immediate blocking read of a specified ADC channel.
-Note that the ST CUBE ADC channel definitons should no longer be used. Use the enumeration found in `ADC.h`.
 
-Refer to the datasheet for how the ADC channels map to the pins. Note that these pins must be left in analog mode. See [GPIO](GPIO.md) for more info.
+Refer to the datasheet for how the ADC channels map to the pins.
+
+> [!TIP]  
+> The ST CUBE ADC channel definitions should not be used. Use the `ADC_Channel_t` enumeration found in `ADC.h`.
+
+> [!NOTE]  
+> ADC pins should be left in analog mode. See [GPIO](GPIO.md) for more info.
 
 ```C
 ADC_Init();
@@ -40,7 +45,7 @@ int32_t degrees = ADC_ReadDieTemp();
 uint32_t vref = ADC_ReadVRef();
 ```
 
-## Configuration
+# Configuration
 
 The ADC can be used 'as is', but more control is often required, especially when used in DMA mode.
 
@@ -68,15 +73,20 @@ When configuring the frequency, note that only a specific list of frequencies ar
 	 23121 hz
 ```
 
-These are dependant on the ADC clocking configuration, so its recommended to check the return value of ADC_SetFreq to confirm your frequency.
+> [!IMPORTANT]  
+> The frequencies available are dependant on the ADC clocking configuration. This varies between series, and may vary based on the STM32X clock config. Its reccommended you check the return value of `ADC_SetFreq` to confirm that your requested frequency was achieved.
 
-## DMA
+# DMA
 
 The ADC may be run in continous mode if a DMA channel is allocated. This can be used in a one-shot or circular mode.
 
-See [DMA](DMA.md) for notes on enabling DMA channels.
+> [!NOTE]
+> See [DMA](DMA.md) for more information on DMA channel selection.
 
-### **One-shot mode**:
+> [!WARNING]
+> No provision is made to protect the ADC from simultaneous access while in DMA mode. Ensure that any DMA transfers are completed or stopped before starting any new activity.
+
+## One-shot mode:
 
 In one-shot mode, the callback will be called when the buffer is filled. On completion, the ADC will be automatically stopped.
 
@@ -100,7 +110,7 @@ void main()
 }
 ```
 
-### **Circular mode**:
+## Circular mode:
 
 In circular mode, the callback will be called recurringly until the `ADC_Stop()` is called. The callback will be called when the buffer is half full.
 

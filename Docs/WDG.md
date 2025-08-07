@@ -9,8 +9,6 @@ The header is available [here](../Lib/WDG.h).
 
 The used watchdog is the Independant Watchdog (IWDG). This is based off the LSI - even when an LSE is supplied. This means it cannot even be interrupted by clock disturbance.
 
-The maximum supported period is 28333ms.
-
 ```c
 // Create a watchdog with a period of 50ms
 WDG_Init(50);
@@ -24,9 +22,11 @@ while (1)
 }
 ```
 
-*Once started, the WDG cannot be stopped*. The exception to this when compiled in debug, the WDG will be stopped when the debugger halts the core.
+> [!NOTE]  
+> Once started, the WDG cannot be stopped. The exception to this when compiled in debug, the WDG will be stopped when the debugger halts the core.
 
-Note that the LSI is extremely innaccurate - so be sure that the WDG has at least a 20% margin of error.
+> [!IMPORTANT]  
+> The IWDG always uses the LSI. The LSI can be extremely innaccurate, so be sure the the WDG has at least a 20% margin of error.
 
 # Board
 

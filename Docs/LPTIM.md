@@ -7,15 +7,14 @@ The header is available [here](../Lib/LPTIM.h).
 
 # Usage
 
-Warning - the IRQn names for the LPTIM are probably shared with different peripherals for many STM parts.
-This will be improved in future, but right now you'll need to manually confirm these are correct.
-
 ## Clock configuration
 
-The LPTIM only has a basic prescalar, so the base frequency must be the LSO frequency divided by some power of two.
+> [!IMPORTANT]
+> The LPTIM only has a basic prescalar, so the base frequency must be the LSO frequency divided by some power of two.
 See [CLK](./CLK.md#low-speed-oscillators) for more info on the LSO source. If this condition is not met, a lower base frequency will be selected.
 
-Currently this module is dependent on the LSO being already initialised. Please init the [RTC](./RTC.md) before starting the LPTIM.
+> [!IMPORTANT]
+> Currently this module is dependent on the LSO being already initialised. Please init the [RTC](./RTC.md) before starting the LPTIM.
 
 ## Basic usage:
 ```c

@@ -2,9 +2,10 @@
 This module enables a CAN bus peripheral.
 The bus is always run with 29 bit addresses.
 
-Note that the use of an external oscillator is reccommended for bus reliability.
-
 The header is available [here](../Lib/CAN.h).
+
+> [!TIP]  
+> The use of an external oscillator is reccommended for bus reliability.
 
 # Usage
 
@@ -37,10 +38,9 @@ while (1)
 }
 ```
 
-## Filters
+# Filters
 
-Up to `FILTER_BANK_COUNT` CAN filters can be enabled. These are used to restrict the recieved messages.
-There is no default filter. One should always be enabled.
+Up to `FILTER_BANK_COUNT` CAN filters can be enabled. These are used to select the recieved messages.
 
 ```C
 // Arguments are: index, id_mask, id_match 
@@ -48,7 +48,10 @@ CAN_EnableFilter(0, 0x00F00000, 0x00100000);
 CAN_EnableFilter(1, 0x00F00000, 0x00200000);
 ```
 
-## Modes
+> [!TIP]  
+> There is no default filter. If you wish to retrieve all can traffic, then you will need to setup a filter with a mask of 0.
+
+# Modes
 The CAN_Mode_t provides the following flags for altering the CAN behavior:
 
 | Mode                   | Description                                         |
@@ -72,7 +75,10 @@ The following template can be used. Commented out settings are optional.
 //#define CAN_DUAL_FIFO
 ```
 
-The CAN time quanta will be automatically computed, but may be manually specified in the Board.h file. This is not reccommended unless you have a specific requirement to do so.
+The CAN time quanta will be automatically computed, but may be manually specified in the Board.h file.
+
+> [!WARNING]  
+> Setting the time quanta manually is not reccommended. This may be depricated in the future.
 
 ```C
 // Set the time segments

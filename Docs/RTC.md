@@ -57,8 +57,8 @@ DateTime_t dt = {
 // This will occurr each hour at **:30:21
 RTC_OnAlarm(RTC_Alarm_A, &dt, RTC_Mask_Hour, User_Callback);
 ```
-
-Note that the alarms can be generated each second/hour/minute/day. For more custom periods - the alarm will have to be reinitialised with a new value each wakeup.
+> [!TIP]
+> The alarms can be generated each second, hour, minute or day. For more custom periods - the alarm will have to be reinitialised with a new value each wakeup.
 
 ## Timer:
 
@@ -90,11 +90,15 @@ uint32_t end = RTC_ReadBinary();
 uint32_t elapsed_ms =  (end - start) * 1000 / RTC_SUBSECOND_RES;
 ```
 
+> [!TIP]  
+> This feature is not widely available. Check your datasheet.
+
 ## Oscillator selection:
 
-Its important to note that the LSI (Low speed internal oscillator) is **extremely** inacurate. Check your parts datasheet. It is useful for wakeups, but not for accurate time keeping.
+See the [CLK](CLK.md) module for selecting the LSI or LSE.
 
-See the [CLK](CLK.md) module for using the LSE (low speed external oscillaor) instead.
+> [!TIP]
+> The LSI (Low speed internal oscillator) is **extremely** inacurate. Check your parts datasheet. It is useful for wakeups, but not for accurate time keeping.
 
 # Board
 
