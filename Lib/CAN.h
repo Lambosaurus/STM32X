@@ -30,12 +30,25 @@ typedef struct {
 	bool ext;
 } CAN_Msg_t;
 
-typedef enum
-{
+typedef enum {
 	CAN_Mode_Default 			= 0,
 	CAN_Mode_Silent 			= (1 << 0),
 	CAN_Mode_TransmitFIFO		= (1 << 1),
 } CAN_Mode_t;
+
+typedef enum {
+	CAN_Error_None 				= 0,
+	CAN_Error_Stuff				= 1,
+	CAN_Error_Form				= 2,
+	CAN_Error_Acknowledgement	= 3,
+	CAN_Error_RecessiveBit		= 4,
+	CAN_Error_DominantBit		= 5,
+	CAN_Error_CRC				= 6,
+	CAN_Error_Software			= 7,
+	CAN_Error_RxOverrun			= 8,
+} CAN_Error_t;
+
+typedef void (*CAN_ErrorCallback_t)(CAN_Error_t error);
 
 /*
  * PUBLIC FUNCTIONS
@@ -53,6 +66,11 @@ uint32_t CAN_WriteFree(void);
 // Receive
 uint32_t CAN_ReadCount(void);
 bool CAN_Read(CAN_Msg_t * msg);
+
+#ifdef CAN_USE_IRQS
+void CAN_OnError(CAN_ErrorCallback_t callback);
+void CAN_IRQHandler(void);
+#endif //CAN_USE_IRQS
 
 
 #endif //CAN_PINS

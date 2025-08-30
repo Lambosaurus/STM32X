@@ -5,10 +5,16 @@
 #include "GPIO.h"
 #include "CLK.h"
 #include "Core.h"
+#include "IRQ.h"
+
 
 /*
  * PRIVATE DEFINITIONS
  */
+
+#ifndef CAN_IRQ_PRIO
+#define CAN_IRQ_PRIO		1
+#endif
 
 #define FILTER_BANK_COUNT			14
 #define _CAN_RX_FIFO0_COUNT(can) 	(can->RF0R & CAN_RF0R_FMP0)
@@ -49,6 +55,12 @@ static bool CAN_WaitForStatus(uint32_t msr_bit, bool state);
 /*
  * PRIVATE VARIABLES
  */
+
+#ifdef CAN_USE_IRQS
+static struct {
+	CAN_ErrorCallback_t error_callback;
+} gCAN;
+#endif
 
 /*
  * PUBLIC FUNCTIONS
@@ -92,10 +104,17 @@ void CAN_Init(uint32_t bitrate, CAN_Mode_t mode)
 			 | ((ts2 - 1) << CAN_BTR_TS2_Pos)
 			 | (prescalar - 1U);
 
+	// Clear IRQ enable.
+	CAN->IER = 0;
+
 	// Clear init mode - this starts everything.
 	CAN->MCR &= ~CAN_MCR_INRQ;
 	// Wait for ack. This is probably not required.
 	CAN_WaitForStatus(CAN_MSR_INAK, false);
+
+#ifdef CAN_USE_IRQS
+	IRQ_Enable(IRQ_No_CAN, CAN_IRQ_PRIO);
+#endif
 }
 
 void CAN_EnableFilter(uint32_t bank, uint32_t id, uint32_t mask)
@@ -221,6 +240,22 @@ static bool CAN_WaitForStatus(uint32_t msr_bit, bool state)
 	}
 }
 
+#ifdef CAN_USE_IRQS
+
+void CAN_OnError(CAN_ErrorCallback_t callback)
+{
+	// Enable the error code interrupts
+	// And fifo overruns.
+	CAN->IER |= CAN_IER_LECIE | CAN_IER_ERRIE | CAN_IER_FOVIE0
+#ifdef CAN_DUAL_FIFO
+			| CAN_IER_FOVIE1
+#endif
+			;
+	gCAN.error_callback = callback;
+}
+
+#endif //CAN_USE_IRQS
+
 /*
  * PRIVATE FUNCTIONS
  */
@@ -316,5 +351,48 @@ static void CANx_Deinit(void)
 /*
  * INTERRUPT ROUTINES
  */
+
+#ifdef CAN_USE_IRQS
+
+void CAN_IRQHandler(void)
+{
+	CAN_Error_t error = CAN_Error_None;
+
+	// FIFO0 overrun
+	if (CAN->RF0R & CAN_RF0R_FOVR0)
+	{
+		error = CAN_Error_RxOverrun;
+		CAN->RF0R = CAN_RF0R_FOVR0;
+	}
+#ifdef CAN_DUAL_FIFO
+	// FIFO1 overrun
+	if (CAN->RF1R & CAN_RF1R_FOVR1)
+	{
+		error = CAN_Error_RxOverrun;
+		CAN->RF1R = CAN_RF1R_FOVR1;
+	}
+#endif //CAN_DUAL_FIFO
+
+	// Error codes
+	if (CAN->MSR & CAN_MSR_ERRI)
+	{
+		uint32_t esr = CAN->ESR;
+		if (esr & CAN_ESR_LEC)
+		{
+			// The error enum is structured so we can just cast this.
+			error = (CAN_Error_t)((esr & CAN_ESR_LEC) >> CAN_ESR_LEC_Pos);
+			CAN->ESR = CAN_ESR_LEC;
+		}
+		CAN->MSR = CAN_MSR_ERRI;
+	}
+
+	// If we got an error code, give it to the user.
+	if (error != CAN_Error_None && gCAN.error_callback)
+	{
+		gCAN.error_callback(error);
+	}
+}
+
+#endif //CAN_USE_IRQS
 
 #endif // CAN_PINS

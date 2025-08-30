@@ -10,6 +10,7 @@
 #include "TIM.h"
 #include "UART.h"
 #include "USB.h"
+#include "CAN.h"
 
 /*
  * PRIVATE DEFINITIONS
@@ -243,7 +244,13 @@ void USART3_4_IRQHandler(void)
 }
 #endif //defined(UART3_PINS) || defined(UART4_PINS)
 
-//void CEC_CAN_IRQHandler(void);
+#if defined(CAN_PINS) && defined(CAN_USE_IRQS)
+void CEC_CAN_IRQHandler(void)
+{
+	CAN_IRQHandler();
+}
+#endif //defined(CAN_PINS) && defined(CAN_USE_IRQS)
+
 //void USB_IRQHandler(void); // Allow this to be defined in USB.h
 
 
