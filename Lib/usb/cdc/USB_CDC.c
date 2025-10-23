@@ -5,6 +5,7 @@
 #include "../USB_EP.h"
 #include "../USB_CTL.h"
 #include "Core.h"
+#include "util/FIFO.h"
 
 /*
  * PRIVATE DEFINITIONS
@@ -14,12 +15,6 @@
 #define CDC_BFR_SIZE 	USB_CDC_BFR_SIZE
 #else
 #define CDC_BFR_SIZE 512
-#endif
-
-#define CDC_BFR_WRAP(v) ((v) & (CDC_BFR_SIZE - 1))
-
-#if (CDC_BFR_WRAP(CDC_BFR_SIZE) != 0)
-#error "USB_CDC_BFR_SIZE must be a power of two"
 #endif
 
 
@@ -57,14 +52,6 @@
 /*
  * PRIVATE TYPES
  */
-
-typedef struct
-{
-	uint8_t buffer[CDC_BFR_SIZE];
-	uint32_t head;
-	uint32_t tail;
-} CDCBuffer_t;
-
 
 typedef struct
 {
@@ -150,8 +137,7 @@ __ALIGNED(4) const uint8_t cUSB_CDC_ConfigDescriptor[USB_CDC_CONFIG_DESC_SIZE] =
 };
 
 static uint8_t gRxBuffer[CDC_PACKET_SIZE];
-static CDCBuffer_t gRx;
-
+static FIFO_DECLARE(gRxFifo, USB_CDC_BFR_SIZE);
 static CDC_t gCDC;
 
 /*
@@ -160,7 +146,7 @@ static CDC_t gCDC;
 
 void USB_CDC_Init(uint8_t config)
 {
-	gRx.head = gRx.tail = 0;
+	FIFO_Init(&gRxFifo);
 	gCDC.txBusy = false;
 	gCDC.dtr = false;
 
@@ -181,7 +167,6 @@ void USB_CDC_Deinit(void)
 	USB_EP_Close(CDC_IN_EP);
 	USB_EP_Close(CDC_OUT_EP);
 	USB_EP_Close(CDC_CMD_EP);
-	gRx.head = gRx.tail = 0;
 	gCDC.dtr = false;
 }
 
@@ -224,38 +209,12 @@ void USB_CDC_WriteStr(const char * str)
 
 uint32_t USB_CDC_ReadReady(void)
 {
-	// Assume these reads are atomic
-	uint32_t count = CDC_BFR_WRAP(gRx.head - gRx.tail);
-	return count;
+	return FIFO_Count(&gRxFifo);
 }
 
 uint32_t USB_CDC_Read(uint8_t * data, uint32_t count)
 {
-	uint32_t ready = USB_CDC_ReadReady();
-
-	if (count > ready)
-	{
-		count = ready;
-	}
-	if (count > 0)
-	{
-		uint32_t tail = gRx.tail;
-		uint32_t newtail = CDC_BFR_WRAP( tail + count );
-		if (newtail > tail)
-		{
-			// We can read continuously from the buffer
-			memcpy(data, gRx.buffer + tail, count);
-		}
-		else
-		{
-			// We read to end of buffer, then read from the start
-			uint32_t chunk = CDC_BFR_SIZE - tail;
-			memcpy(data, gRx.buffer + tail, chunk);
-			memcpy(data + chunk, gRx.buffer, count - chunk);
-		}
-		gRx.tail = newtail;
-	}
-	return count;
+	return FIFO_Read(&gRxFifo, data, count);
 }
 
 void USB_CDC_Setup(USB_SetupRequest_t * req)
@@ -323,32 +282,7 @@ static void USB_CDC_Receive(uint32_t count)
 	// Discard data if DTR not set.
 	if (gCDC.dtr)
 	{
-		// Minus 1 because head == tail represents the empty condition.
-		uint32_t space = CDC_BFR_WRAP(gRx.tail - gRx.head - 1);
-
-		if (count > space)
-		{
-			// Discard any data that we cannot insert into the buffer.
-			count = space;
-		}
-		if (count > 0)
-		{
-			uint32_t head = gRx.head;
-			uint32_t newhead = CDC_BFR_WRAP( head + count );
-			if (newhead > head)
-			{
-				// We can write continuously into the buffer
-				memcpy(gRx.buffer + head, gRxBuffer, count);
-			}
-			else
-			{
-				// We write to end of buffer, then write from the start
-				uint32_t chunk = CDC_BFR_SIZE - head;
-				memcpy(gRx.buffer + head, gRxBuffer, chunk);
-				memcpy(gRx.buffer, gRxBuffer + chunk, count - chunk);
-			}
-			gRx.head = newhead;
-		}
+		FIFO_Write(&gRxFifo, gRxBuffer, count);
 	}
 
 	USB_EP_Read(CDC_OUT_EP, gRxBuffer, CDC_PACKET_SIZE);
