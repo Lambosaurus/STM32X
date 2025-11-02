@@ -191,10 +191,12 @@ void USB_CDC_Write(const uint8_t * data, uint32_t count)
 	uint32_t tide = CORE_GetTick();
 	while (count)
 	{
+#ifdef USB_CDC_USE_DTR
 		if (!gCDC.dtr)
 		{
 			return;
 		}
+#endif
 		if (gCDC.txBusy)
 		{
 			// Wait for transmit to be free. Abort if it does not come free.
@@ -320,8 +322,10 @@ static void USB_CDC_Control(uint8_t cmd, uint8_t* data, uint16_t length)
 
 static void USB_CDC_Receive(uint32_t count)
 {
+#ifdef USB_CDC_USE_DTR
 	// Discard data if DTR not set.
 	if (gCDC.dtr)
+#endif
 	{
 		// Minus 1 because head == tail represents the empty condition.
 		uint32_t space = CDC_BFR_WRAP(gRx.tail - gRx.head - 1);
