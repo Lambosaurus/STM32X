@@ -11,6 +11,7 @@
 #include "TIM.h"
 #include "UART.h"
 #include "USB.h"
+#include "usb/pd/USB_PD.h"
 
 /*
  * PRIVATE DEFINITIONS
@@ -139,12 +140,17 @@ void EXTI4_15_IRQHandler(void)
 }
 #endif // GPIO_IRQ4_ENABLE .. GPIO_IRQ15_ENABLE
 
-#if defined(USB_ENABLE)
+#if defined(USB_ENABLE) || defined(USB_PD)
 void USB_UCPD1_2_IRQHandler(void)
 {
+#if defined(USB_ENABLE)
 	USB_IRQHandler();
+#endif
+#if defined(USB_PD)
+	USB_PD_IRQHandler();
+#endif
 }
-#endif //defined(USB_ENABLE)
+#endif //defined(USB_ENABLE) || defined(USB_PD)
 
 #if defined(DMA_CH1_ENABLE)
 void DMA1_Channel1_IRQHandler(void)

@@ -303,6 +303,23 @@ void CLK_DisableRNGCLK(void)
 #endif
 }
 
+#ifdef USB_PD
+void CLK_EnableUCPDCLK(void)
+{
+#if (defined(STM32G0)) && !defined(CLK_USE_HSI)
+	__HAL_RCC_HSI_ENABLE();
+#endif
+}
+
+void CLK_DisableUCPDCLK(void)
+{
+	// TODO: This causes clock contention with CLK_DisableADCCLK. Very bad.
+#if (defined(STM32G0)) && !defined(CLK_USE_HSI)
+	__HAL_RCC_HSI_DISABLE();
+#endif
+}
+#endif
+
 uint32_t CLK_SelectPrescalar(uint32_t src_freq, uint32_t div_min, uint32_t div_max, uint32_t * dst_freq)
 {
 	// TODO: This is really a log2 problem.

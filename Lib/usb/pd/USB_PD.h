@@ -37,7 +37,12 @@ typedef enum {
 void USB_PD_Init(void);
 void USB_PD_Deinit(void);
 
+void USB_PD_Start(uint32_t voltage_limit);
+void USB_PD_Stop(void);
+
 USB_PD_Flag_t USB_PD_Read(void);
+
+void USB_PD_IRQHandler(void);
 
 /*
  * EXTERN DECLARATIONS

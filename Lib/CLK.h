@@ -44,6 +44,11 @@ void CLK_EnableUSBCLK(void);
 void CLK_DisableUSBCLK(void);
 #endif
 
+#ifdef USB_PD
+void CLK_EnableUCPDCLK(void);
+void CLK_DisableUCPDCLK(void);
+#endif
+
 static inline uint32_t CLK_GetHCLKFreq(void);
 static inline uint32_t CLK_GetPCLKFreq(void);
 static inline uint32_t CLK_GetLSOFreq(void);
