@@ -8,12 +8,17 @@
  * PUBLIC DEFINITIONS
  */
 
+#define FIFO_INDEX_ADD_MOD(_size, _offset, _step)		((_offset) + (_step) < (_size) ? (_offset) + (_step) : (_offset) + (_step) - (_size))
+#define FIFO_INDEX_SUB_MOD(_size, _offset, _step)		((_offset) < (_step) ? (_offset) + (_size) - (_step) : (_offset) - (_step))
+
 #ifdef DEBUG
-// In an unoptimized build, the below will probably not get dead-branch pruned.
-#define FIFO_INDEX(_size, _offset)		((_offset) < (_size) ? (_offset) : (_offset) - (_size))
+#define FIFO_INDEX_ADD(_size, _offset, _step)			FIFO_INDEX_ADD_MOD(_size, _offset, _step)
+#define FIFO_INDEX_SUB(_size, _offset, _step)			FIFO_INDEX_SUB_MOD(_size, _offset, _step)
 #else
-#define FIFO_IS_POW2(_x) 				(((_x) & ((_x) - 1)) == 0)
-#define FIFO_INDEX(_size, _offset)		(FIFO_IS_POW2(_size) ? ((_offset) & ((_size) - 1)) : (((_offset) < (_size) ? (_offset) : (_offset) - (_size))) )
+// In an unoptimized build, the below will probably not get dead-branch pruned.
+#define FIFO_IS_POW2(_x) 						(((_x) & ((_x) - 1)) == 0)
+#define FIFO_INDEX_ADD(_size, _offset, _step)		(FIFO_IS_POW2(_size) ? (((_offset) + (_step)) & ((_size) - 1)) : FIFO_INDEX_ADD_MOD(_size, _offset, _step) )
+#define FIFO_INDEX_SUB(_size, _offset, _step)		(FIFO_IS_POW2(_size) ? (((_offset) - (_step)) & ((_size) - 1)) : FIFO_INDEX_SUB_MOD(_size, _offset, _step) )
 #endif
 
 #define FIFO_UNPACK(_fifo)				&(_fifo)->base, sizeof((_fifo)->bfr)
