@@ -42,11 +42,6 @@
 #define USB_PD_SPEC_REVISION	2
 
 
-#define USB_PD_SYNC1			0b11000
-#define USB_PD_SYNC2			0b10001
-#define USB_PD_SYNC2			0b10001
-
-
 /*
  * PRIVATE TYPES
  */
@@ -162,7 +157,6 @@ static struct {
 // How TF to poll in low power mode?
 // Notifications for USB PD detection
 // Change PD negotiation state on USB PD detection
-// PD negotiation
 // Notifications for USB PD negotiation
 // Chunk messages into uint16_ts to make alignment easier?
 
@@ -523,7 +517,6 @@ void USB_PD_IRQHandler(void)
 		{
 			// big uh-oh.
 			UCPD->TXDR = 0;
-			__BKPT();
 		}
 	}
 }
