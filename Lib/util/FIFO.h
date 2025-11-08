@@ -8,8 +8,14 @@
  * PUBLIC DEFINITIONS
  */
 
+#ifdef DEBUG
+// In an unoptimized build, the below will probably not get dead-branch pruned.
+#define FIFO_INDEX(_size, _offset)		((_offset) < (_size) ? (_offset) : (_offset) - (_size))
+#else
 #define FIFO_IS_POW2(_x) 				(((_x) & ((_x) - 1)) == 0)
-#define FIFO_INDEX(_size, _offset)		(FIFO_IS_POW2(_size) ? ((_offset) & ((_size) - 1)) : ((_offset) % (_size)))
+#define FIFO_INDEX(_size, _offset)		(FIFO_IS_POW2(_size) ? ((_offset) & ((_size) - 1)) : (((_offset) < (_size) ? (_offset) : (_offset) - (_size))) )
+#endif
+
 #define FIFO_UNPACK(_fifo)				&(_fifo)->base, sizeof((_fifo)->bfr)
 
 
