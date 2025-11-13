@@ -49,7 +49,11 @@
 #endif //DMA2
 
 #ifndef USART5
+#ifdef LPUART1
+#define USART3_4_5_6_LPUART1_IRQHandler	USART3_4_LPUART1_IRQHandler
+#else
 #define USART3_4_5_6_LPUART1_IRQHandler	USART3_4_IRQHandler
+#endif
 #endif
 
 /*
