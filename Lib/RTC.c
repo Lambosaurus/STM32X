@@ -184,7 +184,7 @@ void RTC_Deinit(void)
 	CLK_DisableLSO();
 }
 
-void RTC_Write(DateTime_t * time)
+void RTC_Write(const DateTime_t * time)
 {
 	uint32_t treg = (RTC_ToBCD(time->hour)   << 16)
 				  | (RTC_ToBCD(time->minute) << 8)
@@ -238,7 +238,7 @@ void RTC_Read(DateTime_t * time)
 
 #ifdef RTC_USE_IRQS
 
-void RTC_OnAlarm(RTC_Alarm_t alarm, DateTime_t * time, RTC_Mask_t mask, VoidFunction_t callback)
+void RTC_OnAlarm(RTC_Alarm_t alarm, const DateTime_t * time, RTC_Mask_t mask, VoidFunction_t callback)
 {
 	uint32_t treg = RTC_ALARMMASK_ALL & ~mask;
 	if (time != NULL)
