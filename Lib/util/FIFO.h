@@ -106,21 +106,21 @@ typedef struct {
 
 // The prototypes referenced above.
 // Prefer the macros - they make a cleaner API.
-static inline void FIFO_INL_Init(FIFO_t * fifo, uint16_t size);
-static inline void FIFO_INL_Clear(FIFO_t * fifo, uint16_t size);
-static inline uint16_t FIFO_INL_Count(FIFO_t * fifo, uint16_t size);
-static inline uint16_t FIFO_INL_Free(FIFO_t * fifo, uint16_t size);
-static inline uint16_t FIFO_INL_Discard(FIFO_t * fifo, uint16_t size, uint16_t n);
-static inline bool FIFO_INL_Put(FIFO_t * fifo, uint16_t size, uint8_t b);
-static inline bool FIFO_INL_Pop(FIFO_t * fifo, uint16_t size, uint8_t * b);
-static inline uint16_t FIFO_INL_Write(FIFO_t * fifo, uint16_t size, const uint8_t * src, uint16_t src_size);
-static inline uint16_t FIFO_INL_Read(FIFO_t * fifo, uint16_t size, uint8_t * dst, uint16_t dst_size);
-static inline bool FIFO_INL_Enqueue(FIFO_t * fifo, uint16_t size, const void * src, uint16_t src_size);
-static inline bool FIFO_INL_Dequeue(FIFO_t * fifo, uint16_t size, void * dst, uint16_t dst_size);
-static inline void FIFO_INL_BlindPut(FIFO_t * fifo, uint16_t size, uint8_t b);
-static inline uint8_t FIFO_INL_BlindPop(FIFO_t * fifo, uint16_t size);
-static inline void FIFO_INL_BlindWrite(FIFO_t * fifo, uint16_t size, const uint8_t * src, uint16_t src_size);
-static inline void FIFO_INL_BlindRead(FIFO_t * fifo, uint16_t size, uint8_t * dst, uint16_t dst_size);;
+static inline void FIFO_INL_Init(FIFO_t * fifo, uint32_t size);
+static inline void FIFO_INL_Clear(FIFO_t * fifo, uint32_t size);
+static inline uint32_t FIFO_INL_Count(FIFO_t * fifo, uint32_t size);
+static inline uint32_t FIFO_INL_Free(FIFO_t * fifo, uint32_t size);
+static inline uint32_t FIFO_INL_Discard(FIFO_t * fifo, uint32_t size, uint32_t n);
+static inline bool FIFO_INL_Put(FIFO_t * fifo, uint32_t size, uint8_t b);
+static inline bool FIFO_INL_Pop(FIFO_t * fifo, uint32_t size, uint8_t * b);
+static inline uint32_t FIFO_INL_Write(FIFO_t * fifo, uint32_t size, const uint8_t * src, uint32_t src_size);
+static inline uint32_t FIFO_INL_Read(FIFO_t * fifo, uint32_t size, uint8_t * dst, uint32_t dst_size);
+static inline bool FIFO_INL_Enqueue(FIFO_t * fifo, uint32_t size, const void * src, uint32_t src_size);
+static inline bool FIFO_INL_Dequeue(FIFO_t * fifo, uint32_t size, void * dst, uint32_t dst_size);
+static inline void FIFO_INL_BlindPut(FIFO_t * fifo, uint32_t size, uint8_t b);
+static inline uint8_t FIFO_INL_BlindPop(FIFO_t * fifo, uint32_t size);
+static inline void FIFO_INL_BlindWrite(FIFO_t * fifo, uint32_t size, const uint8_t * src, uint32_t src_size);
+static inline void FIFO_INL_BlindRead(FIFO_t * fifo, uint32_t size, uint8_t * dst, uint32_t dst_size);;
 
 /*
  * EXTERN DECLARATIONS
