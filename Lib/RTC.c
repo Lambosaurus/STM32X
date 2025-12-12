@@ -444,7 +444,7 @@ void RTC_IRQHandler(void)
 	}
 }
 
-#elif defined(SMT32G0) || defined(STM32WL)
+#elif defined(STM32G0) || defined(STM32WL)
 
 void RTC_IRQHandler(void)
 {
