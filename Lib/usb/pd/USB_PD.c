@@ -26,7 +26,7 @@
 #endif
 
 #ifndef USB_PD_IRQ_PRIO
-#define USB_PD_IRQ_PRIO			1 // Will usually be equal to USB prio, as the irqn is actually shared.
+#define USB_PD_IRQ_PRIO			1 // Will usually be equal to USB prio, as the irqn is shared.
 #endif //USB_PD_IRQ_PRIO
 
 #define _USB_PD_ENABLE(ucpd)	(ucpd->CFG1 |= UCPD_CFG1_UCPDEN)
@@ -35,8 +35,7 @@
 #define UCPD_STROBE()			(SYSCFG->CFGR1 |= SYSCFG_CFGR1_UCPD1_STROBE | SYSCFG_CFGR1_UCPD2_STROBE)
 #define UCPD_KCLK_FREQ()		(16000000) // Fed from the HSI16
 
-#define USB_PD_PAYLOAD_MAX		30
-#define USB_PD_PAYLOAD_IDLE		0xFF
+#define USB_PD_PAYLOAD_MAX		30 // No extended message support
 #define USB_PD_TX_FIFO_SIZE		64
 
 #define USB_PD_SPEC_REVISION	2
@@ -67,6 +66,7 @@ typedef enum {
 	USB_PD_SOP_None			= 0xFF,
 } USB_PD_SOP_t;
 
+// The explicity 20 bit K code sequences for the given SOP type.
 typedef enum {
 	USB_PD_SOPK_0			= (USB_PD_KCode_Sync1 << 0) | (USB_PD_KCode_Sync1 << 5) | (USB_PD_KCode_Sync1 << 10) | (USB_PD_KCode_Sync2 << 15),
 	USB_PD_SOPK_1			= (USB_PD_KCode_Sync1 << 0) | (USB_PD_KCode_Sync1 << 5) | (USB_PD_KCode_Sync3 << 10) | (USB_PD_KCode_Sync3 << 15),
@@ -117,6 +117,12 @@ typedef enum {
 	USB_PD_Msg_Revision				= 0x8C,
 } USB_PD_Msg_t;
 
+typedef enum {
+	USB_PD_State_Idle				= 0,
+	USB_PD_State_Requested			= 1,
+	USB_PD_State_Ready				= 2,
+} USB_PD_State_t;
+
 /*
  * PRIVATE PROTOTYPES
  */
@@ -124,7 +130,7 @@ typedef enum {
 static void USB_PDx_Init(void);
 static void USB_PDx_Deinit(void);
 
-static void USB_PD_SelectPhy(USB_PD_Flag_t flag);
+static void USB_PD_Notify(void);
 static void USB_PD_Reset(void);
 
 /*
@@ -132,9 +138,16 @@ static void USB_PD_Reset(void);
  */
 
 static struct {
+	USB_PD_Callback_t callback;
 	uint32_t max_voltage;
-	uint32_t voltage_requested;
+	USB_PD_Flag_t flags;
+	uint8_t state;
 	uint8_t msg_id;
+
+	struct {
+		uint32_t voltage;
+		uint32_t current;
+	} request;
 
 	struct {
 		uint8_t bfr[USB_PD_PAYLOAD_MAX];
@@ -154,14 +167,17 @@ static struct {
  */
 
 // TODO:
-// How TF to poll in low power mode?
-// Notifications for USB PD detection
-// Change PD negotiation state on USB PD detection
-// Notifications for USB PD negotiation
 // Chunk messages into uint16_ts to make alignment easier?
+// Make CLK_EnableUCPDCLK safe..... (non-trivial....)
+// Get state transactions working on init.
+// Issue USB PD reset on detection?
+// Clean up state vs flags.
 
-void USB_PD_Init(void)
+
+void USB_PD_Init(uint32_t voltage_limit)
 {
+	gUSB_PD.max_voltage = voltage_limit;
+
 	CLK_EnableUCPDCLK();
 	USB_PDx_Init();
 
@@ -178,9 +194,12 @@ void USB_PD_Init(void)
 					| UCPD_CFG1_RXORDSETEN_3 // Hard reset
 					;
 
-	UCPD->CFG1 |= cfg1;
+	UCPD->CFG1 = cfg1;
 	UCPD->CFG2 = 0;
-	UCPD->IMR = 0;
+	UCPD->IMR = UCPD_IMR_TYPECEVT1IE | UCPD_IMR_TYPECEVT2IE
+			  | UCPD_IMR_RXMSGENDIE | UCPD_IMR_RXHRSTDETIE
+			  | UCPD_IMR_RXNEIE | UCPD_IMR_RXORDDETIE
+			  | UCPD_IMR_TXISIE | UCPD_IMR_TXMSGSENTIE;
 
 	_USB_PD_ENABLE(UCPD);
 
@@ -190,51 +209,54 @@ void USB_PD_Init(void)
 #endif
 	UCPD->CR = cr;
 
+	gUSB_PD.flags = 0; // TODO: not needed if we do CC update on init.
+	USB_PD_Reset();
+
 	UCPD_STROBE();
+	IRQ_Enable(UCPD_IRQ_NO, USB_PD_IRQ_PRIO);
+
+	// TODO: Do initial detection?
+	// USB_PD_Flag_t flags = USB_PD_Read();
+	// USB_PD_SelectPhy(flags);
 }
 
 void USB_PD_Deinit(void)
 {
+	gUSB_PD.flags = 0;
+	UCPD->CR = 0;
+	UCPD->IMR = 0;
 	_USB_PD_DISABLE(UCPD);
 	USB_PDx_Deinit();
 	UCPD_STROBE();
 	CLK_DisableUCPDCLK();
 }
 
-USB_PD_Flag_t USB_PD_Read(void)
+void USB_PD_OnChange(USB_PD_Callback_t cb)
 {
-	uint32_t sr = UCPD->SR;
-	if (sr & UCPD_SR_TYPEC_VSTATE_CC1)
-	{
-		USB_PD_Flag_t current = (sr & UCPD_SR_TYPEC_VSTATE_CC1) >> UCPD_SR_TYPEC_VSTATE_CC1_Pos;
-		return USB_PD_Flag_CC1 | (current * USB_PD_Flag_500mA);
-	}
-	if (sr & UCPD_SR_TYPEC_VSTATE_CC2)
-	{
-		USB_PD_Flag_t current = (sr & UCPD_SR_TYPEC_VSTATE_CC2) >> UCPD_SR_TYPEC_VSTATE_CC2_Pos;
-		return USB_PD_Flag_CC2 | (current * USB_PD_Flag_500mA);
-	}
-	return 0;
+	gUSB_PD.callback = cb;
 }
 
-void USB_PD_Start(uint32_t voltage_limit)
+USB_PD_Flag_t USB_PD_Read(uint32_t * voltage, uint32_t * current)
 {
-	gUSB_PD.max_voltage = voltage_limit;
+	USB_PD_Flag_t flags = gUSB_PD.flags;
+	if (flags & USB_PD_Flag_Negotiated)
+	{
+		*voltage = gUSB_PD.request.voltage;
+		*current = gUSB_PD.request.current;
+	}
+	else if (flags)
+	{
+		*voltage = 5000;
+		*current = ((flags & USB_PD_Flag_3000mA) == USB_PD_Flag_3000mA) ? 3000
+				 : (((flags & USB_PD_Flag_1500mA) == USB_PD_Flag_1500mA) ? 1500 : 500);
+	}
+	else
+	{
+		*voltage = 0;
+		*current = 0;
+	}
 
-	USB_PD_Flag_t flags = USB_PD_Read();
-	USB_PD_SelectPhy(flags);
-
-	UCPD->IMR |= UCPD_IMR_RXMSGENDIE | UCPD_IMR_RXHRSTDETIE | UCPD_IMR_RXNEIE | UCPD_IMR_RXORDDETIE | UCPD_IMR_TXISIE | UCPD_IMR_TXMSGSENTIE;
-
-	USB_PD_Reset();
-
-	IRQ_Enable(UCPD_IRQ_NO, USB_PD_IRQ_PRIO);
-}
-
-void USB_PD_Stop(void)
-{
-	UCPD->IMR &= ~(UCPD_IMR_RXMSGENDIE | UCPD_IMR_RXHRSTDETIE | UCPD_IMR_RXNEIE | UCPD_IMR_RXORDDETIE | UCPD_IMR_TXISIE | UCPD_IMR_TXMSGSENTIE);
-	USB_PD_SelectPhy(0);
+	return flags;
 }
 
 /*
@@ -243,31 +265,39 @@ void USB_PD_Stop(void)
 
 static void USB_PD_Reset(void)
 {
+	// Reset the negotiation state machine.
 	gUSB_PD.msg_id = 0;
-	gUSB_PD.voltage_requested = 0;
+	gUSB_PD.state = USB_PD_State_Idle;
 	FIFO_Clear(&gUSB_PD.tx.fifo);
 	gUSB_PD.tx.size = 0;
 	gUSB_PD.rx.sop = USB_PD_SOP_None;
 }
 
-static void USB_PD_SelectPhy(USB_PD_Flag_t flag)
+static void USB_PD_UpdateCC(void)
 {
-	uint32_t cr = UCPD->CR;
-
-	cr &= ~(UCPD_CR_PHYRXEN | UCPD_CR_PHYCCSEL);
-
-	if (flag & USB_PD_Flag_CC1)
+	uint32_t sr = UCPD->SR;
+	if (sr & UCPD_SR_TYPEC_VSTATE_CC1)
 	{
-		cr |= UCPD_CR_PHYRXEN;
+		// Select the CC1 phy
+		UCPD->CR = (UCPD->CR | UCPD_CR_PHYRXEN) & ~UCPD_CR_PHYCCSEL;
+
+		uint32_t current = (sr & UCPD_SR_TYPEC_VSTATE_CC1) >> UCPD_SR_TYPEC_VSTATE_CC1_Pos;
+		gUSB_PD.flags = USB_PD_Flag_CC1 | (current * USB_PD_Flag_500mA);
 	}
-	else if (flag & USB_PD_Flag_CC2)
+	else if (sr & UCPD_SR_TYPEC_VSTATE_CC2)
 	{
-		cr |= UCPD_CR_PHYRXEN | UCPD_CR_PHYCCSEL;
+		// Select the CC2 phy
+		UCPD->CR = UCPD->CR | UCPD_CR_PHYRXEN | UCPD_CR_PHYCCSEL;
+
+		uint32_t current = (sr & UCPD_SR_TYPEC_VSTATE_CC2) >> UCPD_SR_TYPEC_VSTATE_CC2_Pos;
+		gUSB_PD.flags = USB_PD_Flag_CC2 | (current * USB_PD_Flag_500mA);
 	}
-
-	UCPD->CR = cr;
-
-	//UCPD_STROBE();
+	else // Neither CC line
+	{
+		// Disable phy
+		UCPD->CR &= ~(UCPD_CR_PHYRXEN | UCPD_CR_PHYCCSEL);
+		gUSB_PD.flags = 0;
+	}
 }
 
 static void USB_PDx_Init(void)
@@ -321,31 +351,32 @@ static void USB_PD_QueueAck(uint8_t msg_id)
 
 static void USB_PD_TransmitNext(void)
 {
-	if (UCPD->TX_PAYSZ == 0)
-	{
-		if (gUSB_PD.tx.size)
-		{
-			// We could have had unwritten data, if the previous message was aborted.
-			// Discard this now.
-			FIFO_Discard(&gUSB_PD.tx.fifo, gUSB_PD.tx.size);
-			gUSB_PD.tx.size = 0;
-		}
+	// If already in a transmit, do not interrupt.
+	if (UCPD->TX_PAYSZ != 0)
+		return;
 
-		uint8_t size;
-		if (FIFO_Pop(&gUSB_PD.tx.fifo, &size))
-		{
-			gUSB_PD.tx.size = size;
-			UCPD->TX_ORDSET = USB_PD_SOPK_0;
-			UCPD->TX_PAYSZ = size;
-			UCPD->CR |= UCPD_CR_TXSEND;
-		}
+	if (gUSB_PD.tx.size)
+	{
+		// We could have had unwritten data if the previous message was aborted.
+		// Discard this now.
+		FIFO_Discard(&gUSB_PD.tx.fifo, gUSB_PD.tx.size);
+		gUSB_PD.tx.size = 0;
+	}
+
+	uint8_t size;
+	if (FIFO_Pop(&gUSB_PD.tx.fifo, &size))
+	{
+		gUSB_PD.tx.size = size;
+		UCPD->TX_ORDSET = USB_PD_SOPK_0;
+		UCPD->TX_PAYSZ = size;
+		UCPD->CR |= UCPD_CR_TXSEND;
 	}
 }
 
 static void USB_PD_HandleSourceCapabilties(const uint8_t * data, uint8_t objects)
 {
-	//if (gUSB_PD.voltage_requested != 0)
-	//	return;
+	if (gUSB_PD.state >= USB_PD_State_Requested)
+		return;
 
 	uint32_t accepted_object = 0;
 	uint32_t accepted_voltage = 0;
@@ -355,26 +386,36 @@ static void USB_PD_HandleSourceCapabilties(const uint8_t * data, uint8_t objects
 		uint32_t object = (data[3] << 24) | (data[2] << 16) | (data[1] << 8) | data[0];
 		data += 4;
 
-		uint32_t min_voltage;
-		uint32_t max_voltage;
-		uint32_t current;
-
 		uint32_t type = object >> 30;
+
+		if (type >= 3)
+			// We do not support augmented PDOs
+			continue;
+
+		uint32_t current_code = ((object >> 0) & 0x3FF);
+		uint32_t min_voltage = ((object >> 10) & 0x3FF) * 50; // 50mV units.
+		uint32_t max_voltage;
+		uint32_t max_current;
+
 		switch (type)
 		{
 		case 0: // Fixed supply
-			current = ((object >> 0) & 0x3FF); // In 10mA units
-			min_voltage = ((object >> 10) & 0x3FF) * 50;
 			max_voltage = min_voltage;
+			max_current = current_code * 10; // 10mA units
 			break;
 		case 1: // Battery
-		case 2: // Variable supply
-			current = ((object >>  0) & 0x3FF); // In 10mA units
-			min_voltage = ((object >> 10) & 0x3FF) * 50;
-			max_voltage = ((object >> 20) & 0x3FF) * 50;
+			max_voltage = ((object >> 20) & 0x3FF) * 50; // 50mV units
+			// Batteries are expressed in 250mW units.
+			// Convert into mA based on nominal voltage. This way we can treat it uniformly.
+			max_current = (current_code * 250 * 1000 * 2) / (max_voltage + min_voltage);
 			break;
-		case 3:
+		case 2: // Variable supply
+			max_voltage = ((object >> 20) & 0x3FF) * 50; // 50mV units
+			max_current = current_code * 10; // 10mA units
+			break;
+
 		default:
+			// This shouldn't happen.
 			continue;
 		}
 
@@ -387,14 +428,16 @@ static void USB_PD_HandleSourceCapabilties(const uint8_t * data, uint8_t objects
 			// [27..20]: Flags & reserved bits. Leave zero.
 			// [19..10]: Operating current
 			// [ 9.. 0]: Maximum operating current (deprecated)
-			accepted_object = ((i+1) << 28) | (current << 10) | current;
+			accepted_object = ((i+1) << 28) | (current_code << 10) | current_code;
+
+			gUSB_PD.request.current = max_current;
+			gUSB_PD.request.voltage = (min_voltage + max_voltage) / 2;
 		}
 	}
 
 	if (accepted_object != 0)
 	{
-		gUSB_PD.voltage_requested = accepted_voltage;
-		// Not ready for this yet.....
+		gUSB_PD.state = USB_PD_State_Requested;
 		USB_PD_Queue(USB_PD_Msg_Request, (gUSB_PD.msg_id++) & 0x7, &accepted_object, 1);
 	}
 }
@@ -428,10 +471,23 @@ static void USB_PD_HandleMessage(const uint8_t * packet, uint8_t size)
 		break;
 
 	case USB_PD_Msg_PsReady:
+		gUSB_PD.state = USB_PD_State_Ready;
+		gUSB_PD.flags |= USB_PD_Flag_Negotiated;
+		USB_PD_Notify();
 		break;
 
 	default:
 		break;
+	}
+}
+
+static void USB_PD_Notify(void)
+{
+	if (gUSB_PD.callback)
+	{
+		uint32_t voltage, current;
+		USB_PD_Flag_t flags = USB_PD_Read(&voltage, &current);
+		gUSB_PD.callback(flags, voltage, current);
 	}
 }
 
@@ -443,11 +499,29 @@ void USB_PD_IRQHandler(void)
 {
 	uint32_t sr = UCPD->SR;
 
+	if (sr & (UCPD_IMR_TYPECEVT1IE | UCPD_IMR_TYPECEVT2IE))
+	{
+		USB_PD_Reset();
+		USB_PD_UpdateCC();
+		UCPD->ICR = UCPD_ICR_TYPECEVT1CF | UCPD_ICR_TYPECEVT2CF;
+
+		USB_PD_Notify();
+	}
+
 	if (sr & UCPD_SR_RXHRSTDET)
 	{
+		bool was_ready = gUSB_PD.state == USB_PD_State_Ready;
+
 		// Reset condition detected
 		USB_PD_Reset();
+		gUSB_PD.flags &= ~USB_PD_Flag_Negotiated;
 		UCPD->ICR = UCPD_ICR_RXHRSTDETCF;
+
+		if (was_ready)
+		{
+			// We just got a reset. Fall back to the position described by the analog mode.
+			USB_PD_Notify();
+		}
 	}
 
 	if (sr & UCPD_SR_RXORDDET)

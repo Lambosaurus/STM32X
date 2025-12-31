@@ -22,25 +22,26 @@
  */
 
 typedef enum {
-	USB_PD_Flag_CC1 	= (1 << 0),
-	USB_PD_Flag_CC2 	= (1 << 1),
-	USB_PD_Flag_500mA 	= (0x1 << 2),
-	USB_PD_Flag_1500mA 	= (0x2 << 2),
-	USB_PD_Flag_3000mA 	= (0x3 << 2),
+	USB_PD_Flag_CC1 		= (1 << 0),
+	USB_PD_Flag_CC2 		= (1 << 1),
+	USB_PD_Flag_500mA 		= (0x1 << 2),
+	USB_PD_Flag_1500mA 		= (0x2 << 2),
+	USB_PD_Flag_3000mA 		= (0x3 << 2),
+	USB_PD_Flag_Negotiated 	= (1 << 4)
 } USB_PD_Flag_t;
+
+typedef void(*USB_PD_Callback_t)(USB_PD_Flag_t flag, uint32_t voltage, uint32_t current);
 
 /*
  * PUBLIC FUNCTIONS
  */
 
 // Initialisation
-void USB_PD_Init(void);
+void USB_PD_Init(uint32_t voltage_limit);
 void USB_PD_Deinit(void);
 
-void USB_PD_Start(uint32_t voltage_limit);
-void USB_PD_Stop(void);
-
-USB_PD_Flag_t USB_PD_Read(void);
+void USB_PD_OnChange(USB_PD_Callback_t cb);
+USB_PD_Flag_t USB_PD_Read(uint32_t * voltage, uint32_t * current);
 
 void USB_PD_IRQHandler(void);
 
