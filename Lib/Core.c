@@ -237,6 +237,15 @@ void CORE_InitGPIO(void)
 #if defined(GPIOH)
 	__HAL_RCC_GPIOH_CLK_ENABLE();
 #endif
+
+	// Disable unused UCPD pins which may have pulldowns enabled.
+#if defined(SYSCFG_CFGR1_UCPD1_STROBE) && (USB_PD != 1)
+	SYSCFG->CFGR1 |= SYSCFG_CFGR1_UCPD1_STROBE;
+#endif
+#if defined(SYSCFG_CFGR1_UCPD2_STROBE) && (USB_PD != 2)
+	SYSCFG->CFGR1 |= SYSCFG_CFGR1_UCPD2_STROBE;
+#endif
+
 }
 
 /*
