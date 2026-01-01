@@ -18,10 +18,10 @@
 #endif
 
 #if USB_PD == 1
-#define UCPD		UCPD1
+#define UCPD					UCPD1
 #define UCPD_IRQ_NO				IRQ_No_UCPD1
 #elif USB_PD == 2
-#define UCPD		UCPD2
+#define UCPD					UCPD2
 #define UCPD_IRQ_NO				IRQ_No_UCPD2
 #endif
 
@@ -166,13 +166,6 @@ static struct {
  * PUBLIC
  */
 
-// TODO:
-// Chunk messages into uint16_ts to make alignment easier?
-// Make CLK_EnableUCPDCLK safe..... (non-trivial....)
-// Get state transactions working on init.
-// Issue USB PD reset on detection?
-
-
 void USB_PD_Init(uint32_t voltage_limit)
 {
 	gUSB_PD.max_voltage = voltage_limit;
@@ -283,7 +276,7 @@ static void USB_PD_ResetComms(void)
 {
 	// Reset the negotiation state machine.
 	gUSB_PD.msg_id = 0;
-	gUSB_PD.request.voltage = 0; // We use this as a flag for whether or not a request is out. Yea, kinda sketch.
+	gUSB_PD.request.voltage = 0; // TODO: We use this as a flag to track our request status. This is pretty bad.
 	FIFO_Clear(&gUSB_PD.tx.fifo);
 	gUSB_PD.tx.size = 0;
 	gUSB_PD.rx.sop = USB_PD_SOP_None;
