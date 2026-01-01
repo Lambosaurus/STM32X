@@ -282,7 +282,9 @@ void CLK_EnableADCCLK(void)
 void CLK_DisableADCCLK(void)
 {
 #if (!defined(STM32F0)) && !defined(CLK_USE_HSI)
+#ifndef USB_PD // TODO: We leave the clock on to avoid the shared resource issue. (See CLK_DisableUCPDCLK)
 	__HAL_RCC_HSI_DISABLE();
+#endif
 #endif
 }
 
@@ -302,6 +304,24 @@ void CLK_DisableRNGCLK(void)
 	__HAL_RCC_MSI_DISABLE();
 #endif
 }
+
+#ifdef USB_PD
+void CLK_EnableUCPDCLK(void)
+{
+#if (defined(STM32G0)) && !defined(CLK_USE_HSI)
+	__HAL_RCC_HSI_ENABLE();
+	while(__HAL_RCC_GET_FLAG(RCC_FLAG_HSIRDY) == 0);
+#endif
+}
+
+void CLK_DisableUCPDCLK(void)
+{
+#if (defined(STM32G0)) && !defined(CLK_USE_HSI)
+	// TODO: We leave the clock on to avoid the shared resource issue. (See CLK_DisableADCCLK)
+	//__HAL_RCC_HSI_DISABLE();
+#endif
+}
+#endif
 
 uint32_t CLK_SelectPrescalar(uint32_t src_freq, uint32_t div_min, uint32_t div_max, uint32_t * dst_freq)
 {
