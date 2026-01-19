@@ -19,14 +19,20 @@
 #ifndef UART_BFR_SIZE
 #define UART_BFR_SIZE 64
 #endif
+#ifndef UART_TX_BFR_SIZE
+#define UART_TX_BFR_SIZE	UART_BFR_SIZE
+#endif
+#ifndef UART_RX_BFR_SIZE
+#define UART_RX_BFR_SIZE	UART_BFR_SIZE
+#endif
 
 /*
  * PUBLIC TYPES
  */
 
 typedef struct {
-	FIFO_DECLARE(tx, UART_BFR_SIZE);
-	FIFO_DECLARE(rx, UART_BFR_SIZE);
+	FIFO_DECLARE(tx, UART_TX_BFR_SIZE);
+	FIFO_DECLARE(rx, UART_RX_BFR_SIZE);
 	USART_TypeDef * Instance;
 } UART_t;
 
