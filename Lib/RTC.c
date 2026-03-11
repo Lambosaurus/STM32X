@@ -57,6 +57,7 @@
 
 #endif
 
+#define RTC_SSR_INVERT(_value)				((RTC_SUBSECOND_RES-1)-(_value))
 
 #ifndef RTC_IRQ_PRIO
 #define RTC_IRQ_PRIO	0
@@ -223,16 +224,13 @@ void RTC_Read(DateTime_t * time)
 	uint32_t treg = RTC->TR & RTC_TR_RESERVED_MASK;
 	uint32_t dreg = RTC->DR & RTC_DR_RESERVED_MASK;
 
-	// SSR is a downcounter. Invert it.
-	ssr = (RTC_SUBSECOND_RES - 1) - ssr;
-
 	time->hour 		= RTC_FromBCD((treg & (RTC_TR_HT | RTC_TR_HU)) >> 16);
 	time->minute 	= RTC_FromBCD((treg & (RTC_TR_MNT | RTC_TR_MNU)) >> 8);
 	time->second 	= RTC_FromBCD((treg & (RTC_TR_ST | RTC_TR_SU)));
 	time->year 		= RTC_FromBCD((dreg & (RTC_DR_YT | RTC_DR_YU)) >> 16) + RTC_YEAR_MIN;
 	time->month 	= RTC_FromBCD((dreg & (RTC_DR_MT | RTC_DR_MU)) >> 8);
 	time->day 		= RTC_FromBCD((dreg & (RTC_DR_DT | RTC_DR_DU)));
-	time->millis    = (ssr * 1000) / RTC_SUBSECOND_RES;
+	time->millis    = RTC_SSR_INVERT(ssr) * 1000 / RTC_SUBSECOND_RES;
 
 }
 
@@ -241,13 +239,20 @@ void RTC_Read(DateTime_t * time)
 void RTC_OnAlarm(RTC_Alarm_t alarm, const DateTime_t * time, RTC_Mask_t mask, VoidFunction_t callback)
 {
 	uint32_t treg = RTC_ALARMMASK_ALL & ~mask;
+	uint32_t ssreg = 0;
 	if (time != NULL)
 	{
 		treg |=	(RTC_ToBCD(time->hour)   << 16)
 			 |  (RTC_ToBCD(time->minute) << 8)
 			 |  (RTC_ToBCD(time->second));
+
+		if (time->millis)
+		{
+			// TODO: we would need to set the subsecond mask if the RTC was in binary mode.
+			// Note we mask the bottom bit. For some reason, the RTC fails to match after reload. This make 255 -> 254. It might be more stable anyway.
+			ssreg = (RTC_SSR_INVERT(time->millis * RTC_SUBSECOND_RES / 1000) & ~1) | RTC_ALARMSUBSECONDMASK_NONE;
+		}
 	}
-	uint32_t ssreg = 0;
 	_RTC_WRITEPROTECTION_DISABLE();
 	switch(alarm)
 	{
