@@ -106,6 +106,9 @@
 
 #endif
 
+// Convert the wakeup source into a format comparable to CLK_SYSCLK_SRC
+#define _CLK_GET_WAKEUP_SOURCE()		(__HAL_RCC_GET_SYSCLK_SOURCE() >> (RCC_CFGR_SWS_Pos - RCC_CFGR_SW_Pos))
+
 /*
  * PRIVATE TYPES
  */
@@ -214,6 +217,16 @@ void CLK_InitSYSCLK(void)
 #if (defined(RCC_SYSCLKSOURCE_MSI) && !defined(CLK_USE_MSI))
 	__HAL_RCC_MSI_DISABLE();
 #endif
+}
+
+void CLK_ReinitSYSCLK(void)
+{
+	// Check if the sysclk source has changed (probably due to stop mode entry)
+	// If so.. then we probably need to set everything back up.
+	if (_CLK_GET_WAKEUP_SOURCE() != CLK_SYSCLK_SRC)
+	{
+		CLK_InitSYSCLK();
+	}
 }
 
 

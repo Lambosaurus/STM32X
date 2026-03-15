@@ -29,6 +29,7 @@
 
 // HCLK & PCLK included
 void CLK_InitSYSCLK(void);
+void CLK_ReinitSYSCLK(void);
 
 void CLK_EnableLSO(void);
 void CLK_DisableLSO(void);
