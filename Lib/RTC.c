@@ -33,6 +33,21 @@
 #define _RTC_GET_FLAG(flag)    				(((((flag)) >> 8U) == 1U) ? (((RTC->ICSR & (1U << (((uint16_t)(flag)) & RTC_FLAG_MASK))) != 0U)) :\
                                               (((RTC->SR & (1U << (((uint16_t)(flag)) & RTC_FLAG_MASK))) != 0U)))
 
+#elif defined(STM32C0)
+
+#define ISR									ICSR
+#define RTC_ISR_INIT						RTC_ICSR_INIT
+#define RTC_ISR_WUTWF						RTC_ICSR_WUTWF
+#define RTC_ISR_RSF							RTC_ICSR_RSF
+
+//#define RTC_FLAG_ALRAWF						RTC_FLAG_ALRAF
+#define RTC_FLAG_ALRBWF						RTC_FLAG_ALRBF
+#define RTC_FLAG_WKUPWF						RTC_FLAG_WUTF
+
+#define _RTC_CLEAR_FLAG(flag)   			(RTC->SCR |= (flag))
+#define _RTC_GET_FLAG(flag)    				(((((flag)) >> 8U) == 1U) ? (((RTC->ICSR & (1U << (((uint16_t)(flag)) & RTC_FLAG_MASK))) != 0U)) :\
+                                              (((RTC->SR & (1U << (((uint16_t)(flag)) & RTC_FLAG_MASK))) != 0U)))
+
 #elif defined(STM32WL)
 
 #define ISR									ICSR
@@ -130,7 +145,7 @@ void RTC_Init(void)
 #ifdef RTC_USE_IRQS
   __HAL_RTC_ALARM_EXTI_ENABLE_IT();
 	__HAL_RTC_WAKEUPTIMER_EXTI_ENABLE_IT();
-#if !(defined(STM32WL) || defined(STM32G0))
+#if !(defined(STM32WL) || defined(STM32G0) || defined(STM32C0))
 	__HAL_RTC_WAKEUPTIMER_EXTI_ENABLE_RISING_EDGE();
 	__HAL_RTC_ALARM_EXTI_ENABLE_RISING_EDGE();
 #endif
@@ -369,7 +384,7 @@ static void RTC_EnterInit(void)
 {
 	if (!_RTC_GET_FLAG(RTC_FLAG_INITF))
 	{
-#if defined(STM32G0)
+#if defined(STM32G0) || defined(STM32C0)
 		RTC->ISR |= RTC_ISR_INIT;
 #else
 		RTC->ISR = RTC_INIT_MASK;
@@ -444,7 +459,7 @@ void RTC_IRQHandler(void)
 	}
 }
 
-#elif defined(SMT32G0) || defined(STM32WL)
+#elif defined(STM32G0) || defined(STM32WL) || defined(STM32C0)
 
 void RTC_IRQHandler(void)
 {

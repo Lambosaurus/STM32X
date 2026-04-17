@@ -162,6 +162,9 @@ static void DMAx_EnableIRQn(int n)
 	// Note, n = 0 corresponds to DMA1_Channel1_IRQn
 #if defined(STM32WL)
 	IRQ_Enable(IRQ_No_DMA1_CH1 + n, DMA_IRQ_PRIO);
+#elif defined(STM32C0)
+		if (n < 1)	{ HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn); }
+		else		{ HAL_NVIC_EnableIRQ(DMA1_Channel2_3_IRQn); }
 #else
 	if (n < 1) 		{ IRQ_Enable(IRQ_No_DMA1_CH1, DMA_IRQ_PRIO); }
 	else if (n < 3) { IRQ_Enable(IRQ_No_DMA1_CH2, DMA_IRQ_PRIO);	}
