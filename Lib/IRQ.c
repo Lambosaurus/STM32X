@@ -44,6 +44,8 @@ void IRQ_Disable(IRQ_No_t irq)
 #include "irq/IRQL0.inl.h"
 #elif defined(STM32F0)
 #include "irq/IRQF0.inl.h"
+#elif defined(STM32C0)
+#include "irq/IRQC0.inl.h"
 #elif defined(STM32G0)
 #include "irq/IRQG0.inl.h"
 #else

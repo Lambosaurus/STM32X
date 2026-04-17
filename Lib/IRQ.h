@@ -149,6 +149,42 @@ typedef enum {
 	IRQ_No_CEC			= 30,
 } IRQ_No_t;
 
+#elif defined(STM32C0)
+typedef enum
+{
+	IRQ_No_Systick 		= -1,
+	IRQ_No_WWDG			= 0,
+	IRQ_No_RTC 			= 2,
+	IRQ_No_FLASH		= 3,
+	IRQ_No_RCC			= 4,
+	IRQ_No_EXTI0		= 5,
+	IRQ_No_EXTI2		= 6,
+	IRQ_No_EXTI4		= 7,
+	IRQ_No_USB			= 8,
+	IRQ_No_DMA1_CH1		= 9,
+	IRQ_No_DMA1_CH2		= 10,
+	IRQ_No_DMAMUX1		= 11,
+	IRQ_No_ADC1			= 12,
+	IRQ_No_TIM1			= 13,
+	IRQ_No_TIM1_CC		= 14,
+	IRQ_No_TIM3			= 16,
+	IRQ_No_TIM14		= 19,
+	IRQ_No_TIM16		= 21,
+	IRQ_No_CAN			= 21,
+	IRQ_No_TIM17		= 22,
+	IRQ_No_CAN_IT1		= 22,
+	IRQ_No_I2C1			= 23,
+	IRQ_No_I2C2			= 24,
+	IRQ_No_SPI1			= 25,
+	IRQ_No_SPI2			= 26,
+	IRQ_No_UART1		= 27,
+	IRQ_No_UART2		= 28,
+	IRQ_No_LPUART2		= 28,
+	IRQ_No_UART3		= 29,
+	IRQ_No_UART4		= 29,
+	IRQ_No_LPUART1		= 29,
+} IRQ_No_t;
+
 #else
 #error "IRQ support not added for this series"
 #endif
