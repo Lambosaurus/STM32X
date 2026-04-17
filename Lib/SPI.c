@@ -62,7 +62,7 @@ void SPI_Init(SPI_t * spi, uint32_t bitrate, SPI_Mode_t mode)
 			| (SPI_NSS_SOFT & SPI_CR1_SSM) | prescalar | SPI_FIRSTBIT_MSB | SPI_CRCCALCULATION_DISABLE;
 	uint32_t cr2 = ((SPI_NSS_SOFT >> 16u) & SPI_CR2_SSOE) | SPI_TIMODE_DISABLE;
 
-#if defined(STM32G0) || defined(STM32C0)
+#if defined(STM32G0) || defined(STM32F0) || defined(STM32C0)
 	cr2 |= SPI_DATASIZE_8BIT | SPI_RXFIFO_THRESHOLD_QF;
 #else
 	cr1 |= SPI_DATASIZE_8BIT;
@@ -91,8 +91,11 @@ void SPI_Write(SPI_t * spi, const uint8_t * data, uint32_t count)
 	{
 		while (!__HAL_SPI_GET_FLAG(spi, SPI_FLAG_TXE));
 		_SPI_TX(spi, data[i]);
+		while (!__HAL_SPI_GET_FLAG(spi, SPI_FLAG_RXNE));
+		(void)_SPI_RX(spi);
 	}
 	while (__HAL_SPI_GET_FLAG(spi, SPI_FLAG_BSY));
+	(void)_SPI_RX(spi);
 	__HAL_SPI_CLEAR_OVRFLAG(spi);
 }
 
@@ -136,19 +139,9 @@ uint8_t SPI_TransferByte(SPI_t * spi, uint8_t byte)
 
 static uint32_t SPI_SelectPrescalar(SPI_t * spi, uint32_t target)
 {
-	// Div clock by 2, because the prescalars start at 2
-	uint32_t clk = CLK_GetPCLKFreq() >> 1;
-	uint32_t actual;
-	uint32_t k;
-	for (k = 0; k <= 0x7; k++)
-	{
-		actual = clk >> k;
-		if (actual <= target)
-		{
-			break;
-		}
-	}
-	spi->bitrate = actual;
+	uint32_t src_freq = CLK_GetPCLKFreq();
+	spi->bitrate = target;
+	uint32_t k = CLK_SelectPrescalar(src_freq, 2, 2 << 7, &spi->bitrate);
 	return k << SPI_CR1_BR_Pos;
 }
 

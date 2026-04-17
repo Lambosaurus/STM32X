@@ -15,6 +15,10 @@ The header is available [here](../Lib/US.h).
 
 When no timer is provided, only `US_Delay()` is available. This is provided using a calibrated loop, and so it not highly accurate. It will typically run 4us longer than requested on a Cortex M0+ core @ 32MHz. This is still suitable for many uses.
 
+> [!WARNING]
+> This timing has not been validated on newer compilers.
+> This should probaly be re-implmented with an assembly loop.
+
 ## Timer mode:
 
 When a timer is used, this module can be used for accurate time keeping.
@@ -33,7 +37,8 @@ uint32_t elapsed = US_Subtract(start, end);
 
 `US_Delay()` will be based on the timer, and have the same accuracy.
 
-Note that as the timer is expected to be 16 bit, this limits the maximum intervals that can be measured. This interval can be extended by decreasing the microsecond resolution. With `US_RES` defined as `1` an interval of `65535` us can be measured. Increasing this step size multiplies this as the cost of accuracy.
+> [!IMPORTANT]
+> The timer is expected to be 16 bit, this limits the maximum intervals that can be measured. This interval can be extended by decreasing the microsecond resolution. With `US_RES` defined as `1` an interval of `65535` us can be measured. Increasing this step size multiplies this as the cost of accuracy.
 
 # Board
 

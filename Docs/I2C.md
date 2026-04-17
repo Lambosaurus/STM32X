@@ -7,9 +7,11 @@ The header is available [here](../Lib/I2C.h).
 
 # Usage
 
-The I2C frequency can be arbitrary, but the `I2C_Mode_t` enum is provided for convenience.
+> [!TIP]  
+> The I2C frequency can be arbitrary, but the `I2C_Mode_t` enum is provided for convenience.
 
-Note that the device address should be specified as a 7 bit address. The R/W bit is automatically set.
+> [!NOTE]
+> The device address should be specified as a 7 bit address. The R/W bit is automatically set.
 
 ```c
 I2C_Init(I2C_1, I2C_Mode_Fast);
@@ -66,6 +68,7 @@ The maximum size of an I2C transfer is by default limited to 255 bytes.
 
 This can be overridden using the `I2C_USE_LONG_TRANSFER` definition to add support for longer blocks.
 
+> [!NOTE]  
 > The transfer size is per read/write block. A transfer of 255 bytes tx followed by 255 bytes rx is permitted.
 
 ## I2C Timeouts
@@ -80,10 +83,9 @@ The following template can be used. Commented out definitions are optional.
 
 ```C
 // I2C configuration
-#define I2C1_GPIO			GPIOB
-#define I2C1_PINS			(GPIO_PIN_6 | GPIO_PIN_7)
-#define I2C1_AF			    GPIO_AF1_I2C1
-//#define USE_I2C_FASTMODEPLUS
+#define I2C1_PINS		(PB6 | PB7)
+#define I2C1_AF			GPIO_AF1_I2C1
+//#define I2C_USE_FASTMODEPLUS
 //#define I2C_USE_LONG_TRANSFER
 //#define I2C_TIMEOUT       10
 ```

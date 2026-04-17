@@ -10,7 +10,7 @@
  * FUNCTIONAL TESTING
  * STM32L0: Y
  * STM32F0: Y
- * STM32G0: N/A
+ * STM32G0: Y
  * STM32WL: N/A
  */
 
@@ -30,6 +30,9 @@
 void USB_Init(void);
 void USB_Deinit(void);
 bool USB_IsEnumerated(void);
+
+// This is actually implemented in USB_PCD.h
+void USB_IRQHandler(void);
 
 /*
  * EXTERN DECLARATIONS

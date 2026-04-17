@@ -6,7 +6,7 @@
 /*
  * FUNCTIONAL TESTING
  * STM32L0: Y
- * STM32F0: N
+ * STM32F0: Y
  * STM32G0: Y
  * STM32WL: Y
  */
@@ -66,6 +66,8 @@ void UART_ReadFlush(UART_t * uart);
 uint32_t UART_Seek(UART_t * uart, uint8_t delimiter);
 
 
+void UART_IRQHandler(UART_t * uart);
+
 /*
  * EXTERN DECLARATIONS
  */
@@ -87,6 +89,9 @@ extern UART_t * const UART_4;
 #endif
 #ifdef UART5_PINS
 extern UART_t * const UART_5;
+#endif
+#ifdef UART6_PINS
+extern UART_t * const UART_6;
 #endif
 
 #endif //UART_H

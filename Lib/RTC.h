@@ -8,7 +8,7 @@
  * STM32L0: Y
  * STM32F0: N
  * STM32G0: N
- * STM32WL: N
+ * STM32WL: Y
  */
 
 /*
@@ -66,19 +66,21 @@ typedef enum {
 void RTC_Init(void);
 void RTC_Deinit(void);
 
-void RTC_Write(DateTime_t * time);
+void RTC_Write(const DateTime_t * time);
 void RTC_Read(DateTime_t * time);
 
 #ifdef RTC_USE_IRQS
 
 // time can be NULL to assume h,m,s = 0
-void RTC_OnAlarm(RTC_Alarm_t alarm, DateTime_t * time, RTC_Mask_t mask, VoidFunction_t callback);
+void RTC_OnAlarm(RTC_Alarm_t alarm, const DateTime_t * time, RTC_Mask_t mask, VoidFunction_t callback);
 void RTC_StopAlarm(RTC_Alarm_t alarm);
 
 #ifdef RTC_WAKEUPTIMER_ENABLE
 void RTC_OnPeriod(uint32_t ms, VoidFunction_t callback);
 void RTC_StopPeriod(void);
 #endif //RTC_WAKEUPTIMER_ENABLE
+
+void RTC_IRQHandler(void);
 
 #endif //RTC_USE_IRQS
 

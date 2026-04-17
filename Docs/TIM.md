@@ -8,9 +8,11 @@ The header is available [here](../Lib/TIM.h).
 # Usage
 
 ## Read the datasheet:
-Note the specific width of each timer. Most timers are 16 bit, but some timers may be 8 or even 32 bit.
+> [!TIP] 
+> Check the specific width of each timer. Most timers are 16 bit, but some timers may be 8 or 32 bit.
 
-Timer channels are used for PWM and IRQ's. Most timers have 2 channels, but some may have 0 or even 4 channels.
+> [!TIP]  
+> Timer channels are used for PWM and IRQ's. Most timers have 2 channels, but some may have 0 or 4 channels.
 
 ## Basic usage:
 
@@ -18,9 +20,11 @@ This module will refer to two terms. These should not be confused:
 * **Base frequency:** the frequency of each clock tick. This is the rate at which the timer counts up.
 * **Reload frequency:** the frequency of reload events. Reloads are when the timer resets back to 0. This is the the reload value divided by the base frequency. For example, a timer with a 1KHz base frequency, and a reload value of 99, will have a reload frequency of 10Hz. 
 
-It is important to note that the total number of ticks before the counter reloads will be reload + 1; ie, with a reload of `255`, the reload period is `256` ticks in total.
+> [!IMPORTANT]
+> The total number of ticks before the counter reloads will be reload + 1; ie, with a reload of `255`, the reload period is `256` ticks in total.
 
-Note that the reload value should not exceed the timers width (ie, `0xFFFF` for a 16 bit timer).
+> [!TIP]
+> The reload value should not exceed the timers width (ie, `0xFFFF` for a 16 bit timer).
 
 ```c
 // Set up a 10KHz counter that reloads at 0xFFFF
@@ -79,7 +83,10 @@ while (1)
 Timers can also be used to generate PWM.
 Timer channels can only be routed to specific GPIO. Check your datasheet.
 
-The GPIO will be high while the timer value is less than the channels pulse value. Note for 100% duty cycle, the pulse value must exceed the reload value.
+The GPIO will be high while the timer value is less than the channels pulse value. 
+
+> [!NOTE] 
+> To achieve 100% duty cycle, the pulse value must exceed the reload value.
 
 ```c
 // Set up a timer with a reload frequency of 10KHz, with an 8 bit resolution.
@@ -94,9 +101,8 @@ TIM_EnablePwm(TIM_2, TIM_CH2, PA1, GPIO_AF2_TIM2);
 TIM_SetPulse(TIM_2, TIM_CH2, 256); 
 ```
 
-## Mixing Interrupts & PWM:
-
-Note that mixing IRQ's and PWM is perfectly valid, but channels are a shared resource between them. IRQ's and PWM on the same channel will have the same trigger point.
+> [!TIP]
+> Mixing IRQ's and PWM is perfectly valid, but channels are a shared resource between them. IRQ's and PWM on the same channel will have the same trigger point.
 
 # Board
 

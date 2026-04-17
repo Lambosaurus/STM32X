@@ -29,7 +29,8 @@ uint32_t read = UART_Read(UART_1, rx, sizeof(rx));
 
 `UART_Write()` is appropriate for writing binary data, and `UART_WriteStr()` is a helper for writing null terminated strings. These functions will not block if there is space in the transmit buffer. If the transmit buffer is full, these functions will block until the data is in the buffer.
 
-Because the UART transmit is interrupt driven, you may need to flush the transmitter before deinitialisation, otherwise the transmit will be cut short.
+> [!TIP]
+> Because the UART transmit is interrupt driven, you may need to flush the transmitter before deinitialisation, otherwise the transmit will be cut short.
 
 ```c
 UART_WriteStr(UART_1, "Entering stop mode\r\n");
@@ -105,8 +106,7 @@ The following template can be used. Commented out definitions are optional.
 
 ```C
 // UART Config
-#define UART1_GPIO		GPIOA
-#define UART1_PINS		(GPIO_PIN_9 | GPIO_PIN_10)
-#define UART1_AF		    GPIO_AF4_USART1
-//#define UART_BFR_SIZE     128
+#define UART1_PINS		(PA9 | PA10)
+#define UART1_AF		GPIO_AF4_USART1
+#define UART_BFR_SIZE   128
 ```

@@ -1,5 +1,5 @@
 # GPIO
-This module controls the processors GPIO blocks to control the pins
+This module allows basic IO functionality of the GPIO blocks.
 
 The header is available [here](../Lib/GPIO.h).
 
@@ -7,7 +7,8 @@ The header is available [here](../Lib/GPIO.h).
 
 `GPIO_Init()` may be used directly, but using the alternative initialisers is reccommended.
 
-Note that `GPIO_State_t` is defined as `bool`. `GPIO_PIN_SET` and `true` can be used as readability requires.
+> [!TIP]  
+> `GPIO_State_t` is defined as `bool`. `GPIO_PIN_SET` and `true` can be used as readability requires.
 
 
 ## Output:
@@ -26,7 +27,7 @@ while (1)
 }
 ```
 
-Note that inline functions for set/reset are available.
+Inline functions for set/reset are available.
 
 ```c
 GPIO_Set(PA0);
@@ -48,7 +49,7 @@ bool state = GPIO_Read(PA0);
 
 ## Analog / Deinit:
 
-Note that all GPIO are defaulted to Analog mode during [CORE_Init()](CORE.md)
+Deinitialising a pin puts it back into High-Z (Analog) mode.
 
 ```c
 GPIO_EnableOutput(PA0, true);
@@ -57,26 +58,31 @@ GPIO_EnableOutput(PA0, true);
 GPIO_Deinit(PA0);
 ```
 
-It is reccommended to deinit no-longer used pins:
-* To prevent power leaking into unpowered devices
-* To minimise noise and power consumption caused by floating pins
+> [!TIP]  
+> Its reccommended to deinitialize pins when they are not active. This minimizes noise and power consumption.
 
-Some analog peripherals will require their affected pins to be in this mode, such as [ADC](ADC.md) and [COMP](COMP.md).
+> [!TIP]  
+> Some analog peripherals will require their affected pins to be in this mode, such as [ADC](ADC.md) and [COMP](COMP.md).
+
+> [!NOTE]
+> All GPIO are defaulted to Analog mode during [CORE_Init()](CORE.md)
+
 
 ## Combining pins:
 
-Note that pins can be combined to affect multiple pins on the same GPIO block. This is significantly faster.
+Pins can be combined to affect multiple pins on the same GPIO block. This is reccommended where reasonable, as it takes no additional time or memory to affect pins in paralell.
 
 ```c
 // configure 3 pins at once
 GPIO_EnableInput(PA0 | PA1 | PA2, GPIO_Pull_None);
 ```
 
-This is reccommended where reasonable on all functions, with the exception of `GPIO_OnChange()`.
+> [!WARNING]  
+> Combining pins on different GPIO blocks will not work as intended. Ie, `PA0 | PB0`.
 
 ## Interrupts:
 
-Interrupts occurr on a per channel basis. Each pin is on a channel corresponding to its pin number, ie, `GPIO_Pin_3` is on channel 3, and so on. Take care to enable each channel in `Board.h`, using `#define GPIO_IRQx_ENABLE`.
+Interrupts occurr on a per channel basis. Each pin is on a channel corresponding to its pin number, ie, `GPIO_Pin_3` is on channel 3, and so on. These channels must be enabled within the `Board.h` file with the `#define GPIO_IRQx_ENABLE` definition.
 
 ```c
 // Note that the pin must still be configured as an input before enabling the interrupt.
@@ -84,7 +90,14 @@ GPIO_EnableInput(PA0, GPIO_Pull_Up);
 GPIO_OnChange(PA0, GPIO_IT_Falling, User_Callback);
 ```
 
-Pins on the same channel will conflict, and cannot both be used for interrupts. For example `PA7` and `PB7` both use channel 7, and will not function as intended. Take care to consider this at the PCB level.
+> [!IMPORTANT]  
+> Pins on the same channel will conflict, and cannot both be used for interrupts. For example `PA7` and `PB7` both use channel 7. Take care to consider this at the PCB level.
+
+> [!WARNING]  
+> `GPIO_OnChange` does not support combining pins.
+
+> [!TIP]  
+> To deinitialise a pin interrupt, you must call `GPIO_OnChange(PA0, GPIO_IT_None, NULL)` to remove the IRQ handler.
 
 ## Other configs:
 Unorthodox IO configurations are possible using the raw GPIO_Init function. GPIO config flags are designed to be combined.

@@ -10,6 +10,11 @@
  * PRIVATE DEFINITIONS
  */
 
+#ifdef STM32G0
+#define USB					USB_DRD_FS
+#define USB_CNTR_FRES		USB_CNTR_USBRST
+#endif
+
 #define USB_GET_IRQ() 		(USB->ISTR)
 #define USB_CLR_IRQ(flag)	(USB->ISTR &= ~flag)
 
@@ -42,7 +47,9 @@ void USB_PCD_Init(void)
 	USB->CNTR = USB_CNTR_FRES; // Issue reset
 	USB->CNTR = 0;
 	USB->ISTR = 0;
+#ifdef BTABLE_ADDRESS
 	USB->BTABLE = BTABLE_ADDRESS;
+#endif
 
 	USB_EP_Init();
 

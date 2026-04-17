@@ -13,8 +13,19 @@
 
 #define BTABLE_SIZE			(USB_ENDPOINTS * 8)
 
+#ifdef STM32G0
+#define PMA_WORD_SIZE		4
+#define PMA_SIZE			USB_DRD_PMA_SIZE
+#define PMA_BASE			USB_DRD_PMAADDR
+#define USB					USB_DRD_FS
+#define USB_EP_CTR_RX		USB_EP_VTRX
+#define USB_EP_CTR_TX		USB_EP_VTTX
+#define USB_ISTR_EP_ID		USB_ISTR_IDN
+#else
+#define PMA_WORD_SIZE		2
 #define PMA_SIZE			1024
 #define PMA_BASE			(((uint32_t)USB) + 0x400)
+#endif
 
 /*
  * PRIVATE TYPES
@@ -246,6 +257,40 @@ static uint16_t USB_PMA_Alloc(uint16_t size)
 	return head;
 }
 
+#if (PMA_WORD_SIZE == 4)
+static void USB_PMA_Write(uint16_t address, uint8_t * data, uint16_t count)
+{
+	volatile uint32_t * pma = (uint32_t*)(USB_DRD_PMAADDR + (uint32_t)address);
+	uint32_t words = (count + 3) / 4;
+	while(words--)
+	{
+		*pma++ = __UNALIGNED_UINT32_READ(data);
+		data += 4;
+	}
+}
+
+static void USB_PMA_Read(uint16_t address, uint8_t * data, uint16_t count)
+{
+	volatile uint32_t * pma = (uint32_t *)(USB_DRD_PMAADDR + (uint32_t)address);
+	uint32_t words = count / 4;
+	while (words--)
+	{
+		__UNALIGNED_UINT32_WRITE(data, *pma++);
+		data += 4;
+	}
+
+	uint16_t remainder = count & 0x3;
+	if (remainder != 0)
+	{
+		uint32_t word = *pma;
+		while (remainder--)
+		{
+			*data++ = (uint8_t)(word);
+			word >>= 8;
+		}
+	}
+}
+#else // PMA_WORD_SIZE == 2
 static void USB_PMA_Write(uint16_t address, uint8_t * data, uint16_t count)
 {
 	volatile uint16_t * pma = (volatile uint16_t *)(PMA_BASE + ((uint32_t)address * PMA_ACCESS));
@@ -278,6 +323,7 @@ static void USB_PMA_Read(uint16_t address, uint8_t * data, uint16_t count)
 		*data = (uint8_t)word;
 	}
 }
+#endif
 
 static void USB_EP_Activate(USB_EP_t *ep)
 {

@@ -67,6 +67,10 @@
 
 #define ADC_FLAG_ALL				(ADC_FLAG_AWD | ADC_FLAG_OVR | ADC_FLAG_EOS | ADC_FLAG_RDY | ADC_FLAG_EOC | ADC_FLAG_EOSMP)
 
+#ifndef ADC_COMMON
+#define ADC_COMMON 					ADC1_COMMON
+#endif
+
 #elif defined(STM32G0) || defined(STM32WL)
 
 #define ADC_CLOCK_PRESCALAR			ADC_CLOCK_ASYNC_DIV4
@@ -226,7 +230,7 @@ uint32_t ADC_SetFreq(uint32_t target)
 	return actual;
 }
 
-#if defined(STM32L0) || defined(STM32WL)
+#if defined(STM32L0) || defined(STM32WL) || defined(STM32G0)
 void ADC_SetOversampling(uint32_t ratio)
 {
 	if (ratio > 1)

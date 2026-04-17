@@ -7,7 +7,8 @@ The header is available [here](../Lib/SPI.h).
 
 # Usage
 
-Arbitrary SPI bitrates are not supported by the hardware, and usually have to be powers of two of PCLK. This module will select the highest bitrate that does not exceed your specified bitrate.
+> [!IMPORTANT]  
+> Arbitrary SPI bitrates are not supported by the hardware, and usually have to be powers of two divisions of PCLK. This module will select the highest bitrate that does not exceed your specified bitrate.
 
 ```c
 SPI_Init(SPI_1, 16000000, SPI_Mode_0);
@@ -37,6 +38,6 @@ The following template can be used.
 
 ```C
 // SPI configuration
-#define SPI1_PINS		    (PA3 | PA4 | PA5)
+#define SPI1_PINS		    (PB3 | PB4 | PB5)
 #define SPI1_AF			    GPIO_AF0_SPI1
 ```

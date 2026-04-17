@@ -32,6 +32,7 @@ The [CORE](Docs/CORE.md) module provides a lot of basic functionality, and shoul
 * [CORE](Docs/CORE.md)
 * [CLK](Docs/CLK.md)
 * [GPIO](Docs/GPIO.md)
+* [IRQ](Docs/IRQ.md)
 
 ### Connectivity:
 * [UART](Docs/UART.md)
@@ -42,6 +43,7 @@ The [CORE](Docs/CORE.md) module provides a lot of basic functionality, and shoul
 
 ### Analog:
 * [ADC](Docs/ADC.md)
+* [DAC](Docs/DAC.md)
 * [COMP](Docs/COMP.md)
 * [TSC](Docs/TSC.md)
 
@@ -50,6 +52,7 @@ The [CORE](Docs/CORE.md) module provides a lot of basic functionality, and shoul
 * [RTC](Docs/RTC.md)
 * [WDG](Docs/WDG.md)
 * [US](Docs/US.md)
+* [LPTIM](Docs/LPTIM.md)
 
 ### Storage:
 * [FLASH](Docs/FLASH.md)

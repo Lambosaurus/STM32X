@@ -45,4 +45,5 @@ The module is dependant on definitions within `Board.h`. Commented out definitio
 //#define USB_MAX_POWER_MA          100
 ```
 
-Note that there are additional defintion options for each class.
+> [!NOTE]  
+> Note that there are additional defintion options for each class.

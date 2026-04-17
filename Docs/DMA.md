@@ -1,19 +1,17 @@
 # DMA
 This module provides control for the DMA controllers.
 
-This module is primarially designed for use in other modules, such as the [ADC](ADC.md) module.
-Modules requiring DMA will only need the appropriate DMA channel defined in the Board file, and the rest is done internally.
-
 The header is available [here](../Lib/DMA.h).
 
-# Usage
-Usage of the module functions are **NOT** expected of the user in normal circumstances. It is primarially for internal use of other libraries.
+> [!TIP]
+> This module is primarially for internal use by other modules. The user is only expected to configure this module via the `Board.h` file.
 
-The DMA channel must be configured to use the correct DMA request signal. For some MCU's this is fixed (L0's), and for others it can be configured (G0's)
+# Usage
+Any used DMA channels must be configured to use the correct DMA request signal. For some MCU's this is fixed (L0's), and for others it can be configured (G0's)
 
 ## Fixed DMA Requests
 
-For some processors, you must make sure that the used DMA channel can recieve requests from the desired peripheral. Check your datasheet.
+For some processors, specific DMA channels route to specific peripherals. You must check your datasheet to confirm the correct DMA channel is used.
 
 ## Routable DMA Requests
 
