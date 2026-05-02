@@ -4,7 +4,7 @@ This module provides control for the DMA controllers.
 The header is available [here](../Lib/DMA.h).
 
 > [!TIP]
-> This module is primarially for internal use by other modules. The user is only expected to configure this module via the `Board.h` file.
+> This module is primarily for internal use by other modules. The user is only expected to configure this module via the `Board.h` file.
 
 # Usage
 Any used DMA channels must be configured to use the correct DMA request signal. For some MCU's this is fixed (L0's), and for others it can be configured (G0's)

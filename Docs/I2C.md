@@ -76,6 +76,10 @@ This can be overridden using the `I2C_USE_LONG_TRANSFER` definition to add suppo
 Because I2C supports clock stretching, all I2C transfers have a timeout. This timeout is implemented per byte, and can be overidden using the `I2C_TIMEOUT` definiton.
 Some devices may require extended clock stretching, and so this timeout may need to be increased.
 
+## I2C Pullups
+
+External pullups are expected on an I2C bus. As a fallback option, `I2C_USE_PULLUPS` can be used to use the GPIO pullups.
+
 # Board
 
 The module is dependant on  definitions within `Board.h`
@@ -88,4 +92,5 @@ The following template can be used. Commented out definitions are optional.
 //#define I2C_USE_FASTMODEPLUS
 //#define I2C_USE_LONG_TRANSFER
 //#define I2C_TIMEOUT       10
+//#define I2C_USE_PULLUPS
 ```

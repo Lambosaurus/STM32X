@@ -37,7 +37,9 @@
 #define RCC_CSR_PORRSTF 					RCC_CSR_BORRSTF
 #endif
 
+#ifndef CORE_SYSTICK_FREQ
 #define CORE_SYSTICK_FREQ	1000
+#endif
 #define MS_PER_SYSTICK		(1000 / CORE_SYSTICK_FREQ)
 
 /*
