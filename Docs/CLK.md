@@ -72,6 +72,9 @@ The PLL will be automatically configued to achieve the required system clock fre
 > [!IMPORTANT]
 > The PLL multiplication and division factors will be automatically computed - but may need user assistance for some combinations. Specifiy the multiplier only if required.
 
+> [!NOTE]
+> The CLK_SYSCLK_FREQ will default to 32MHz if not specified.
+
 ```C
 // CLK PLL configuration
 #define CLK_SYSCLK_FREQ   32000000

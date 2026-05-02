@@ -82,7 +82,7 @@ GPIO_EnableInput(PA0 | PA1 | PA2, GPIO_Pull_None);
 
 ## Interrupts:
 
-Interrupts occurr on a per channel basis. Each pin is on a channel corresponding to its pin number, ie, `GPIO_Pin_3` is on channel 3, and so on. These channels must be enabled within the `Board.h` file with the `#define GPIO_IRQx_ENABLE` definition.
+Interrupts occurr on a per channel basis. Each pin is on a channel corresponding to its pin number, ie, `GPIO_Pin_3` is on channel 3, and so on. These channels must be enabled within the `Board.h` file with the `#define GPIO_IRQx_ENABLE` definition. This requires `GPIO_USE_IRQS` to be defined.
 
 ```c
 // Note that the pin must still be configured as an input before enabling the interrupt.

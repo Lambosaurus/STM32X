@@ -37,7 +37,9 @@
 #define RCC_CSR_PORRSTF 					RCC_CSR_BORRSTF
 #endif
 
+#ifndef CORE_SYSTICK_FREQ
 #define CORE_SYSTICK_FREQ	1000
+#endif
 #define MS_PER_SYSTICK		(1000 / CORE_SYSTICK_FREQ)
 
 /*
@@ -78,6 +80,7 @@ void CORE_Init(void)
 #if !defined(STM32WL)
 	__HAL_RCC_SYSCFG_CLK_ENABLE();
 	__HAL_RCC_PWR_CLK_ENABLE();
+#endif
 #ifdef __HAL_PWR_VOLTAGESCALING_CONFIG
 	__HAL_PWR_VOLTAGESCALING_CONFIG(CORE_VOLTAGE_RANGE);
 #endif
@@ -117,22 +120,21 @@ void CORE_Stop(void)
 	SET_BIT(PWR->CR, PWR_CR_ULP | PWR_CR_FWU);
 #endif
 
-	// Select the low power regulator
-	_PWR_SET_PWR_REGULATOR(PWR_LOWPOWERREGULATOR_ON);
-#endif
-
 	// WFI, but with the SLEEPDEEP bit set.
 	SET_BIT(SCB->SCR, SCB_SCR_SLEEPDEEP_Msk);
+#ifdef CORE_USE_WFE
+	__WFE();
+#else
 	__WFI();
+#endif
 	CLEAR_BIT(SCB->SCR, SCB_SCR_SLEEPDEEP_Msk);
-	_PWR_SET_PWR_REGULATOR(PWR_MAINREGULATOR_ON);
 
 #ifdef STM32L0
 	CLEAR_BIT(PWR->CR, PWR_CR_ULP | PWR_CR_FWU);
 #endif
 
 	// SYSCLK is defaulted to HSI on boot
-	CLK_InitSYSCLK();
+	CLK_ReinitSYSCLK();
 	HAL_ResumeTick();
 }
 
@@ -237,6 +239,15 @@ void CORE_InitGPIO(void)
 #if defined(GPIOH)
 	__HAL_RCC_GPIOH_CLK_ENABLE();
 #endif
+
+	// Disable unused UCPD pins which may have pulldowns enabled.
+#if defined(SYSCFG_CFGR1_UCPD1_STROBE) && (USB_PD != 1)
+	SYSCFG->CFGR1 |= SYSCFG_CFGR1_UCPD1_STROBE;
+#endif
+#if defined(SYSCFG_CFGR1_UCPD2_STROBE) && (USB_PD != 2)
+	SYSCFG->CFGR1 |= SYSCFG_CFGR1_UCPD2_STROBE;
+#endif
+
 }
 
 /*

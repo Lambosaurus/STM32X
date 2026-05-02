@@ -11,7 +11,7 @@ The header is available [here](../Lib/LPTIM.h).
 
 > [!IMPORTANT]
 > The LPTIM only has a basic prescalar, so the base frequency must be the LSO frequency divided by some power of two.
-See [CLK](./CLK.md#low-speed-oscillators) for more info on the LSO source. If this condition is not met, a lower base frequency will be selected.
+> See [CLK](./CLK.md#low-speed-oscillators) for more info on the LSO source. If this condition is not met, a lower base frequency will be selected.
 
 > [!IMPORTANT]
 > Currently this module is dependent on the LSO being already initialised. Please init the [RTC](./RTC.md) before starting the LPTIM.
@@ -33,7 +33,7 @@ An interrupt can be triggered when the timer reloads, or on a specific pulse val
 
 ```c
 LPTIM_Init(LPTIM_1, 1024, 1023);
-LPTIM_OnReload(LPTIM_1,  ser_OnReload); // Occurrs on the timer reload (1Hz)
+LPTIM_OnReload(LPTIM_1,  User_OnReload); // Occurrs on the timer reload (1Hz)
 LPTIM_OnPulse(LPTIM_1, 511, User_OnPulse); // Occurrs 0.5s after the reload event.
 LPTIM_Start(LPTIM_1);
 
