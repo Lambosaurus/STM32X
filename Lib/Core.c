@@ -122,11 +122,7 @@ void CORE_Stop(void)
 
 	// WFI, but with the SLEEPDEEP bit set.
 	SET_BIT(SCB->SCR, SCB_SCR_SLEEPDEEP_Msk);
-#ifdef CORE_USE_WFE
-	__WFE();
-#else
 	__WFI();
-#endif
 	CLEAR_BIT(SCB->SCR, SCB_SCR_SLEEPDEEP_Msk);
 
 #ifdef STM32L0

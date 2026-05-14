@@ -41,10 +41,6 @@ void CORE_Stop(void);
 void CORE_Delay(uint32_t ms);
 static inline uint32_t CORE_GetTick(void);
 
-#ifdef CORE_USE_WFE
-static inline void CORE_Wake(void);
-#endif
-
 // Core reset
 void CORE_Reset(void);
 CORE_ResetSource_t CORE_GetResetSource(void);
