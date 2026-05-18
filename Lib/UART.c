@@ -107,7 +107,7 @@ void UART_Init(UART_t * uart, uint32_t baud, UART_Mode_t mode)
 	// Configure to standard settings: 8N1, no flow control.
 	uint32_t cr1 = (uint32_t)UART_WORDLENGTH_8B | UART_PARITY_NONE | UART_MODE_TX_RX | UART_OVERSAMPLING_16;
 	uint32_t cr2 = UART_STOPBITS_1;
-	uint32_t cr3 = (uint32_t)UART_HWCONTROL_NONE | UART_ONE_BIT_SAMPLE_DISABLE;
+	uint32_t cr3 = (uint32_t)UART_HWCONTROL_NONE | UART_ONE_BIT_SAMPLE_DISABLE | USART_CR3_TXFTCFG_1;
 
 	if (mode & UART_Mode_Inverted) 		{ cr2 |= USART_CR2_RXINV | USART_CR2_TXINV; }
 	if (mode & UART_Mode_Swap) 			{ cr2 |= USART_CR2_SWAP; }
@@ -122,7 +122,7 @@ void UART_Init(UART_t * uart, uint32_t baud, UART_Mode_t mode)
 	const uint32_t cr2msk = USART_CR2_STOP | USART_CR2_RXINV | USART_CR2_TXINV | USART_CR2_SWAP | USART_CR2_LINEN | USART_CR2_CLKEN;
 	MODIFY_REG(uart->Instance->CR2, cr2msk, cr2);
 
-	const uint32_t cr3msk = USART_CR3_RTSE | USART_CR3_CTSE | USART_CR3_ONEBIT | USART_CR3_SCEN | USART_CR3_HDSEL | USART_CR3_IREN;
+	const uint32_t cr3msk = USART_CR3_RTSE | USART_CR3_CTSE | USART_CR3_ONEBIT | USART_CR3_SCEN | USART_CR3_HDSEL | USART_CR3_IREN | USART_CR3_TXFTCFG_Msk;
 	MODIFY_REG(uart->Instance->CR3, cr3msk, cr3);
 
 	// Calculate baud rate.
@@ -358,19 +358,30 @@ void UART_IRQHandler(UART_t *uart)
 		FIFO_Put(&uart->rx, rxb);
 	}
 
-	if (flags & USART_ISR_TXE)
+#if defined(STM32G0) || defined(STM32WL)
+	while (uart->Instance->ISR & USART_ISR_TXE)
 	{
 		uint8_t txb;
 		if (FIFO_Pop(&uart->tx, &txb))
-		{
 			uart->Instance->TDR = txb;
-		}
 		else
 		{
 			// No more data. Stop.
 			__UART_TX_DISABLE(uart);
+			break;
 		}
 	}
+#else
+	if (flags & USART_ISR_TXE)
+	{
+		uint8_t txb;
+		if (FIFO_Pop(&uart->tx, &txb))
+			uart->Instance->TDR = txb;
+		else
+			// No more data. Stop.
+			__UART_TX_DISABLE(uart);
+	}
+#endif
 
 	if (flags & (USART_ISR_ORE | USART_ISR_PE | USART_ISR_NE | USART_ISR_FE))
 	{
