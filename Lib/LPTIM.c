@@ -5,6 +5,7 @@
 
 #include "CLK.h"
 #include "IRQ.h"
+#include "Core.h"
 
 /*
  * PRIVATE DEFINITIONS
@@ -109,12 +110,18 @@ void LPTIM_OnReload(LPTIM_t * tim, VoidFunction_t callback)
 void LPTIM_OnPulse(LPTIM_t * tim, uint32_t value, VoidFunction_t callback)
 {
 	tim->Instance->IER &= ~LPTIM_IER_CMPMIE;
+	tim->Instance->IER |= LPTIM_IER_CMPOKIE;
 	tim->PulseCallback = callback;
 
-	// Because of the different clock domains, we need to wait for the write to go through.
-	tim->Instance->ICR = LPTIM_ICR_CMPOKCF;
+
+	tim->cmp_ok = false;
 	tim->Instance->CMP = value;
-	while (!(tim->Instance->ISR & LPTIM_ISR_CMPOK));
+	while (!tim->cmp_ok)
+	{
+		// We need to wait for the write to go through. This takes 3 counter counts!
+		// We do this under interrupt so that we can at least sleep while we wait (also it was easy)
+		CORE_Idle();
+	}
 
 	tim->Instance->IER |= LPTIM_IER_CMPMIE;
 }
@@ -187,6 +194,11 @@ void LPTIM_IRQHandler(LPTIM_t * tim)
 	{
 		tim->Instance->ICR = LPTIM_ICR_CMPMCF;
 		tim->PulseCallback();
+	}
+	if (isr & LPTIM_ISR_CMPOK)
+	{
+		tim->Instance->ICR = LPTIM_ICR_CMPOKCF;
+		tim->cmp_ok = true;
 	}
 }
 

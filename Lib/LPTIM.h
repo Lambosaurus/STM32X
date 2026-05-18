@@ -23,6 +23,7 @@ typedef struct {
 #ifdef LPTIM_USE_IRQS
 	VoidFunction_t ReloadCallback;
 	VoidFunction_t PulseCallback;
+	volatile bool cmp_ok;
 #endif //TIM_USE_IRQS
 } LPTIM_t;
 
