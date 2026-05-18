@@ -43,6 +43,10 @@ while (1)
 }
 ```
 
+> [!WARNING]
+> `LPTIM_OnPulse` can take a long time due to synchronisation across clock domains.
+> Avoid doing this often, or in a critical section.
+
 # Board
 The module is dependant on definitions within `Board.h`
 The following template can be used. Commented out definitions are optional.
