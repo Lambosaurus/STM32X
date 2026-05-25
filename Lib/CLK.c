@@ -106,6 +106,12 @@
 
 #endif
 
+#ifdef CLK_USE_LSE
+#define CLK_RTC_SRC 		RCC_RTCCLKSOURCE_LSE
+#else
+#define CLK_RTC_SRC			RCC_RTCCLKSOURCE_LSI
+#endif
+
 // Convert the wakeup source into a format comparable to CLK_SYSCLK_SRC
 #define _CLK_GET_WAKEUP_SOURCE()		(__HAL_RCC_GET_SYSCLK_SOURCE() >> (RCC_CFGR_SWS_Pos - RCC_CFGR_SW_Pos))
 
@@ -117,9 +123,6 @@
  * PRIVATE PROTOTYPES
  */
 
-#ifdef CLK_USE_LSE
-static void CLK_ResetBackupDomain(void);
-#endif
 static void CLK_AccessBackupDomain(void);
 
 /*
@@ -247,9 +250,12 @@ void CLK_DisableUSBCLK(void)
 
 void CLK_EnableLSO(void)
 {
-#ifdef CLK_USE_LSE
-	//__HAL_RCC_LSEDRIVE_CONFIG(RCC_LSEDRIVE_HIGH);
 	CLK_AccessBackupDomain();
+	if (__HAL_RCC_GET_RTC_SOURCE() == CLK_RTC_SRC)
+		return;
+#ifdef CLK_USE_LSE
+	__HAL_RCC_BACKUPRESET_FORCE();
+	__HAL_RCC_BACKUPRESET_RELEASE();
 #ifdef CLK_LSE_BYPASS
 	__HAL_RCC_LSE_CONFIG(RCC_LSE_BYPASS);
 #else
@@ -257,14 +263,11 @@ void CLK_EnableLSO(void)
 	__HAL_RCC_LSE_CONFIG(RCC_LSE_ON);
 #endif
 	while(!__HAL_RCC_GET_FLAG(RCC_FLAG_LSERDY));
-	CLK_ResetBackupDomain();
-	__HAL_RCC_RTC_CONFIG(RCC_RTCCLKSOURCE_LSE);
 #else
 	__HAL_RCC_LSI_ENABLE();
 	while (!__HAL_RCC_GET_FLAG(RCC_FLAG_LSIRDY));
-	CLK_AccessBackupDomain();
-	__HAL_RCC_RTC_CONFIG(RCC_RTCCLKSOURCE_LSI);
 #endif
+	__HAL_RCC_RTC_CONFIG(CLK_RTC_SRC);
 }
 
 void CLK_DisableLSO(void)
@@ -359,24 +362,6 @@ uint32_t CLK_SelectPrescalar(uint32_t src_freq, uint32_t div_min, uint32_t div_m
 /*
  * PRIVATE FUNCTIONS
  */
-
-#ifdef CLK_USE_LSE
-static void CLK_ResetBackupDomain(void)
-{
-	// RTC Clock selection can be changed only if the Backup Domain is reset
-#if defined(STM32G0)
-	uint32_t bdcr = (RCC->BDCR & ~(RCC_BDCR_RTCSEL));
-	__HAL_RCC_BACKUPRESET_FORCE();
-	__HAL_RCC_BACKUPRESET_RELEASE();
-	RCC->BDCR = bdcr;
-#else
-	uint32_t csr = (RCC->CSR & ~(RCC_CSR_RTCSEL));
-	__HAL_RCC_BACKUPRESET_FORCE();
-	__HAL_RCC_BACKUPRESET_RELEASE();
-	RCC->CSR = csr;
-#endif
-}
-#endif
 
 static void CLK_AccessBackupDomain(void)
 {
