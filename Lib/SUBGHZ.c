@@ -15,6 +15,10 @@
 #define SUBGHZ_SPI_SELECT 	LL_PWR_SelectSUBGHZSPI_NSS
 #define SUBGHZ_SPI_DESELECT	LL_PWR_UnselectSUBGHZSPI_NSS
 
+#ifndef SUBGHZ_IRQ_PRIO
+#define SUBGHZ_IRQ_PRIO 	1
+#endif
+
 /*
  * PRIVATE TYPES
  */
@@ -52,6 +56,7 @@ void SUBGHZ_Init(void)
 {
 	__HAL_RCC_SUBGHZSPI_CLK_ENABLE();
 	HAL_NVIC_EnableIRQ(SUBGHZ_Radio_IRQn);
+	HAL_NVIC_SetPriority(SUBGHZ_Radio_IRQn, SUBGHZ_IRQ_PRIO, SUBGHZ_IRQ_PRIO);
 
 	LL_RCC_RF_DisableReset();
 	while (LL_RCC_IsRFUnderReset());
