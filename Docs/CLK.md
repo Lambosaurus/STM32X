@@ -51,6 +51,10 @@ The presense of an external low speed oscillator (LSE) can be specifed using the
 > [!NOTE]  
 > In the absence of the LSE, the internal LSI will be automatically used.
 
+> [!WARNING]
+> To avoid resetting the backup domain (which would discard the RTC time), we try not to change the LSO clock source unless it has not already been set.
+> This might cause issues in the future if you need to change LSE settings (such as drive speed or bypass) after firmware update.
+
 ## High speed oscillators:
 
 A high speed oscillator is required for almost all peripherals and the generation of the system clock.
