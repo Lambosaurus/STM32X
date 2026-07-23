@@ -115,10 +115,8 @@ void RTC_Init(void)
 	RTC->ISR |= RTC_BINARY_MIX | ssr_reload;
 #endif
 
-	uint32_t sync_div = RTC_SUBSECOND_RES - 1;
 	uint32_t async_div = (CLK_GetLSOFreq() / RTC_SUBSECOND_RES);
-
-	RTC->PRER = ((async_div - 1) << 16U) | (sync_div - 1);
+	RTC->PRER = ((async_div - 1) << 16U) | (RTC_SUBSECOND_RES - 1);
 
 	// Exit Initialization mode
 	RTC->ISR &= ((uint32_t)~RTC_ISR_INIT);
