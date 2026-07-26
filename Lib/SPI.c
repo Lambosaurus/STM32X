@@ -91,7 +91,7 @@ void SPI_Write(SPI_t * spi, const uint8_t * data, uint32_t count)
 	{
 		while (!__HAL_SPI_GET_FLAG(spi, SPI_FLAG_TXE));
 		_SPI_TX(spi, data[i]);
-		while (!__HAL_SPI_GET_FLAG(spi, SPI_FLAG_RXNE));
+		while (!__HAL_SPI_GET_FLAG(spi, SPI_FLAG_RXNE) && __HAL_SPI_GET_FLAG(spi, SPI_FLAG_BSY));
 		(void)_SPI_RX(spi);
 	}
 	while (__HAL_SPI_GET_FLAG(spi, SPI_FLAG_BSY));
@@ -105,7 +105,7 @@ void SPI_Read(SPI_t * spi, uint8_t * data, uint32_t count)
 	{
 		while (!__HAL_SPI_GET_FLAG(spi, SPI_FLAG_TXE));
 		_SPI_TX(spi, 0xFF);
-		while (!__HAL_SPI_GET_FLAG(spi, SPI_FLAG_RXNE));
+		while (!__HAL_SPI_GET_FLAG(spi, SPI_FLAG_RXNE) && __HAL_SPI_GET_FLAG(spi, SPI_FLAG_BSY));
 		data[i] = _SPI_RX(spi);
 	}
 	while (__HAL_SPI_GET_FLAG(spi, SPI_FLAG_BSY));
@@ -118,7 +118,7 @@ void SPI_Transfer(SPI_t * spi, const uint8_t * txdata, uint8_t * rxdata, uint32_
 	{
 		while (!__HAL_SPI_GET_FLAG(spi, SPI_FLAG_TXE));
 		_SPI_TX(spi, txdata[i]);
-		while (!__HAL_SPI_GET_FLAG(spi, SPI_FLAG_RXNE));
+		while (!__HAL_SPI_GET_FLAG(spi, SPI_FLAG_RXNE) && __HAL_SPI_GET_FLAG(spi, SPI_FLAG_BSY));
 		rxdata[i] = _SPI_RX(spi);
 	}
 	while (__HAL_SPI_GET_FLAG(spi, SPI_FLAG_BSY));
