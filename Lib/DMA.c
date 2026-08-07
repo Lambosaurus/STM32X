@@ -37,46 +37,39 @@ static void DMA_ConfigureMux(int n, uint32_t resource);
  */
 
 #ifdef DMA_CH1_ENABLE
-static DMA_t gDMA_CH1 = {
+DMA_t gDMA_CH1 = {
 	.Instance = DMA1_Channel1
 };
-DMA_t * const DMA_CH1 = &gDMA_CH1;
 #endif
 #ifdef DMA_CH2_ENABLE
-static DMA_t gDMA_CH2 = {
+DMA_t gDMA_CH2 = {
 	.Instance = DMA1_Channel2
 };
-DMA_t * const DMA_CH2 = &gDMA_CH2;
 #endif
 #ifdef DMA_CH3_ENABLE
-static DMA_t gDMA_CH3 = {
+DMA_t gDMA_CH3 = {
 	.Instance = DMA1_Channel3
 };
-DMA_t * const DMA_CH3 = &gDMA_CH3;
 #endif
 #ifdef DMA_CH4_ENABLE
-static DMA_t gDMA_CH4 = {
+DMA_t gDMA_CH4 = {
 	.Instance = DMA1_Channel4
 };
-DMA_t * const DMA_CH4 = &gDMA_CH4;
 #endif
 #ifdef DMA_CH5_ENABLE
-static DMA_t gDMA_CH5 = {
+DMA_t gDMA_CH5 = {
 	.Instance = DMA1_Channel5
 };
-DMA_t * const DMA_CH5 = &gDMA_CH5;
 #endif
 #ifdef DMA_CH6_ENABLE
-static DMA_t gDMA_CH6 = {
+DMA_t gDMA_CH6 = {
 	.Instance = DMA1_Channel6
 };
-DMA_t * const DMA_CH6 = &gDMA_CH6;
 #endif
 #ifdef DMA_CH7_ENABLE
-static DMA_t gDMA_CH7 = {
+DMA_t gDMA_CH7 = {
 	.Instance = DMA1_Channel7
 };
-DMA_t * const DMA_CH7 = &gDMA_CH7;
 #endif
 
 /*
@@ -96,7 +89,7 @@ void DMA_Init(DMA_t * dma, void * peripheral, void * bfr, uint32_t length, DMA_F
 		| DMA_CCR_MINC  | DMA_CCR_PINC   | DMA_CCR_CIRC
 		| DMA_CCR_DIR   | DMA_CCR_MEM2MEM,
 
-		DMA_PRIORITY_MEDIUM | DMA_MINC_ENABLE | DMA_PINC_DISABLE | flags
+		DMA_PRIORITY_MEDIUM | flags
 	);
 
 	dma->Instance->CNDTR = length;
@@ -210,12 +203,14 @@ static void DMAx_Init(DMA_t * dma)
 
 static void DMAx_Deinit(DMA_t * dma)
 {
+#ifndef DMA_SHARE_ENABLE
 	__DMA1_CLK_DISABLE();
 #ifdef DMAMUX_ENABLE
 #ifdef __HAL_RCC_DMAMUX1_CLK_DISABLE
 	__HAL_RCC_DMAMUX1_CLK_DISABLE();
 #endif //__HAL_RCC_DMAMUX1_CLK_DISABLE
 #endif //DMAMUX_ENABLE
+#endif //DMA_SHARE_ENABLE
 }
 
 /*
@@ -251,17 +246,13 @@ void DMA_IRQHandler(DMA_t * dma)
 		if (dma->callback)
 		{
 			if (circular)
-			{
 				dma->callback(dma->data.bfr + (dma->data.size/2), dma->data.length / 2);
-			}
 			else
-			{
 				dma->callback(dma->data.bfr, dma->data.length);
-
-				// DMA should be re-initialised after a single shot.
-				DMA_Deinit(dma);
-			}
 		}
+
+		if (!circular)
+			DMA_Deinit(dma);
 	}
 }
 

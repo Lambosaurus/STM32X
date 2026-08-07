@@ -339,7 +339,7 @@ void ADC_Start(ADC_Channel_t channel, uint16_t * buffer, uint32_t count, bool ci
 				ADC_CFGR1_CONTINUOUS(ENABLE) | ADC_CFGR1_DMACONTREQ(circular) | ADC_CFGR1_DMAEN
 			);
 
-	DMA_Flags_t flags = DMA_Dir_FromPeriph | DMA_MemSize_HalfWord | DMA_PeriphSize_Word;
+	DMA_Flags_t flags = DMA_Dir_FromPeriph | DMA_MemSize_HalfWord | DMA_PeriphSize_Word | DMA_Increment_Memory;
 
 	if (circular)
 	{

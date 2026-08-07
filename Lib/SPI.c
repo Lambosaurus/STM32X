@@ -28,19 +28,37 @@ static uint32_t SPI_SelectPrescalar(SPI_t * spi, uint32_t target);
 
 #ifdef SPI1_PINS
 static SPI_t gSPI_1 = {
-	.Instance = SPI1
+	.Instance = SPI1,
+#ifdef SPI1_RX_DMA_CH
+	.rx_dma = SPI1_RX_DMA_CH,
+#endif
+#ifdef SPI1_TX_DMA_CH
+	.tx_dma = SPI1_TX_DMA_CH,
+#endif
 };
 SPI_t * const SPI_1 = &gSPI_1;
 #endif
 #ifdef SPI2_PINS
 static SPI_t gSPI_2 = {
-	.Instance = SPI2
+	.Instance = SPI2,
+#ifdef SPI2_RX_DMA_CH
+	.rx_dma = SPI2_RX_DMA_CH,
+#endif
+#ifdef SPI2_TX_DMA_CH
+	.tx_dma = SPI2_TX_DMA_CH,
+#endif
 };
 SPI_t * const SPI_2 = &gSPI_2;
 #endif
 #ifdef SPI3_PINS
 static SPI_t gSPI_3 = {
-	.Instance = SPI3
+	.Instance = SPI3,
+#ifdef SPI3_RX_DMA_CH
+	.rx_dma = SPI3_RX_DMA_CH,
+#endif
+#ifdef SPI3_TX_DMA_CH
+	.tx_dma = SPI3_TX_DMA_CH,
+#endif
 };
 SPI_t * const SPI_3 = &gSPI_3;
 #endif
@@ -87,6 +105,10 @@ void SPI_Deinit(SPI_t * spi)
 
 void SPI_Write(SPI_t * spi, const uint8_t * data, uint32_t count)
 {
+#ifdef SPI_DMA_ENABLE
+	CLEAR_BIT(spi->Instance->CR2, SPI_CR2_RXDMAEN | SPI_CR2_TXDMAEN);
+#endif
+
 	for (uint32_t i = 0; i < count; i++)
 	{
 		while (!__HAL_SPI_GET_FLAG(spi, SPI_FLAG_TXE));
@@ -101,6 +123,10 @@ void SPI_Write(SPI_t * spi, const uint8_t * data, uint32_t count)
 
 void SPI_Read(SPI_t * spi, uint8_t * data, uint32_t count)
 {
+#ifdef SPI_DMA_ENABLE
+	CLEAR_BIT(spi->Instance->CR2, SPI_CR2_RXDMAEN | SPI_CR2_TXDMAEN);
+#endif
+
 	for (uint32_t i = 0; i < count; i++)
 	{
 		while (!__HAL_SPI_GET_FLAG(spi, SPI_FLAG_TXE));
@@ -114,6 +140,10 @@ void SPI_Read(SPI_t * spi, uint8_t * data, uint32_t count)
 
 void SPI_Transfer(SPI_t * spi, const uint8_t * txdata, uint8_t * rxdata, uint32_t count)
 {
+#ifdef SPI_DMA_ENABLE
+	CLEAR_BIT(spi->Instance->CR2, SPI_CR2_RXDMAEN | SPI_CR2_TXDMAEN);
+#endif
+
 	for (uint32_t i = 0; i < count; i++)
 	{
 		while (!__HAL_SPI_GET_FLAG(spi, SPI_FLAG_TXE));
@@ -127,11 +157,44 @@ void SPI_Transfer(SPI_t * spi, const uint8_t * txdata, uint8_t * rxdata, uint32_
 
 uint8_t SPI_TransferByte(SPI_t * spi, uint8_t byte)
 {
+#ifdef SPI_DMA_ENABLE
+	CLEAR_BIT(spi->Instance->CR2, SPI_CR2_RXDMAEN | SPI_CR2_TXDMAEN);
+#endif
+
 	while (!__HAL_SPI_GET_FLAG(spi, SPI_FLAG_TXE));
 	_SPI_TX(spi, byte);
 	while (!__HAL_SPI_GET_FLAG(spi, SPI_FLAG_RXNE));
 	return _SPI_RX(spi);
 }
+
+#ifdef SPI_DMA_ENABLE
+void SPI_Start(SPI_t * spi, const uint8_t * txdata, uint8_t * rxdata, uint32_t count, bool circular, SPI_Callback_t callback)
+{
+	DMA_Flags_t flags = DMA_MemSize_Byte | DMA_PeriphSize_Byte | DMA_Increment_Memory;
+	if (circular)
+		flags |= DMA_Mode_Circular;
+
+	SET_BIT(spi->Instance->CR2, SPI_CR2_RXDMAEN | SPI_CR2_TXDMAEN);
+
+	// For now, just assume rxdata and txdata are present....
+	DMA_Init(spi->rx_dma, (void*)&spi->Instance->DR, (void*)rxdata, count, flags | DMA_Dir_FromPeriph, (DMA_Callback_t)callback);
+	DMA_Init(spi->tx_dma, (void*)&spi->Instance->DR, (void*)txdata, count, flags | DMA_Dir_ToPeriph, NULL);
+}
+
+void SPI_Stop(SPI_t * spi)
+{
+	if (spi->tx_dma)
+		DMA_Deinit(spi->tx_dma);
+	if (spi->rx_dma)
+		DMA_Deinit(spi->rx_dma);
+
+	CLEAR_BIT(spi->Instance->CR2, SPI_CR2_RXDMAEN | SPI_CR2_TXDMAEN);
+
+	// Wait for the peripheral to stop, and ensure the RXNE is cleared.
+	while (__HAL_SPI_GET_FLAG(spi, SPI_FLAG_BSY));
+	(void)_SPI_RX(spi);
+}
+#endif
 
 /*
  * PRIVATE FUNCTIONS

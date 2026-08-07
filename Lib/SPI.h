@@ -2,6 +2,9 @@
 #define SPI_H
 
 #include "STM32X.h"
+#ifdef SPI_DMA_ENABLE
+#include "DMA.h"
+#endif
 
 /*
  * FUNCTIONAL TESTING
@@ -19,9 +22,15 @@
  * PUBLIC TYPES
  */
 
+typedef void (*SPI_Callback_t)(const uint8_t * rxdata, uint32_t size);
+
 typedef struct {
 	SPI_TypeDef * Instance;
 	uint32_t bitrate;
+#ifdef SPI_DMA_ENABLE
+	DMA_t * rx_dma;
+	DMA_t * tx_dma;
+#endif
 } SPI_t;
 
 typedef enum {
@@ -46,6 +55,10 @@ void SPI_Read(SPI_t * spi, uint8_t * data, uint32_t count);
 void SPI_Transfer(SPI_t * spi, const uint8_t * txdata, uint8_t * rxdata, uint32_t count);
 uint8_t SPI_TransferByte(SPI_t * spi, uint8_t data);
 
+#ifdef SPI_DMA_ENABLE
+void SPI_Start(SPI_t * spi, const uint8_t * txdata, uint8_t * rxdata, uint32_t count, bool circular, SPI_Callback_t callback);
+void SPI_Stop(SPI_t * spi);
+#endif
 
 /*
  * EXTERN DECLARATIONS
