@@ -33,19 +33,25 @@
 #define _FLASH_CR_PROG				FLASH_CR_PG
 #define _FLASH_CR_LOCK				FLASH_CR_LOCK
 #define _FLASH_CR_ERASE				FLASH_CR_PER
+#define _FLASH_CR_OBL_LAUNCH		FLASH_CR_OBL_LAUNCH
+#define _FLASH_CR_OPTSTRT			FLASH_CR_OPTSTRT
 
 #endif
 
 
 // Treat this like a function: It dereferences an address, so must be calculated (On some series)
-#define FLASH_PAGE_COUNT()		(FLASH_SIZE / FLASH_PAGE_SIZE)
+#define FLASH_PAGE_COUNT()			(FLASH_SIZE / FLASH_PAGE_SIZE)
+
+#ifdef FLASH_DBANK_SUPPORT
+#define FLASH_IS_BUSY()		__HAL_FLASH_GET_FLAG(FLASH_FLAG_CFGBSY)
+#else
+#define FLASH_IS_BUSY()		__HAL_FLASH_GET_FLAG(FLASH_FLAG_BSY))
+#endif
 
 // This must be a macro, as the __RAM_FUNC's should not call other functions.
 #define FLASH_WAIT_FOR_OPERATION()					\
-	while(__HAL_FLASH_GET_FLAG(FLASH_FLAG_BSY));	\
-	if (__HAL_FLASH_GET_FLAG(FLASH_FLAG_EOP)) {		\
-		__HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_EOP);		\
-	}												\
+	while(FLASH_IS_BUSY()) {}						\
+	__HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_EOP);			\
 
 /*
  * PRIVATE TYPES
@@ -59,6 +65,11 @@ static void FLASH_Unlock(void);
 static inline void FLASH_Lock(void);
 #if defined(STM32L0)
 __RAM_FUNC void FLASH_WriteHalfPage(uint32_t * __restrict address, const uint32_t * __restrict data);
+#endif
+
+#ifdef FLASH_DBANK_SUPPORT
+static void FLASH_WriteOptions(uint32_t ob);
+static uint32_t FLASH_ReadOptions(void);
 #endif
 
 /*
@@ -92,8 +103,17 @@ void FLASH_Erase(const uint32_t * address)
     _FLASH_SET_CR(FLASH_CR_STRT);
 #elif defined(STM32G0) || defined(STM32WL)
     uint32_t page_number = ((uint32_t)address - FLASH_BASE) / FLASH_PAGE_SIZE;
-    MODIFY_REG(FLASH->CR, FLASH_CR_PNB, page_number << FLASH_CR_PNB_Pos);
-    _FLASH_SET_CR(FLASH_CR_STRT);
+    uint32_t bank = 0;
+#ifdef FLASH_DBANK_SUPPORT
+    bank = FLASH_GetBank();
+    if (page_number >= FLASH_PAGE_NB)
+    {
+    	page_number -= FLASH_PAGE_NB;
+    	bank = !bank;
+    }
+#endif
+	MODIFY_REG(FLASH->CR, FLASH_CR_PNB | FLASH_CR_BKER, (page_number << FLASH_CR_PNB_Pos) | (bank ? FLASH_CR_BKER : 0));
+	_FLASH_SET_CR(FLASH_CR_STRT);
 #endif
 
     FLASH_WAIT_FOR_OPERATION();
@@ -158,6 +178,9 @@ void FLASH_Write(const uint32_t * address, const uint32_t * data, uint32_t size)
 		*(__IO uint32_t *)dest = *(uint32_t*)data_head;
 		dest += sizeof(uint32_t);
 		data_head += sizeof(uint32_t);
+
+		// Technically not needed on same-bank operations, as the flash stalls out anyway
+		FLASH_WAIT_FOR_OPERATION();
 	}
 	_FLASH_CLR_CR(_FLASH_CR_PROG);
 
@@ -166,9 +189,49 @@ void FLASH_Write(const uint32_t * address, const uint32_t * data, uint32_t size)
 	FLASH_Lock();
 }
 
+
+#ifdef FLASH_DBANK_SUPPORT
+void FLASH_SwapBank(void)
+{
+	uint32_t obs = FLASH_ReadOptions();
+	obs ^= FLASH_OPTR_nSWAP_BANK;
+	FLASH_WriteOptions(obs);
+}
+
+uint8_t FLASH_GetBank(void)
+{
+	return (FLASH_ReadOptions() & FLASH_OPTR_nSWAP_BANK) ? 0 : 1;
+}
+#endif //FLASH_DBANK_SUPPORT
+
 /*
  * PRIVATE FUNCTIONS
  */
+
+#ifdef FLASH_DBANK_SUPPORT
+// TODO: This could be standalone, and include read/write functions, along with an enumeration for the option bytes
+static void FLASH_WriteOptions(uint32_t ob)
+{
+	FLASH_Unlock();
+
+	FLASH->OPTKEYR |= FLASH_OPTKEY1;
+	FLASH->OPTKEYR |= FLASH_OPTKEY2;
+
+	FLASH->OPTR = ob;
+
+	_FLASH_SET_CR(_FLASH_CR_OPTSTRT);
+	FLASH_WAIT_FOR_OPERATION();
+
+	// This should trigger a system reset.
+	_FLASH_SET_CR(_FLASH_CR_OBL_LAUNCH);
+	while(1);
+}
+
+static uint32_t FLASH_ReadOptions(void)
+{
+	return FLASH->OPTR;
+}
+#endif //FLASH_DBANK_SUPPORT
 
 static void FLASH_Unlock(void)
 {

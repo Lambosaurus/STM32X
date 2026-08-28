@@ -41,6 +41,11 @@ void FLASH_Erase(const uint32_t * address);
 // Take care with writes: if not aligned to the series flash word sizes, they may be lost.
 void FLASH_Write(const uint32_t * address, const uint32_t * data, uint32_t size);
 
+#if defined(FLASH_DBANK_SUPPORT)
+void FLASH_SwapBank(void);
+uint8_t FLASH_GetBank(void);
+#endif
+
 /*
  * EXTERN DECLARATIONS
  */
