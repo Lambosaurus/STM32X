@@ -56,6 +56,7 @@ void TIM_SetPulse(TIM_t * tim, TIM_Channel_t ch, uint32_t pulse);
 #ifdef TIM_USE_IRQS
 void TIM_OnReload(TIM_t * tim, VoidFunction_t callback);
 void TIM_OnPulse(TIM_t * tim, TIM_Channel_t ch, VoidFunction_t callback);
+void TIM_StopPulse(TIM_t * tim, TIM_Channel_t ch);
 void TIM_IRQHandler(TIM_t * tim);
 #endif //TIM_USE_IRQS
 

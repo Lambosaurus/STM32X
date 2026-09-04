@@ -146,12 +146,20 @@ void TIM_OnReload(TIM_t * tim, VoidFunction_t callback)
 
 void TIM_OnPulse(TIM_t * tim, TIM_Channel_t ch, VoidFunction_t callback)
 {
+	tim->PulseCallback[ch] = callback;
+	__HAL_TIM_CLEAR_IT(tim, TIM_IT_CC1 << ch);
 	// WARN: This will fail horribly if ch is greater than 4.
 	TIM_EnableOCx(tim, ch, TIM_OCMODE_ACTIVE);
 	// Note that the channels IT's are 1 << 1 through 1 << 4
 	__HAL_TIM_ENABLE_IT(tim, TIM_IT_CC1 << ch);
-	tim->PulseCallback[ch] = callback;
 }
+
+void TIM_StopPulse(TIM_t * tim, TIM_Channel_t ch)
+{
+	__HAL_TIM_DISABLE_IT(tim, TIM_IT_CC1 << ch);
+	TIM_DISABLE_CCx(tim, ch);
+}
+
 #endif //TIM_USE_IRQS
 
 void TIM_EnablePwm(TIM_t * tim, TIM_Channel_t ch, GPIO_Pin_t pins, uint32_t af)

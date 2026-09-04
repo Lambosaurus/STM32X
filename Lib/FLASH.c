@@ -45,7 +45,7 @@
 #ifdef FLASH_DBANK_SUPPORT
 #define FLASH_IS_BUSY()		__HAL_FLASH_GET_FLAG(FLASH_FLAG_CFGBSY)
 #else
-#define FLASH_IS_BUSY()		__HAL_FLASH_GET_FLAG(FLASH_FLAG_BSY))
+#define FLASH_IS_BUSY()		__HAL_FLASH_GET_FLAG(FLASH_FLAG_BSY)
 #endif
 
 // This must be a macro, as the __RAM_FUNC's should not call other functions.
