@@ -41,6 +41,7 @@ typedef GPIO_TypeDef GPIO_t;
 #ifdef GPIO_USE_IRQS
 static void GPIO_EnableIRQ(int n);
 static void GPIO_ConfigInterrupt(int gpio_index, int n, GPIO_IT_Dir_t dir);
+static inline void GPIO_DisableInterrupt(int gpio_index, int n);
 #endif //GPIO_USE_IRQS
 
 static void GPIO_ConfigAlternate(GPIO_Pin_t pins, uint32_t af);
@@ -82,13 +83,17 @@ void GPIO_EnableAlternate(GPIO_Pin_t pins, GPIO_Flag_t flags, uint32_t af)
 void GPIO_OnChange(GPIO_Pin_t pin, GPIO_IT_Dir_t dir, VoidFunction_t callback)
 {
 	int n = FIRST_BIT_INDEX(pin);
-
 	gCallback[n] = callback;
-
 	GPIO_ConfigInterrupt(pin >> 16, n, dir);
-
 	GPIO_EnableIRQ(n);
 }
+
+void GPIO_StopChange(GPIO_Pin_t pin)
+{
+	int n = FIRST_BIT_INDEX(pin);
+	GPIO_DisableInterrupt(pin >> 16, n);
+}
+
 #endif //GPIO_USE_IRQS
 
 void GPIO_Init(GPIO_Pin_t pins, GPIO_Flag_t mode)
@@ -161,11 +166,9 @@ static void GPIO_ConfigAlternate(GPIO_Pin_t pins, uint32_t af)
 #ifdef GPIO_USE_IRQS
 static void GPIO_ConfigInterrupt(int gpio_index, int n, GPIO_IT_Dir_t dir)
 {
-	uint32_t pin = 1 << n;
 	if (dir == GPIO_IT_None)
 	{
-		// Disable the EXTI channel.
-		CLEAR_BIT(EXTI->IMR, pin);
+		GPIO_DisableInterrupt(gpio_index, n);
 	}
 	else
 	{
@@ -182,11 +185,17 @@ static void GPIO_ConfigInterrupt(int gpio_index, int n, GPIO_IT_Dir_t dir)
 		MODIFY_REG(SYSCFG->EXTICR[n >> 2], 0xF << offset, gpio_index << offset);
 #endif
 
+		uint32_t pin = 1 << n;
 		// Configure the EXTI channel
 		SET_BIT(EXTI->IMR, pin);
 		MODIFY_REG(EXTI->RTSR, pin, (dir & GPIO_IT_Rising) ? pin : 0);
 		MODIFY_REG(EXTI->FTSR, pin, (dir & GPIO_IT_Falling) ? pin : 0);
 	}
+}
+
+static inline void GPIO_DisableInterrupt(int gpio_index, int n)
+{
+	CLEAR_BIT(EXTI->IMR, 1 << n);
 }
 #endif
 
