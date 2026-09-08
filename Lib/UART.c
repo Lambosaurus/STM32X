@@ -10,12 +10,6 @@
  * PRIVATE DEFINITIONS
  */
 
-#define UART_BFR_WRAP(v)	((v) & (UART_BFR_SIZE - 1))
-
-#if (UART_BFR_WRAP(UART_BFR_SIZE) != 0)
-#error "UART_BFR_SIZE must be a power of two"
-#endif
-
 #ifndef USART_CR1_M0
 #define USART_CR1_M0 USART_CR1_M
 #endif
@@ -103,8 +97,8 @@ UART_t * const UART_6 = &gUART_6;
 
 void UART_Init(UART_t * uart, uint32_t baud, UART_Mode_t mode)
 {
-	uart->tx.head = uart->tx.tail = 0;
-	uart->rx.head = uart->rx.tail = 0;
+	FIFO_Init(&uart->tx);
+	FIFO_Init(&uart->rx);
 
 	// Enable the uart specific GPIO and clocks.
 	UARTx_Init(uart);
@@ -176,19 +170,19 @@ void UART_Deinit(UART_t * uart)
 
 void UART_Write(UART_t * uart, const uint8_t * data, uint32_t count)
 {
-	while (count--)
+	while (count)
 	{
-		// calculate the next head. We cant assign it yet, as the IRQ relies on it.
-		uint32_t head = UART_BFR_WRAP(uart->tx.head + 1);
+		uint32_t written = FIFO_Write(&uart->tx, data, count);
+		data += written;
+		count -= written;
 
-		// If the head has caught up with tail.. wait.
-		while (head == uart->tx.tail) { CORE_Idle(); }
-
-		uart->tx.buffer[uart->tx.head] = *data++;
-		uart->tx.head = head;
-
-		// Enable transmitter - it may turn itself off at any time.
 		__UART_TX_ENABLE(uart);
+
+		if (count)
+		{
+			// TX is full. Stall for a bit.
+			CORE_Idle();
+		}
 	}
 }
 
@@ -199,61 +193,22 @@ void UART_WriteStr(UART_t * uart, const char * str)
 
 uint32_t UART_ReadCount(UART_t * uart)
 {
-	__UART_RX_DISABLE(uart);
-	// We have to disable the IRQs, as the IRQ may bump the tail.
-	uint32_t count = UART_BFR_WRAP(uart->rx.head - uart->rx.tail);
-	__UART_RX_ENABLE(uart);
-	return count;
+	return FIFO_Count(&uart->rx);
 }
 
 uint32_t UART_Read(UART_t * uart, uint8_t * data, uint32_t count)
 {
-	uint32_t available = UART_ReadCount(uart);
-	if (available < count)
-	{
-		count = available;
-	}
-
-	// As long as we read faster than the tail is nudged, we should be fine.
-	uint32_t tail = uart->rx.tail;
-	for (uint32_t i = 0; i < count; i++)
-	{
-		*data++ = uart->rx.buffer[tail];
-		tail = UART_BFR_WRAP(tail + 1);
-	}
-	uart->rx.tail = tail;
-
-	return count;
-}
-
-uint32_t UART_Seek(UART_t * uart, uint8_t delimiter)
-{
-	uint32_t count = UART_ReadCount(uart);
-	uint32_t tail = uart->rx.tail;
-	for (uint32_t i = 0; i < count; i++)
-	{
-		if (uart->rx.buffer[tail] == delimiter)
-		{
-			return i + 1;
-		}
-		tail = UART_BFR_WRAP(tail + 1);
-	}
-	return 0;
+	return FIFO_Read(&uart->rx, data, count);
 }
 
 uint8_t UART_Pop(UART_t * uart)
 {
-	uint32_t tail = uart->rx.tail;
-	uint8_t b = uart->rx.buffer[tail];
-	uart->rx.tail = UART_BFR_WRAP(tail + 1);
-	return b;
+	return FIFO_BlindPop(&uart->rx);
 }
 
 void UART_ReadFlush(UART_t * uart)
 {
-	__UART_RX_DISABLE(uart);
-	uart->rx.tail = uart->rx.head;
-	__UART_RX_ENABLE(uart);
+	FIFO_Clear(&uart->rx);
 }
 
 void UART_WriteFlush(UART_t * uart)
@@ -266,12 +221,9 @@ void UART_WriteFlush(UART_t * uart)
 
 uint32_t UART_WriteCount(UART_t * uart)
 {
-	__UART_TX_DISABLE(uart);
-	uint32_t count = UART_BFR_WRAP(uart->tx.head - uart->tx.tail);
 	// Include the outgoing character
-	if (__UART_TX_BUSY(uart)) { count++; }
-	// Restore the transmitter if we still have pending data
-	if (count) { __UART_TX_ENABLE(uart); }
+	uint32_t count = FIFO_Count(&uart->tx);
+	if (__UART_TX_BUSY(uart)) { count ++; }
 	return count;
 }
 
@@ -402,29 +354,20 @@ void UART_IRQHandler(UART_t *uart)
 
 	if (flags & USART_ISR_RXNE)
 	{
-		// New RX data. Put it in the RX buffer.
-		uart->rx.buffer[uart->rx.head] = uart->Instance->RDR;
-		uart->rx.head = UART_BFR_WRAP(uart->rx.head + 1);
-		if (uart->rx.head == uart->rx.tail) {
-			// The head just caught up with the tail. Uh oh. Increment the tail.
-			// Note, this causes flaming huge issues.
-			uart->rx.tail = UART_BFR_WRAP(uart->rx.tail + 1);
-		}
+		uint8_t rxb = uart->Instance->RDR;
+		FIFO_Put(&uart->rx, rxb);
 	}
 
 	if (flags & USART_ISR_TXE)
 	{
-		// No byte being transmitted..
-		if (uart->tx.head != uart->tx.tail)
+		uint8_t txb;
+		if (FIFO_Pop(&uart->tx, &txb))
 		{
-			// Send a byte out.
-			uart->Instance->TDR = uart->tx.buffer[uart->tx.tail];
-			uart->tx.tail = UART_BFR_WRAP(uart->tx.tail + 1);
+			uart->Instance->TDR = txb;
 		}
 		else
 		{
-			// Tail caught up with head: no bytes remain.
-			// Disable the TX IRQ.
+			// No more data. Stop.
 			__UART_TX_DISABLE(uart);
 		}
 	}

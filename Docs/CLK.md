@@ -51,6 +51,10 @@ The presense of an external low speed oscillator (LSE) can be specifed using the
 > [!NOTE]  
 > In the absence of the LSE, the internal LSI will be automatically used.
 
+> [!WARNING]
+> To avoid resetting the backup domain (which would discard the RTC time), we try not to change the LSO clock source unless it has not already been set.
+> This might cause issues in the future if you need to change LSE settings (such as drive speed or bypass) after firmware update.
+
 ## High speed oscillators:
 
 A high speed oscillator is required for almost all peripherals and the generation of the system clock.
@@ -71,6 +75,9 @@ The PLL will be automatically configued to achieve the required system clock fre
 
 > [!IMPORTANT]
 > The PLL multiplication and division factors will be automatically computed - but may need user assistance for some combinations. Specifiy the multiplier only if required.
+
+> [!NOTE]
+> The CLK_SYSCLK_FREQ will default to 32MHz if not specified.
 
 ```C
 // CLK PLL configuration

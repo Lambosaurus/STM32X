@@ -4,7 +4,7 @@ This module provides helpers for managing the interrupt request handlers.
 The header is available [here](../Lib/IRQ.h).
 
 > [!TIP]
-> This module is primarially for internal use by other modules.
+> This module is primarily for internal use by other modules.
 
 # Usage
 

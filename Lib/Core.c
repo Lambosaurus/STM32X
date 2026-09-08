@@ -50,7 +50,9 @@
 
 #endif
 
+#ifndef CORE_SYSTICK_FREQ
 #define CORE_SYSTICK_FREQ	1000
+#endif
 #define MS_PER_SYSTICK		(1000 / CORE_SYSTICK_FREQ)
 
 /*
@@ -139,16 +141,14 @@ void CORE_Stop(void)
 	SET_BIT(SCB->SCR, SCB_SCR_SLEEPDEEP_Msk);
 	__WFI();
 	CLEAR_BIT(SCB->SCR, SCB_SCR_SLEEPDEEP_Msk);
-
-#ifdef _PWR_SET_PWR_REGULATOR
 	_PWR_SET_PWR_REGULATOR(PWR_MAINREGULATOR_ON);
-#endif
+
 #ifdef STM32L0
 	CLEAR_BIT(PWR->CR, PWR_CR_ULP | PWR_CR_FWU);
 #endif
 
 	// SYSCLK is defaulted to HSI on boot
-	CLK_InitSYSCLK();
+	CLK_ReinitSYSCLK();
 	HAL_ResumeTick();
 }
 
@@ -253,6 +253,15 @@ void CORE_InitGPIO(void)
 #if defined(GPIOH)
 	__HAL_RCC_GPIOH_CLK_ENABLE();
 #endif
+
+	// Disable unused UCPD pins which may have pulldowns enabled.
+#if defined(SYSCFG_CFGR1_UCPD1_STROBE) && (USB_PD != 1)
+	SYSCFG->CFGR1 |= SYSCFG_CFGR1_UCPD1_STROBE;
+#endif
+#if defined(SYSCFG_CFGR1_UCPD2_STROBE) && (USB_PD != 2)
+	SYSCFG->CFGR1 |= SYSCFG_CFGR1_UCPD2_STROBE;
+#endif
+
 }
 
 /*

@@ -32,6 +32,9 @@ RTC_Read(&dt2);
 // The datetime can now be read.
 ```
 
+> [!TIP]
+> The RTC time will survive a system reset - so long as the backup domain power is not removed. Check for an existing datetime after initializing the RTC.
+
 ## Alarms:
 
 The RTC can be used to generate alarms based off the time. The following example will generate an interrupt on the minute. In this example `User_Callback` is a user defined function.

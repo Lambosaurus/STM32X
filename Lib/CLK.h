@@ -29,6 +29,7 @@
 
 // HCLK & PCLK included
 void CLK_InitSYSCLK(void);
+void CLK_ReinitSYSCLK(void);
 
 void CLK_EnableLSO(void);
 void CLK_DisableLSO(void);
@@ -42,6 +43,11 @@ void CLK_DisableRNGCLK(void);
 #ifdef USB_ENABLE
 void CLK_EnableUSBCLK(void);
 void CLK_DisableUSBCLK(void);
+#endif
+
+#ifdef USB_PD
+void CLK_EnableUCPDCLK(void);
+void CLK_DisableUCPDCLK(void);
 #endif
 
 static inline uint32_t CLK_GetHCLKFreq(void);

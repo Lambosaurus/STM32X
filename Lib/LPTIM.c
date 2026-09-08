@@ -5,6 +5,7 @@
 
 #include "CLK.h"
 #include "IRQ.h"
+#include "Core.h"
 
 /*
  * PRIVATE DEFINITIONS
@@ -76,9 +77,19 @@ void LPTIM_Deinit(LPTIM_t * tim)
 
 void LPTIM_SetReload(LPTIM_t * tim, uint32_t reload)
 {
+#ifdef LPTIM_USE_IRQS
+	tim->Instance->IER |= LPTIM_IER_ARROKIE;
+	tim->write_ok = false;
+	tim->Instance->ARR = reload;
+	while (!tim->write_ok)
+	{
+		CORE_Idle();
+	}
+#else
 	tim->Instance->ICR = LPTIM_ICR_ARROKCF;
 	tim->Instance->ARR = reload;
 	while (!(tim->Instance->ISR & LPTIM_ISR_ARROK));
+#endif
 }
 
 void LPTIM_Start(LPTIM_t * tim)
@@ -109,12 +120,17 @@ void LPTIM_OnReload(LPTIM_t * tim, VoidFunction_t callback)
 void LPTIM_OnPulse(LPTIM_t * tim, uint32_t value, VoidFunction_t callback)
 {
 	tim->Instance->IER &= ~LPTIM_IER_CMPMIE;
+	tim->Instance->IER |= LPTIM_IER_CMPOKIE;
 	tim->PulseCallback = callback;
 
-	// Because of the different clock domains, we need to wait for the write to go through.
-	tim->Instance->ICR = LPTIM_ICR_CMPOKCF;
+	tim->write_ok = false;
 	tim->Instance->CMP = value;
-	while (!(tim->Instance->ISR & LPTIM_ISR_CMPOK));
+	while (!tim->write_ok)
+	{
+		// We need to wait for the write to go through. This takes 3 counter counts!
+		// We do this under interrupt so that we can at least sleep while we wait (also it was easy)
+		CORE_Idle();
+	}
 
 	tim->Instance->IER |= LPTIM_IER_CMPMIE;
 }
@@ -177,16 +193,21 @@ static void LPTIMx_Deinit(LPTIM_t * tim)
 
 void LPTIM_IRQHandler(LPTIM_t * tim)
 {
-	uint32_t isr = tim->Instance->ISR & tim->Instance->IER;
+	uint32_t isr = tim->Instance->ISR;
+	tim->Instance->ICR = isr;
+	isr &= tim->Instance->IER;
+
 	if (isr & LPTIM_ISR_ARRM)
 	{
-		tim->Instance->ICR = LPTIM_ICR_ARRMCF;
 		tim->ReloadCallback();
 	}
 	if (isr & LPTIM_ISR_CMPM)
 	{
-		tim->Instance->ICR = LPTIM_ICR_CMPMCF;
 		tim->PulseCallback();
+	}
+	if (isr & (LPTIM_ISR_CMPOK | LPTIM_ISR_ARROK))
+	{
+		tim->write_ok = true;
 	}
 }
 

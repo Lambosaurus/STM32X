@@ -73,7 +73,7 @@ Blocking delays can be based on the systick as below:
 CORE_Delay(100);
 ```
 
-Events can be optionally piggybacked on the system tick. This can be a way to do small tasks at a reliable time. In this example `User_Callback` is a user defined function.
+Events can be optionally piggybacked on the system tick. This requires `CORE_USE_TICK_IRQ` to be defined. This can be a way to do small tasks at a reliable time. In this example `User_Callback` is a user defined function.
 
 ```C
 CORE_Init();

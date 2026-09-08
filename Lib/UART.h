@@ -2,6 +2,7 @@
 #define UART_H
 
 #include "STM32X.h"
+#include "util/FIFO.h"
 
 /*
  * FUNCTIONAL TESTING
@@ -18,21 +19,20 @@
 #ifndef UART_BFR_SIZE
 #define UART_BFR_SIZE 64
 #endif
+#ifndef UART_TX_BFR_SIZE
+#define UART_TX_BFR_SIZE	UART_BFR_SIZE
+#endif
+#ifndef UART_RX_BFR_SIZE
+#define UART_RX_BFR_SIZE	UART_BFR_SIZE
+#endif
 
 /*
  * PUBLIC TYPES
  */
 
-typedef struct
-{
-	uint8_t buffer[UART_BFR_SIZE];
-	uint32_t head;
-	uint32_t tail;
-} UART_Buffer_t;
-
 typedef struct {
-	UART_Buffer_t tx;
-	UART_Buffer_t rx;
+	FIFO_DECLARE(tx, UART_TX_BFR_SIZE);
+	FIFO_DECLARE(rx, UART_RX_BFR_SIZE);
 	USART_TypeDef * Instance;
 } UART_t;
 

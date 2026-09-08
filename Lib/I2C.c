@@ -15,8 +15,8 @@
 
 // Filter configuration
 #define I2C_USE_ANALOGFILTER
-#define I2C_DIGITALFILTER_SIZE	0
-#define I2C_SCL_DUTY_PCT 60
+#define I2C_DIGITALFILTER_SIZE		0
+#define I2C_SCL_DUTY_PCT 			60
 
 #ifdef I2C_USE_ANALOGFILTER
 // This can probably be calculated but it seems to match what ST use
@@ -45,6 +45,12 @@
 #define _I2C_GET_FLAGS(i2c)			(i2c->Instance->ISR)
 #define _I2C_SET_FMP(bit)			(SYSCFG->CFGR2 |= bit)
 #define _I2C_CLR_FMP(bit)			(SYSCFG->CFGR2 &= ~bit)
+
+#ifdef I2C_USE_PULLUPS
+#define I2C_GPIO_FLAGS				(GPIO_Flag_OpenDrain | GPIO_Pull_Up)
+#else
+#define I2C_GPIO_FLAGS				(GPIO_Flag_OpenDrain)
+#endif
 
 /*
  * PRIVATE TYPES
@@ -417,21 +423,21 @@ static void I2Cx_Init(I2C_t * i2c)
 		__HAL_RCC_I2C1_CONFIG(I2C1_CLK);
 #endif
 		__HAL_RCC_I2C1_CLK_ENABLE();
-		GPIO_EnableAlternate(I2C1_PINS, GPIO_Flag_OpenDrain, I2C1_AF);
+		GPIO_EnableAlternate(I2C1_PINS, I2C_GPIO_FLAGS, I2C1_AF);
 	}
 #endif
 #ifdef I2C2_PINS
 	if (i2c == I2C_2)
 	{
 		__HAL_RCC_I2C2_CLK_ENABLE();
-		GPIO_EnableAlternate(I2C2_PINS, GPIO_Flag_OpenDrain, I2C2_AF);
+		GPIO_EnableAlternate(I2C2_PINS, I2C_GPIO_FLAGS, I2C2_AF);
 	}
 #endif
 #ifdef I2C3_PINS
 	if (i2c == I2C_3)
 	{
 		__HAL_RCC_I2C3_CLK_ENABLE();
-		GPIO_EnableAlternate(I2C3_PINS, GPIO_Flag_OpenDrain, I2C3_AF);
+		GPIO_EnableAlternate(I2C3_PINS, I2C_GPIO_FLAGS, I2C3_AF);
 	}
 #endif
 }
