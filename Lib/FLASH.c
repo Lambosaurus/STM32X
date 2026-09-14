@@ -103,16 +103,16 @@ void FLASH_Erase(const uint32_t * address)
     _FLASH_SET_CR(FLASH_CR_STRT);
 #elif defined(STM32G0) || defined(STM32WL)
     uint32_t page_number = ((uint32_t)address - FLASH_BASE) / FLASH_PAGE_SIZE;
-    uint32_t bank = 0;
 #ifdef FLASH_DBANK_SUPPORT
-    bank = FLASH_GetBank();
+    uint32_t bank = FLASH_GetBank();
     if (page_number >= FLASH_PAGE_NB)
     {
     	page_number -= FLASH_PAGE_NB;
     	bank = !bank;
     }
+    MODIFY_REG(FLASH->CR, FLASH_CR_PNB | FLASH_CR_BKER, (page_number << FLASH_CR_PNB_Pos) | (bank ? FLASH_CR_BKER : 0));
 #endif
-	MODIFY_REG(FLASH->CR, FLASH_CR_PNB | FLASH_CR_BKER, (page_number << FLASH_CR_PNB_Pos) | (bank ? FLASH_CR_BKER : 0));
+    MODIFY_REG(FLASH->CR, FLASH_CR_PNB, (page_number << FLASH_CR_PNB_Pos));
 	_FLASH_SET_CR(FLASH_CR_STRT);
 #endif
 
