@@ -302,7 +302,7 @@ void USART2_LPUART2_IRQHandler(void)
 }
 #endif //defined(UART2_PINS)
 
-#if defined(UART3_PINS) || defined(UART4_PINS) || defined(UART5_PINS) || defined(UART6_PINS) || defined(LPUART_PINS)
+#if defined(UART3_PINS) || defined(UART4_PINS) || defined(UART5_PINS) || defined(UART6_PINS) || defined(UARTLP_PINS)
 void USART3_4_5_6_LPUART1_IRQHandler(void)
 {
 #ifdef UART3_PINS
@@ -317,11 +317,11 @@ void USART3_4_5_6_LPUART1_IRQHandler(void)
 #ifdef UART6_PINS
 	UART_IRQHandler(UART_6);
 #endif
-#ifdef LPUART_PINS
+#ifdef UARTLP_PINS
 	UART_IRQHandler(UART_LP);
 #endif
 }
-#endif //defined(UART3_PINS) || defined(UART4_PINS) || defined(UART5_PINS) || defined(UART6_PINS) || defined(LPUART_PINS)
+#endif //defined(UART3_PINS) || defined(UART4_PINS) || defined(UART5_PINS) || defined(UART6_PINS) || defined(UARTLP_PINS)
 
 
 //void CEC_IRQHandler(void);
