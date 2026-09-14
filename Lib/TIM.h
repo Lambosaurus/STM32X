@@ -67,37 +67,52 @@ void TIM_EnablePwm(TIM_t * tim, TIM_Channel_t ch, GPIO_Pin_t pins, uint32_t af);
  */
 
 #ifdef TIM1_ENABLE
-extern TIM_t * const TIM_1;
+extern TIM_t gTIM_1;
+#define TIM_1 (&gTIM_1)
 #endif
 #ifdef TIM2_ENABLE
-extern TIM_t * const TIM_2;
+extern TIM_t gTIM_2;
+#define TIM_2 (&gTIM_2)
 #endif
 #ifdef TIM3_ENABLE
-extern TIM_t * const TIM_3;
+extern TIM_t gTIM_3;
+#define TIM_3 (&gTIM_3)
+#endif
+#ifdef TIM4_ENABLE
+extern TIM_t gTIM_4;
+#define TIM_4 (&gTIM_4)
 #endif
 #ifdef TIM5_ENABLE
-extern TIM_t * const TIM_5;
+extern TIM_t gTIM_5;
+#define TIM_5 (&gTIM_5)
 #endif
 #ifdef TIM6_ENABLE
-extern TIM_t * const TIM_6;
+extern TIM_t gTIM_6;
+#define TIM_6 (&gTIM_6)
 #endif
 #ifdef TIM14_ENABLE
-extern TIM_t * const TIM_14;
+extern TIM_t gTIM_14;
+#define TIM_14 (&gTIM_14)
 #endif
 #ifdef TIM15_ENABLE
-extern TIM_t * const TIM_15;
+extern TIM_t gTIM_15;
+#define TIM_15 (&gTIM_15)
 #endif
 #ifdef TIM16_ENABLE
-extern TIM_t * const TIM_16;
+extern TIM_t gTIM_16;
+#define TIM_16 (&gTIM_16)
 #endif
 #ifdef TIM17_ENABLE
-extern TIM_t * const TIM_17;
+extern TIM_t gTIM_17;
+#define TIM_17 (&gTIM_17)
 #endif
 #ifdef TIM21_ENABLE
-extern TIM_t * const TIM_21;
+extern TIM_t gTIM_21;
+#define TIM_21 (&gTIM_21)
 #endif
 #ifdef TIM22_ENABLE
-extern TIM_t * const TIM_22;
+extern TIM_t gTIM_22;
+#define TIM_22 (&gTIM_22)
 #endif
 
 #include "TIM.inl.h"

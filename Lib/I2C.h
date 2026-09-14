@@ -50,13 +50,16 @@ bool I2C_Transfer(I2C_t * i2c, uint8_t address, const uint8_t * txdata, uint32_t
  */
 
 #ifdef I2C1_PINS
-extern I2C_t * I2C_1;
+extern I2C_t gI2C_1;
+#define I2C_1 (&gI2C_1)
 #endif
 #ifdef I2C2_PINS
-extern I2C_t * I2C_2;
+extern I2C_t gI2C_2;
+#define I2C_2 (&gI2C_2)
 #endif
 #ifdef I2C3_PINS
-extern I2C_t * I2C_3;
+extern I2C_t gI2C_3;
+#define I2C_3 (&gI2C_3)
 #endif
 
 

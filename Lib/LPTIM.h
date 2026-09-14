@@ -57,10 +57,12 @@ void LPTIM_IRQHandler(LPTIM_t * tim);
  */
 
 #ifdef LPTIM1_ENABLE
-extern LPTIM_t * const LPTIM_1;
+extern LPTIM_t gLPTIM_1;
+#define LPTIM_1 (&gLPTIM_1)
 #endif
 #ifdef LPTIM2_ENABLE
-extern LPTIM_t * const LPTIM_2;
+extern LPTIM_t gLPTIM_2;
+#define LPTIM_2 (&gLPTIM_2)
 #endif
 
 #endif //COMP_ENABLED

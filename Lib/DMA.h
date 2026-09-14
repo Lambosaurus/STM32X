@@ -64,25 +64,32 @@ void DMA_IRQHandler(DMA_t * dma);
  */
 
 #ifdef DMA_CH1_ENABLE
-extern DMA_t * const DMA_CH1;
+extern DMA_t gDMA_CH1;
+#define DMA_CH1		(&gDMA_CH1)
 #endif
 #ifdef DMA_CH2_ENABLE
-extern DMA_t * const DMA_CH2;
+extern DMA_t gDMA_CH2;
+#define DMA_CH2		(&gDMA_CH2)
 #endif
 #ifdef DMA_CH3_ENABLE
-extern DMA_t * const DMA_CH3;
+extern DMA_t gDMA_CH3;
+#define DMA_CH3		(&gDMA_CH3)
 #endif
 #ifdef DMA_CH4_ENABLE
-extern DMA_t * const DMA_CH4;
+extern DMA_t gDMA_CH4;
+#define DMA_CH4		(&gDMA_CH4)
 #endif
 #ifdef DMA_CH5_ENABLE
-extern DMA_t * const DMA_CH5;
+extern DMA_t gDMA_CH5;
+#define DMA_CH5		(&gDMA_CH5)
 #endif
 #ifdef DMA_CH6_ENABLE
-extern DMA_t * const DMA_CH6;
+extern DMA_t gDMA_CH6;
+#define DMA_CH6		(&gDMA_CH6)
 #endif
 #ifdef DMA_CH7_ENABLE
-extern DMA_t * const DMA_CH7;
+extern DMA_t gDMA_CH7;
+#define DMA_CH7		(&gDMA_CH7)
 #endif
 
 #endif //DMA_H

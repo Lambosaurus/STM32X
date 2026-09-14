@@ -64,10 +64,12 @@ void COMP_IRQHandler(void);
  */
 
 #ifdef COMP1_ENABLE
-extern COMP_t * const COMP_1;
+extern COMP_t gCOMP_1;
+#define COMP_1 (&gCOMP_1)
 #endif
 #ifdef COMP2_ENABLE
-extern COMP_t * const COMP_2;
+extern COMP_t gCOMP_2;
+#define COMP_2 (&gCOMP_2)
 #endif
 
 #endif //COMP_ENABLE

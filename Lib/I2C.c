@@ -82,22 +82,19 @@ static uint32_t I2Cx_GetFMPBit(I2C_t * i2c);
  */
 
 #ifdef I2C1_PINS
-static I2C_t gI2C_1 = {
+I2C_t gI2C_1 = {
 	.Instance = I2C1
 };
-I2C_t * I2C_1 = &gI2C_1;
 #endif
 #ifdef I2C2_PINS
-static I2C_t gI2C_2 = {
+I2C_t gI2C_2 = {
 	.Instance = I2C2
 };
-I2C_t * I2C_2 = &gI2C_2;
 #endif
 #ifdef I2C3_PINS
-static I2C_t gI2C_3 = {
+I2C_t gI2C_3 = {
 	.Instance = I2C3
 };
-I2C_t * I2C_3 = &gI2C_3;
 #endif
 
 

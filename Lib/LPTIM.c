@@ -39,16 +39,14 @@ static void LPTIMx_Deinit(LPTIM_t * tim);
  */
 
 #ifdef LPTIM1_ENABLE
-static LPTIM_t gLPTIM_1 = {
+LPTIM_t gLPTIM_1 = {
 	.Instance = LPTIM1
 };
-LPTIM_t * const LPTIM_1 = &gLPTIM_1;
 #endif
 #ifdef LPTIM2_ENABLE
-static LPTIM_t gLPTIM_2 = {
+LPTIM_t gLPTIM_2 = {
 	.Instance = LPTIM2
 };
-LPTIM_t * const LPTIM_2 = &gLPTIM_2;
 #endif
 
 /*
