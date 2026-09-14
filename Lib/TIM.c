@@ -274,7 +274,7 @@ static void TIMx_Init(TIM_t * tim)
 #ifdef TIM4_ENABLE
 	if (tim == TIM_4)
 	{
-		__HAL_RCC_TIM3_CLK_ENABLE();
+		__HAL_RCC_TIM4_CLK_ENABLE();
 		IRQ_Enable(IRQ_No_TIM4, TIM_IQR_PRIO);
 	}
 #endif
