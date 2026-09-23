@@ -53,6 +53,13 @@
 	while(FLASH_IS_BUSY()) {}						\
 	__HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_EOP);			\
 
+
+#ifdef FLASH_USE_RAMFUNC
+#define FLASH_FUNC_ATTR			__RAM_FUNC
+#else
+#define FLASH_FUNC_ATTR
+#endif
+
 /*
  * PRIVATE TYPES
  */
@@ -64,7 +71,7 @@
 static void FLASH_Unlock(void);
 static inline void FLASH_Lock(void);
 #if defined(STM32L0)
-__RAM_FUNC void FLASH_WriteHalfPage(uint32_t * __restrict address, const uint32_t * __restrict data);
+void FLASH_WriteHalfPage(uint32_t * __restrict address, const uint32_t * __restrict data);
 #endif
 
 #ifdef FLASH_DBANK_SUPPORT
@@ -90,6 +97,7 @@ const uint32_t * FLASH_GetPage(uint32_t page)
 	return (const uint32_t *)(FLASH_BASE + (FLASH_PAGE_SIZE * page));
 }
 
+FLASH_FUNC_ATTR
 void FLASH_Erase(const uint32_t * address)
 {
 	FLASH_Unlock();
@@ -121,6 +129,7 @@ void FLASH_Erase(const uint32_t * address)
 	FLASH_Lock();
 }
 
+FLASH_FUNC_ATTR
 void FLASH_Write(const uint32_t * address, const uint32_t * data, uint32_t size)
 {
 	uint32_t dest = (uint32_t)address;
@@ -233,11 +242,10 @@ static uint32_t FLASH_ReadOptions(void)
 }
 #endif //FLASH_DBANK_SUPPORT
 
+FLASH_FUNC_ATTR
 static void FLASH_Unlock(void)
 {
-	// This sequence must not be interrupted.
-	uint32_t primask_bit = __get_PRIMASK();
-	__disable_irq();
+	CRITICAL_SECTION_BEGIN();
 
 #if defined(STM32L0)
 	FLASH->PEKEYR = FLASH_PEKEY1;
@@ -252,9 +260,10 @@ static void FLASH_Unlock(void)
 	FLASH->KEYR = FLASH_KEY2;
 #endif
 
-	__set_PRIMASK(primask_bit);
+	CRITICAL_SECTION_END();
 }
 
+__attribute__((always_inline))
 static inline void FLASH_Lock(void)
 {
 	_FLASH_SET_CR(_FLASH_CR_LOCK);
