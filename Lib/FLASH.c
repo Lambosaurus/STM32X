@@ -207,6 +207,7 @@ void FLASH_SwapBank(void)
 	FLASH_WriteOptions(obs);
 }
 
+__attribute__((always_inline))
 uint8_t FLASH_GetBank(void)
 {
 	return (FLASH_ReadOptions() & FLASH_OPTR_nSWAP_BANK) ? 0 : 1;
@@ -236,6 +237,7 @@ static void FLASH_WriteOptions(uint32_t ob)
 	while(1);
 }
 
+__attribute__((always_inline))
 static uint32_t FLASH_ReadOptions(void)
 {
 	return FLASH->OPTR;
